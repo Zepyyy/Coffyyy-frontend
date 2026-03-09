@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { NavLink } from "react-router";
+import { Analytics } from "@vercel/analytics/react";
 import { Button } from "./components/ui/button";
 import { db } from "./db/db";
 
@@ -75,6 +76,7 @@ export default function Yo() {
 					))}
 				</div>
 			</div>
+			<Analytics />
 		</div>
 	);
 }

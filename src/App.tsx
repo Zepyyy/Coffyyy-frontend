@@ -1,5 +1,6 @@
 import { Moon, Sun } from "lucide-react";
 import { NavLink } from "react-router";
+import { Analytics } from "@vercel/analytics/react";
 import { Button } from "./components/ui/button";
 import { useTheme } from "./contexts/ThemeContext";
 
@@ -26,6 +27,7 @@ export default function App() {
 					</NavLink>
 				</div>
 			</div>
+			<Analytics />
 		</main>
 	);
 }
