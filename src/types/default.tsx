@@ -17,3 +17,15 @@ export type Beans = {
 	tastingNotes?: Array<string>;
 	variety?: Array<string>;
 };
+
+export type Machines = {
+	id?: number;
+	name?: string;
+	brand?: string;
+	type?: string;
+	purchaseDate?: string;
+	model?: string;
+	induction?: boolean;
+	grindRange?: string;
+	capacity?: string;
+};

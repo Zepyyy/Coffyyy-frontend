@@ -28,6 +28,8 @@ const toggleVariants = cva(
 					"data-[state=on]:bg-tag-blue-900 data-[state=on]:border-tag-blue-100 data-[state=on]:border data-[state=off]:border-transparent border-transparent shadow-xs hover:bg-tag-blue-900/50 hover:text-accent-foreground bg-tag-blue-900/25",
 				redColored:
 					"data-[state=on]:bg-tag-red-900 data-[state=on]:border-tag-red-100 data-[state=on]:border data-[state=off]:border-transparent border-transparent shadow-xs hover:bg-tag-red-900/50 hover:text-accent-foreground bg-tag-red-900/25",
+				purpleColored:
+					"data-[state=on]:bg-tag-purple-900 data-[state=on]:border-tag-purple-100 data-[state=on]:border data-[state=off]:border-transparent border-transparent shadow-xs hover:bg-tag-purple-900/50 hover:text-accent-foreground bg-tag-purple-900/25",
 			},
 		},
 		defaultVariants: {

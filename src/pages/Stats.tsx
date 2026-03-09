@@ -11,6 +11,7 @@ function MetricShape() {
 			className="absolute right-0 top-0 h-full w-2/3 opacity-35"
 			aria-hidden
 		>
+			<title>Metric shape</title>
 			<circle
 				cx="120"
 				cy="18"
@@ -253,10 +254,9 @@ export default function Stats() {
 
 	return (
 		<section className="w-full h-full rounded-2xl border border-border bg-card p-5 md:p-8 flex flex-col gap-6">
-			<header>
+			<header className="flex flex-wrap items-center justify-between gap-3">
 				<h1 className="text-2xl md:text-3xl font-semibold">Statistics</h1>
 			</header>
-
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				{[
 					{ label: "Total brews", value: String(totalBrews) },
@@ -341,7 +341,9 @@ export default function Stats() {
 
 				{paginatedBrews.length === 0 ? (
 					<p className="text-sm text-muted-foreground">
-						No records for current filters.
+						{totalBrews === 0
+							? "☕ Nothing logged yet. Go brew something!"
+							: "No records match your current filters."}
 					</p>
 				) : (
 					<div className="space-y-2">

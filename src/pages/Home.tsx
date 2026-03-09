@@ -50,11 +50,13 @@ function BarChart({ title, rows }: { title: string; rows: Array<Ranked> }) {
 		<div className="rounded-xl border border-border bg-card/50 p-4">
 			<p className="text-sm font-semibold mb-3">{title}</p>
 			{rows.length === 0 ? (
-				<p className="text-sm text-muted-foreground">No data yet</p>
+				<p className="text-sm text-muted-foreground">
+					☕ Your cup is empty. Add some brews!
+				</p>
 			) : (
 				<div className="space-y-3">
 					{rows.map((row) => (
-						<div key={row.label}>
+						<div key={row.label + " - " + row.value}>
 							<div className="mb-1 flex items-center justify-between gap-2 text-xs">
 								<span className="truncate">{row.label}</span>
 								<span className="font-semibold">{row.value}</span>

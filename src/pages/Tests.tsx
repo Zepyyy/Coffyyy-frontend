@@ -1,88 +1,62 @@
-import { ArrowRight, PlusIcon } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
+import type { TagProps } from "@/components/tag";
 import Tag from "@/components/tag";
-import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { db } from "@/db/db";
+import { buildBeanSuggestions } from "@/lib/beanSuggestions";
+
+type SuggestionGroup = {
+	title: string;
+	items: Array<string>;
+	variant: NonNullable<TagProps["variant"]>;
+};
 
 export default function Tests() {
+	const beans = useLiveQuery(async () => db.Beans.toArray(), []);
+	const suggestions = useMemo(() => buildBeanSuggestions(beans ?? []), [beans]);
+
+	const groups: Array<SuggestionGroup> = [
+		{ title: "Brands", items: suggestions.brands, variant: "redColored" },
+		{ title: "Origins", items: suggestions.origins, variant: "yellowColored" },
+		{
+			title: "Varieties",
+			items: suggestions.varieties,
+			variant: "greenColored",
+		},
+		{
+			title: "Dominant Notes",
+			items: suggestions.dominantNotes,
+			variant: "blueColored",
+		},
+		{ title: "Flavors", items: suggestions.flavors, variant: "purpleColored" },
+	];
+
 	return (
-		<div>
-			<h1>Tests</h1>
-			<div className="relative overflow-hidden min-h-[clamp(10rem,24vh,16rem)] rounded-2xl border border-border bg-background px-6 py-5 flex justify-center items-start transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-				<div className="absolute inset-0 bg-linear-to-tr from-primary/30 to-transparent transition-colors" />
-				<p className="absolute top-1/2 right-5 -translate-y-1/2 text-2xl md:text-4xl font-semibold tracking-tight">
-					<ArrowRight
-						size={48}
-						className="group-hover:scale-[1.2] transition-transform ease-out duration-200"
-					/>
-				</p>
-				<div className="relative z-10 flex flex-col items-center h-full gap-4">
-					<div className="flex flex-row gap-4">
-						<h2>tags</h2>
-						<Tag variant="yellowColored" text="yellow" />
-						<Tag variant="blueColored" text="blue" />
-						<Tag variant="greenColored" text="green" />
-						<Tag variant="redColored" text="red" />
-						<Tag text="default" />
-						<Tag variant="light" text="light" />
+		<section className="w-full h-full rounded-2xl border border-border bg-background px-6 py-5">
+			<h1 className="text-2xl font-semibold">Saved Suggestions</h1>
+			<p className="mt-1 text-sm text-muted-foreground">
+				Suggestions are generated from saved brew entries only.
+			</p>
+			<div className="mt-6 flex flex-col gap-4">
+				{groups.map((group) => (
+					<div key={group.title} className="flex flex-col gap-2">
+						<p className="text-sm font-semibold">{group.title}</p>
+						<div className="flex flex-wrap gap-2">
+							{group.items.length === 0 ? (
+								<Tag variant="light" text="None yet" />
+							) : (
+								group.items.map((item) => (
+									<Tag
+										key={`${group.title}-${item}`}
+										variant={group.variant}
+										text={item}
+									/>
+								))
+							)}
+						</div>
 					</div>
-					<div className="relative z-10 flex h-full gap-4">
-						<h2>togglegroup</h2>
-						<ToggleGroup
-							type="multiple"
-							size="sm"
-							defaultValue={["top"]}
-							spacing={2}
-						>
-							<ToggleGroupItem
-								value="top"
-								aria-label="Toggle top"
-								color="yellowColored"
-							>
-								banan
-							</ToggleGroupItem>
-							<ToggleGroupItem
-								value="bottom"
-								aria-label="Toggle bottom"
-								color="greenColored"
-							>
-								matha
-							</ToggleGroupItem>
-							<ToggleGroupItem
-								value="left"
-								aria-label="Toggle left"
-								color="redColored"
-							>
-								appel
-							</ToggleGroupItem>
-							<ToggleGroupItem
-								value="right"
-								aria-label="Toggle right"
-								color="blueColored"
-							>
-								blueber
-							</ToggleGroupItem>
-							<ToggleGroupItem
-								value="roast"
-								aria-label="Toggle right"
-								color="blueColored"
-							>
-								blueber2
-							</ToggleGroupItem>
-							<Button
-								variant={"add"}
-								aria-label="Toggle right"
-								color="blueColored"
-								size="xs"
-								onClick={() =>
-									console.log("this one is fake, and it adds a tag. WIP")
-								}
-							>
-								<PlusIcon />
-							</Button>
-						</ToggleGroup>
-					</div>
-				</div>
+				))}
 			</div>
-		</div>
+		</section>
 	);
 }

@@ -59,6 +59,8 @@
     --color-tag-yellow-900: var(--tag-yellow-900);
     --color-tag-red-100: var(--tag-red-100);
     --color-tag-red-900: var(--tag-red-900);
+    --color-tag-purple-100: var(--tag-purple-100);
+    --color-tag-purple-900: var(--tag-purple-900);
 }
 
 :root {
@@ -92,6 +94,8 @@
     --tag-yellow-100: oklch(0.74 0.143 70);
     --tag-red-900: oklch(0.913 0.045 15);
     --tag-red-100: oklch(0.55 0.216 20);
+    --tag-purple-900: oklch(0.778 0.115 315);
+    --tag-purple-100: oklch(0.273 0.105 312);
 
     --primary: oklch(0.4731 0.0363 74.69);
     --primary-foreground: oklch(0.985 0 0);
@@ -145,6 +149,8 @@
     --tag-yellow-900: oklch(0.3 0.026 74);
     --tag-red-100: oklch(0.737 0.125 11);
     --tag-red-900: oklch(0.288 0.042 15);
+    --tag-purple-100: oklch(0.778 0.115 315);
+    --tag-purple-900: oklch(0.273 0.105 312);
 
     --primary: oklch(0.8425 0.0382 79.07);
     --primary-foreground: oklch(0.205 0 0);
@@ -306,4 +312,19 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+
+@keyframes fadeSlideUp {
+    0% {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-fade-slide-up {
+    animation: fadeSlideUp 0.4s ease-out forwards;
 }
