@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import type { TagProps } from "@/components/tag";
 import Tag from "@/components/tag";
 import { Toggle } from "@/components/ui/toggle";
-import { ToggleGroupItem } from "@/components/ui/toggle-group";
 import { db } from "@/db/db";
 import { buildBeanSuggestions } from "@/lib/beanSuggestions";
 

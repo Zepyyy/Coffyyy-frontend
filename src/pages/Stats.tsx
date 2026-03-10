@@ -68,7 +68,7 @@ type EditForm = {
 	bean: string;
 	overallRating: string;
 	grindSize: string;
-	date: string;
+	date: Date;
 	acidity: string;
 	adjustementNeeded: string;
 	aftertaste: string;
@@ -457,11 +457,14 @@ export default function Stats() {
 											<input
 												type="date"
 												className="h-10 rounded-md border border-border bg-card px-3"
-												value={editForm.date}
+												value={editForm.date.toDateString()}
 												onChange={(event) =>
 													setEditForm((current) =>
 														current
-															? { ...current, date: event.target.value }
+															? {
+																	...current,
+																	date: new Date(event.target.value),
+																}
 															: current,
 													)
 												}
