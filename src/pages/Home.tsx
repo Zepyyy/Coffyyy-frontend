@@ -1,26 +1,19 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
-import Tag from "@/components/tag";
 import { db } from "@/db/db";
-import type { Beans } from "@/types/default";
+import type { Beans, Brews } from "@/types/default";
 
-function beanLabel(brew: Beans) {
-	if (brew.name && brew.brand) return `${brew.name} - ${brew.brand}`;
-	if (brew.name) return brew.name;
-	if (brew.brand) return brew.brand;
-	return "Unnamed bean";
+type Ranked = { label: string; value: number };
+
+function beanLabel(bean: Beans) {
+	if (bean.name && bean.brand) return `${bean.name} — ${bean.brand}`;
+	return bean.name || bean.brand || "Unnamed bean";
 }
 
-type Ranked = {
-	label: string;
-	value: number;
-};
-
-function bestBeans(brews: Array<Beans>): Array<Ranked> {
+function topBeans(beans: Beans[]): Ranked[] {
 	const counts = new Map<string, number>();
-	for (const brew of brews) {
-		const label = beanLabel(brew);
+	for (const b of beans) {
+		const label = beanLabel(b);
 		counts.set(label, (counts.get(label) ?? 0) + 1);
 	}
 	return [...counts.entries()]
@@ -29,118 +22,145 @@ function bestBeans(brews: Array<Beans>): Array<Ranked> {
 		.slice(0, 5);
 }
 
-function bestBrews(brews: Array<Beans>): Array<Ranked> {
-	const ranked = brews.map((brew) => {
-		const roast = typeof brew.roastLevel === "number" ? brew.roastLevel : 0;
-		const flavorDepth =
-			(brew.flavors?.length ?? 0) + (brew.tastingNotes?.length ?? 0);
-		const finishedBonus = brew.finished ? 1 : 0;
-		return {
-			label: beanLabel(brew),
-			value: roast + flavorDepth + finishedBonus,
-		};
-	});
-	return ranked.sort((a, b) => b.value - a.value).slice(0, 5);
+function recentBrews(brews: Brews[]): Brews[] {
+	return [...brews].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)).slice(0, 5);
 }
 
-function BarChart({ title, rows }: { title: string; rows: Array<Ranked> }) {
-	const max = Math.max(1, ...rows.map((row) => row.value));
-
+function MiniBar({
+	label,
+	value,
+	max,
+}: {
+	label: string;
+	value: number;
+	max: number;
+}) {
 	return (
-		<div className="rounded-xl border border-border bg-card/50 p-4">
-			<p className="text-sm font-semibold mb-3">{title}</p>
-			{rows.length === 0 ? (
-				<p className="text-sm text-muted-foreground">
-					☕ Your cup is empty. Add some brews!
-				</p>
-			) : (
-				<div className="space-y-3">
-					{rows.map((row) => (
-						<div key={row.label + " - " + row.value}>
-							<div className="mb-1 flex items-center justify-between gap-2 text-xs">
-								<span className="truncate">{row.label}</span>
-								<span className="font-semibold">{row.value}</span>
-							</div>
-							<div className="h-2 w-full rounded-full bg-muted">
-								<div
-									className="h-full rounded-full bg-primary"
-									style={{ width: `${(row.value / max) * 100}%` }}
-								/>
-							</div>
-						</div>
-					))}
-				</div>
-			)}
+		<div className="space-y-1">
+			<div className="flex items-center justify-between gap-2 text-xs">
+				<span className="truncate text-muted-foreground">{label}</span>
+				<span className="font-semibold shrink-0">{value}</span>
+			</div>
+			<div className="h-1.5 w-full rounded-full bg-muted">
+				<div
+					className="h-full rounded-full bg-primary transition-all"
+					style={{ width: `${(value / max) * 100}%` }}
+				/>
+			</div>
 		</div>
 	);
 }
 
 export default function Home() {
-	const brews = useLiveQuery(async () => db.Beans.toArray(), []);
-	const data = brews ?? [];
-	const topBeans = bestBeans(data);
-	const topBrews = bestBrews(data);
+	const beans = useLiveQuery(() => db.Beans.toArray(), []) ?? [];
+	const brews = useLiveQuery(() => db.Brews.toArray(), []) ?? [];
+
+	const beanRanked = topBeans(beans);
+	const latestBrews = recentBrews(brews);
+	const beanMax = Math.max(1, ...beanRanked.map((r) => r.value));
 
 	return (
-		<section className="w-full h-full flex flex-col gap-5 py-1">
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+		<div className="space-y-6">
+			{/* Hero actions */}
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<Link
-					to="/brew"
-					aria-label="Add new brew"
-					className="lg:col-span-2 group relative overflow-hidden min-h-[clamp(10rem,24vh,16rem)] rounded-2xl border border-primary/20 bg-primary text-primary-foreground px-6 py-5 flex items-end transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					to="/log/brew"
+					className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary text-primary-foreground px-6 py-8 transition-transform hover:scale-[1.01] sm:col-span-2"
 				>
-					<div className="absolute inset-0 bg-linear-to-tr from-primary/20 to-transparent group-hover:from-primary/50 transition-colors" />
-					<div className="relative z-10 flex items-end h-full">
-						<p className="text-3xl md:text-5xl font-semibold tracking-tight">
-							Add new
+					<div className="absolute inset-0 bg-linear-to-tr from-primary/20 to-transparent group-hover:from-primary/40 transition-colors" />
+					<div className="relative">
+						<p className="text-xs uppercase tracking-wider opacity-70">
+							Quick add
 						</p>
+						<p className="mt-1 text-3xl font-bold tracking-tight">Log a Brew</p>
 					</div>
 				</Link>
 
-				<Link
-					to="/stats"
-					aria-label="Open statistics"
-					className="group relative overflow-hidden min-h-[clamp(10rem,24vh,16rem)] rounded-2xl border border-border bg-background px-6 py-5 flex items-end transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					<div className="absolute inset-0 bg-linear-to-tr from-primary/10 to-transparent group-hover:from-primary/20 transition-colors" />
-					<div className="relative z-10 flex items-end h-full">
-						<p className="text-2xl md:text-4xl font-semibold tracking-tight">
-							Statistics
-						</p>
-					</div>
-				</Link>
-			</div>
-
-			<div>
-				<Link
-					to="/tests"
-					aria-label="Open brew"
-					className="group relative overflow-hidden min-h-[clamp(10rem,24vh,16rem)] rounded-2xl border border-border bg-background px-6 py-5 flex items-end transition-transform hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				>
-					<div className="absolute inset-0 bg-linear-to-tr from-primary/30 to-transparent group-hover:from-primary/40 transition-colors" />
-					<p className="absolute top-1/2 right-5 -translate-y-1/2 text-2xl md:text-4xl font-semibold tracking-tight">
-						<ArrowRight
-							size={48}
-							className="group-hover:scale-[1.2] transition-transform ease-out duration-200"
-						/>
-					</p>
-					<div className="relative z-10 flex items-center h-full gap-4">
-						<p className="text-2xl md:text-4xl font-semibold tracking-tight">
-							Tests
-						</p>
-						<div className="flex items-center h-full z-20 gap-2">
-							<Tag text="aled" variant={"blueColored"} />
-							<Tag text="aled" variant={"light"} />
-							<Tag text="aled" variant={"default"} />
+				<div className="flex flex-col gap-3">
+					<Link
+						to="/log/bean"
+						className="group flex-1 flex items-center rounded-xl border border-border bg-card px-4 py-4 transition-all hover:border-foreground/20"
+					>
+						<span className="mr-3 text-2xl">🫘</span>
+						<div>
+							<p className="text-sm font-semibold">Add a Bean</p>
+							<p className="text-xs text-muted-foreground">
+								{beans.length} in library
+							</p>
 						</div>
-					</div>
-				</Link>
+					</Link>
+					<Link
+						to="/log/machine"
+						className="group flex-1 flex items-center rounded-xl border border-border bg-card px-4 py-4 transition-all hover:border-foreground/20"
+					>
+						<span className="mr-3 text-2xl">⚙️</span>
+						<div>
+							<p className="text-sm font-semibold">Add Equipment</p>
+							<p className="text-xs text-muted-foreground">
+								{brews.length} brews logged
+							</p>
+						</div>
+					</Link>
+				</div>
 			</div>
 
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-				<BarChart title="Top Beans" rows={topBeans} />
-				<BarChart title="Best Brews" rows={topBrews} />
+			{/* Charts + recent */}
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+				{/* Top beans */}
+				<div className="rounded-xl border border-border bg-card p-5 space-y-4">
+					<p className="text-sm font-semibold">Top Beans</p>
+					{beanRanked.length === 0 ? (
+						<p className="text-sm text-muted-foreground">
+							No beans catalogued yet.
+						</p>
+					) : (
+						<div className="space-y-3">
+							{beanRanked.map((r) => (
+								<MiniBar
+									key={r.label}
+									label={r.label}
+									value={r.value}
+									max={beanMax}
+								/>
+							))}
+						</div>
+					)}
+				</div>
+
+				{/* Recent brews */}
+				<div className="rounded-xl border border-border bg-card p-5 space-y-3">
+					<p className="text-sm font-semibold">Recent Brews</p>
+					{latestBrews.length === 0 ? (
+						<p className="text-sm text-muted-foreground">Nothing brewed yet.</p>
+					) : (
+						<div className="space-y-2">
+							{latestBrews.map((brew) => (
+								<div
+									key={brew.id}
+									className="flex items-center justify-between gap-2 text-sm"
+								>
+									<span className="truncate text-muted-foreground">
+										{brew.bean ?? "Unnamed"}
+									</span>
+									{brew.overallRating && (
+										<span className="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full bg-muted">
+											{brew.overallRating}
+										</span>
+									)}
+								</div>
+							))}
+						</div>
+					)}
+					{brews.length > 5 && (
+						<Link
+							to="/brews"
+							className="block text-xs text-muted-foreground hover:text-foreground transition-colors"
+						>
+							View all {brews.length} brews →
+						</Link>
+					)}
+				</div>
 			</div>
-		</section>
+		</div>
 	);
 }

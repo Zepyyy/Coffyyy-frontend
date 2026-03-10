@@ -1,87 +1,62 @@
 import { Analytics } from "@vercel/analytics/react";
-import clsx from "clsx";
 import { Moon, Sun } from "lucide-react";
 import { NavLink, Outlet } from "react-router";
-import { Button } from "./components/ui/button";
-import { Separator } from "./components/ui/separator";
 import { useTheme } from "./contexts/ThemeContext";
+import { cn } from "./lib/utils";
+
+const NAV_LINKS = [
+	{ to: "/home", label: "Home" },
+	{ to: "/log", label: "Log" },
+	{ to: "/library", label: "Library" },
+	{ to: "/brews", label: "Brews" },
+];
 
 export default function App() {
 	const { theme, toggleTheme } = useTheme();
 
 	return (
-		<main className="flex text-xl bg-background text-foreground relative">
-			<div className="flex w-full h-full justify-center flex-col">
-				<div className="flex flex-row transition-all duration-150 h-16">
-					<NavLink
-						to="/home"
-						className={({ isActive }) =>
-							clsx(
-								"flex justify-center items-center w-full",
-								isActive
-									? "text-primary-100 bg-primary-800 hover:bg-primary-800/90"
-									: "text-primary-800 bg-primary-200 hover:bg-primary-200/90",
-							)
-						}
-					>
-						Home
-					</NavLink>
-					<Separator orientation="vertical" />
-					<NavLink
-						to="/workflows/"
-						className={({ isActive }) =>
-							clsx(
-								"flex justify-center items-center w-full",
-								isActive
-									? "text-primary-100 bg-primary-800 hover:bg-primary-800/90"
-									: "text-primary-800 bg-primary-200 hover:bg-primary-200/90",
-							)
-						}
-					>
-						Workflows
-					</NavLink>
-					<NavLink
-						to="/database"
-						className={({ isActive }) =>
-							clsx(
-								"flex justify-center items-center w-full",
-								isActive
-									? "text-primary-100 bg-primary-800 hover:bg-primary-800/90"
-									: "text-primary-800 bg-primary-200 hover:bg-primary-200/90",
-							)
-						}
-					>
-						Database
-					</NavLink>
-					<Separator orientation="vertical" />
-					<NavLink
-						to="/stats"
-						className={({ isActive }) =>
-							clsx(
-								"flex justify-center items-center w-full",
-								isActive
-									? "text-primary-100 bg-primary-800 hover:bg-primary-800/90"
-									: "text-primary-800 bg-primary-200 hover:bg-primary-200/90",
-							)
-						}
-					>
-						Stats
-					</NavLink>
-					<Separator orientation="vertical" />
-					<Button
-						variant="default"
+		<div className="min-h-screen bg-background text-foreground flex flex-col">
+			<header className="sticky top-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur-sm">
+				<div className="mx-auto flex h-full max-w-5xl items-center justify-between px-4">
+					<span className="text-base font-bold tracking-tight select-none">
+						Coffyyy
+					</span>
+
+					<nav className="flex items-center gap-0.5">
+						{NAV_LINKS.map(({ to, label }) => (
+							<NavLink
+								key={to}
+								to={to}
+								className={({ isActive }) =>
+									cn(
+										"px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+										isActive
+											? "bg-foreground text-background"
+											: "text-muted-foreground hover:text-foreground hover:bg-muted",
+									)
+								}
+							>
+								{label}
+							</NavLink>
+						))}
+					</nav>
+
+					<button
+						type="button"
 						onClick={toggleTheme}
-						className="flex rounded-none w-16 h-16"
+						className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						aria-label="Toggle theme"
 					>
-						{theme === "dark" ? <Sun /> : <Moon />}
-					</Button>
+						{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+					</button>
 				</div>
-				<Separator />
-				<div className="w-full h-full flex flex-col p-4 bg-background">
-					<Outlet />
-				</div>
-			</div>
+			</header>
+
+			<main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">
+				<Outlet />
+			</main>
+
 			<Analytics />
-		</main>
+		</div>
 	);
 }

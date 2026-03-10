@@ -51,6 +51,8 @@
     --color-primary-700: var(--primary-700);
     --color-primary-800: var(--primary-800);
 
+    --color-tag-teal-100: var(--tag-teal-100);
+    --color-tag-teal-900: var(--tag-teal-900);
     --color-tag-green-100: var(--tag-green-100);
     --color-tag-green-900: var(--tag-green-900);
     --color-tag-blue-100: var(--tag-blue-100);
@@ -86,8 +88,10 @@
     --primary-700: oklch(0.5707 0.0526 72.67);
     --primary-800: oklch(0.4731 0.0363 74.69);
 
-    --tag-green-900: oklch(0.916 0.033 221);
-    --tag-green-100: oklch(0.443 0.071 200);
+    --tag-teal-900: oklch(0.916 0.033 221);
+    --tag-teal-100: oklch(0.443 0.071 200);
+    --tag-green-900: oklch(96.2% 0.044 156.743);
+    --tag-green-100: oklch(44.8% 0.119 151.328);
     --tag-blue-900: oklch(0.865 0.052 265);
     --tag-blue-100: oklch(0.374 0.11 263);
     --tag-yellow-900: oklch(0.949 0.032 76);
@@ -141,8 +145,10 @@
     --primary-700: oklch(0.5707 0.0526 72.67);
     --primary-800: oklch(0.4731 0.0363 74.69);
 
-    --tag-green-100: oklch(0.779 0.046 189);
-    --tag-green-900: oklch(0.293 0.025 222);
+    --tag-teal-100: oklch(0.779 0.046 189);
+    --tag-teal-900: oklch(0.293 0.025 222);
+    --tag-green-100: hsl(143 75.2% 79%);
+    --tag-green-900: hsl(145 73.2% 13%);
     --tag-blue-100: oklch(0.795 0.095 264);
     --tag-blue-900: oklch(0.268 0.071 263);
     --tag-yellow-100: oklch(0.856 0.073 86);
