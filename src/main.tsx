@@ -10,6 +10,8 @@ import Stats from "./pages/Stats.tsx";
 import Tests from "./pages/Tests.tsx";
 import BeansDB from "./pages/WorkFlows/BeansDB.tsx";
 import Brew from "./pages/WorkFlows/Brew.tsx";
+import Default from "./pages/WorkFlows/Default.tsx";
+import Machines from "./pages/WorkFlows/Machines.tsx";
 import Providers from "./providers/Providers.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -23,14 +25,19 @@ createRoot(document.getElementById("root")!).render(
 						<Route path="stats" element={<Stats />} />
 						<Route path="tests" element={<Tests />} />
 						<Route path="database" element={<Database />} />
+						<Route path="brew" element={<Brew />} />
+						<Route path="beans" element={<BeansDB />} />
+						<Route path="machines" element={<Machines />} />
 						<Route path="workflows">
 							<Route
 								index
 								path=""
-								element={<Navigate to="/workflows/Default" replace />}
+								element={<Navigate to="/workflows/default" replace />}
 							/>
+							<Route path="default" element={<Default />} />
 							<Route path="brew" element={<Brew />} />
 							<Route path="beans" element={<BeansDB />} />
+							<Route path="machines" element={<Machines />} />
 						</Route>
 						<Route path="/*" element={<CatchAll />} />
 					</Route>

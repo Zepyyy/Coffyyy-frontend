@@ -33,7 +33,7 @@ export type Brews = {
 	bitterness: string;
 	mouthfeel: string;
 	strength: string;
-	type: string;
+	machine: string;
 	tasteProfiles: Array<string>;
 };
 

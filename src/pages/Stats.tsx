@@ -64,20 +64,7 @@ function getTopValue(values: Array<string | undefined>): string {
 	return winner ?? "No data";
 }
 
-type EditForm = {
-	bean: string;
-	overallRating: string;
-	grindSize: string;
-	date: Date;
-	acidity: string;
-	adjustementNeeded: string;
-	aftertaste: string;
-	bitterness: string;
-	mouthfeel: string;
-	strength: string;
-	type: string;
-	tasteProfiles: string;
-};
+type EditForm = Omit<Brews, "id">;
 
 type SortMode = "newest" | "oldest" | "bean-asc" | "bean-desc" | "rating-asc";
 type RatingFilter = "all" | string;
@@ -86,13 +73,6 @@ const PAGE_SIZE = 8;
 
 function joinList(values?: Array<string>) {
 	return (values ?? []).join(", ");
-}
-
-function parseList(value: string) {
-	return value
-		.split(",")
-		.map((item) => item.trim())
-		.filter(Boolean);
 }
 
 function toEditForm(brew: Brews): EditForm {
@@ -107,8 +87,8 @@ function toEditForm(brew: Brews): EditForm {
 		bitterness: brew.bitterness ?? "",
 		mouthfeel: brew.mouthfeel ?? "",
 		strength: brew.strength ?? "",
-		type: brew.type ?? "",
-		tasteProfiles: joinList(brew.tasteProfiles),
+		machine: brew.machine ?? "",
+		tasteProfiles: brew.tasteProfiles ?? [],
 	};
 }
 
@@ -124,7 +104,7 @@ function searchHaystack(brew: Brews) {
 		brew.bitterness,
 		brew.mouthfeel,
 		brew.strength,
-		brew.type,
+		brew.machine,
 		joinList(brew.tasteProfiles),
 	]
 		.filter(Boolean)
@@ -241,8 +221,8 @@ export default function Stats() {
 				bitterness: editForm.bitterness || undefined,
 				mouthfeel: editForm.mouthfeel || undefined,
 				strength: editForm.strength || undefined,
-				type: editForm.type || undefined,
-				tasteProfiles: parseList(editForm.tasteProfiles),
+				machine: editForm.machine || undefined,
+				tasteProfiles: editForm.tasteProfiles || undefined,
 			});
 			setStatus("Brew updated.");
 			cancelEdit();
@@ -389,7 +369,7 @@ export default function Stats() {
 												{brew.overallRating ?? "No rating"}
 											</span>
 											<span className="text-muted-foreground">
-												{brew.type ?? "No method"}
+												{brew.machine ?? "No method"}
 											</span>
 										</div>
 										{typeof id === "number" && (
@@ -547,7 +527,7 @@ export default function Stats() {
 											<input
 												className="h-10 rounded-md border border-border bg-card px-3"
 												placeholder="Brew method"
-												value={editForm.type}
+												value={editForm.machine}
 												onChange={(event) =>
 													setEditForm((current) =>
 														current
@@ -565,7 +545,7 @@ export default function Stats() {
 														current
 															? {
 																	...current,
-																	tasteProfiles: event.target.value,
+																	tasteProfiles: [event.target.value],
 																}
 															: current,
 													)

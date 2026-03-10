@@ -18,7 +18,7 @@ type BrewForm = {
 	bitterness: string;
 	mouthfeel: string;
 	strength: string;
-	type: string;
+	machine: string;
 	tasteProfiles: string;
 };
 
@@ -33,7 +33,7 @@ const INITIAL_FORM: BrewForm = {
 	bitterness: "",
 	mouthfeel: "",
 	strength: "",
-	type: "",
+	machine: "",
 	tasteProfiles: "",
 };
 type SingleSuggestionField =
@@ -46,7 +46,7 @@ type SingleSuggestionField =
 	| "bitterness"
 	| "mouthfeel"
 	| "strength"
-	| "type";
+	| "machine";
 
 type MultiSuggestionField = "tasteProfiles";
 
@@ -160,14 +160,17 @@ export default function Brew() {
 	const [step, setStep] = useState<number>(0);
 	const brews = useLiveQuery(async () => db.Brews.toArray(), []);
 	const beanNames = useLiveQuery(async () => db.Beans.toArray(), []) ?? [];
+	const machineNames =
+		useLiveQuery(async () => db.Machines.toArray(), []) ?? [];
 
 	const suggestions = useMemo(
 		() =>
 			buildBrewSuggestions(
 				brews ?? [],
 				beanNames.map((b) => b.name ?? ""),
+				machineNames.map((m) => m.name ?? ""),
 			),
-		[brews, beanNames],
+		[brews, beanNames, machineNames],
 	);
 
 	const selectedBean = findSuggestionMatch(form.bean, suggestions.bean);
@@ -211,7 +214,7 @@ export default function Brew() {
 		suggestions.strength,
 	);
 
-	const selectedType = findSuggestionMatch(form.type, suggestions.type);
+	const selectedType = findSuggestionMatch(form.machine, suggestions.machine);
 
 	const selectedTasteProfiles = selectedFromListInput(
 		form.tasteProfiles,
@@ -277,7 +280,7 @@ export default function Brew() {
 				bitterness: form.bitterness,
 				mouthfeel: form.mouthfeel,
 				strength: form.strength,
-				type: form.type,
+				machine: form.machine,
 				tasteProfiles: parseList(form.tasteProfiles),
 			});
 			setForm(INITIAL_FORM);
@@ -626,8 +629,8 @@ export default function Brew() {
 								/>
 							</div>
 							<div className="space-y-2">
-								<FieldLabel title="type" hint="Single select available" />
-								{suggestions.type.length > 0 && (
+								<FieldLabel title="machine" hint="Single select available" />
+								{suggestions.machine.length > 0 && (
 									<div className="rounded-lg border border-border/70 bg-muted/40 p-4">
 										<ToggleGroup
 											type="single"
@@ -636,17 +639,21 @@ export default function Brew() {
 											className="w-full flex-wrap justify-center"
 											value={selectedType}
 											onValueChange={(value) =>
-												setSingleFromToggle("type", suggestions.type, value)
+												setSingleFromToggle(
+													"machine",
+													suggestions.machine,
+													value,
+												)
 											}
 										>
-											{suggestions.type.map((type) => (
+											{suggestions.machine.map((machine) => (
 												<ToggleGroupItem
-													key={type}
-													value={type}
+													key={machine}
+													value={machine}
 													color="blueColored"
 													className="px-4"
 												>
-													{type}
+													{machine}
 												</ToggleGroupItem>
 											))}
 										</ToggleGroup>
@@ -654,9 +661,9 @@ export default function Brew() {
 								)}
 								<input
 									className="h-11 w-full rounded-lg border border-border/70 bg-background px-4 text-sm text-muted-foreground focus:text-foreground"
-									placeholder="type"
-									value={form.type}
-									onChange={setField("type")}
+									placeholder="machine"
+									value={form.machine}
+									onChange={setField("machine")}
 								/>
 							</div>
 							<div className="space-y-2">
@@ -791,7 +798,7 @@ export default function Brew() {
 								<SummaryRow label="Date" value={form.date.toDateString()} />
 								<SummaryRow label="Bitterness" value={form.bitterness} />
 								<SummaryRow label="Mouthfeel" value={form.mouthfeel} />
-								<SummaryRow label="Type" value={form.type} />
+								<SummaryRow label="Machine" value={form.machine} />
 								<SummaryRow label="Strength" value={form.strength} />
 								<SummaryRow label="Taste Profiles" value={form.tasteProfiles} />
 							</div>

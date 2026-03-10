@@ -10,7 +10,7 @@ export type BrewSuggestions = {
 	bitterness: Array<string>;
 	mouthfeel: Array<string>;
 	strength: Array<string>;
-	type: Array<string>;
+	machine: Array<string>;
 	tasteProfiles: Array<string>;
 };
 
@@ -40,6 +40,7 @@ function rankByUsage(values: Array<string>): Array<string> {
 export function buildBrewSuggestions(
 	brews: Array<Brews>,
 	beanNames: string[],
+	machineNames: string[],
 ): BrewSuggestions {
 	const bean: Array<string> = beanNames;
 	const grindSize: Array<string> = [];
@@ -86,7 +87,7 @@ export function buildBrewSuggestions(
 		"🍃 Just right",
 		"💧Too weak",
 	];
-	const type: Array<string> = ["Bialetti Moka pot", "Bambino Sage"];
+	const machine: Array<string> = machineNames;
 	const tasteProfiles: Array<string> = [];
 
 	for (const brew of brews) {
@@ -103,7 +104,7 @@ export function buildBrewSuggestions(
 		mouthfeel,
 		overallRating,
 		strength,
-		type,
+		machine,
 		tasteProfiles: rankByUsage(tasteProfiles),
 	};
 }

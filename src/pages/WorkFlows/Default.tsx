@@ -10,7 +10,7 @@ const EXCUSES = [
 	"Your request reached the bottom of the cup. Nothing left.",
 ];
 
-export function CatchAll() {
+export default function Default() {
 	const [excuseIndex, setExcuseIndex] = useState(() =>
 		Math.floor(Math.random() * EXCUSES.length),
 	);
@@ -21,7 +21,6 @@ export function CatchAll() {
 		setExcuseIndex((current) => (current + 1) % EXCUSES.length);
 		setTimeout(() => setWiggling(false), 750);
 	}
-
 	return (
 		<div className="flex flex-col items-center justify-center h-full min-h-[60vh] gap-6 text-center px-4">
 			<button
@@ -33,13 +32,6 @@ export function CatchAll() {
 			>
 				☕
 			</button>
-
-			<div className="space-y-1">
-				<p className="text-7xl font-semibold tracking-tight text-muted-foreground/30">
-					404
-				</p>
-			</div>
-
 			<p
 				key={excuseIndex}
 				className="text-lg text-muted-foreground max-w-sm animate-fade-slide-up"
@@ -47,15 +39,23 @@ export function CatchAll() {
 				{EXCUSES[excuseIndex]}
 			</p>
 
-			<p className="text-xs text-muted-foreground/50">
-				(Click the cup for another excuse)
-			</p>
-
 			<Link
-				to="/home"
+				to="/workflows/brew"
 				className="mt-2 rounded-xl border border-primary/30 bg-primary/10 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-primary/20 hover:scale-[1.02] active:scale-95"
 			>
-				Back to the grind →
+				Add brews?
+			</Link>
+			<Link
+				to="/workflows/beans"
+				className="mt-2 rounded-xl border border-primary/30 bg-primary/10 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-primary/20 hover:scale-[1.02] active:scale-95"
+			>
+				Add beans?
+			</Link>
+			<Link
+				to="/workflows/machines"
+				className="mt-2 rounded-xl border border-primary/30 bg-primary/10 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-primary/20 hover:scale-[1.02] active:scale-95"
+			>
+				Add machines?
 			</Link>
 		</div>
 	);
