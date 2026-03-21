@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { deleteBean, deleteMachine } from "@/db/crud/delete";
 import { db } from "@/db/db";
@@ -21,12 +21,20 @@ const ROAST_COLORS: Record<number, string> = {
 	10: "bg-tag-purple-900 text-tag-purple-100 dark:bg-tag-purple-900 dark:text-tag-purple-100 dark:border-tag-purple-100 dark:border",
 };
 
+type FilterOption = {
+	label: string;
+	count: number;
+	active: boolean;
+};
+
 function SomethingHere({
-	number,
 	title,
+	options,
+	onToggle,
 }: {
-	number: Array<string>;
 	title: string;
+	options: FilterOption[];
+	onToggle: (label: string) => void;
 }) {
 	return (
 		<div className="rounded-xl bg-primary-700/10 border border-primary-700/25 p-6 space-y-3">
@@ -35,14 +43,32 @@ function SomethingHere({
 			</p>
 			<div className="squiggly-line opacity-40" />
 			<ul className="space-y-3 grid grid-cols-1">
-				{number.map((n) => (
+				{options.map((option) => (
 					<li
-						className="flex items-center justify-between group cursor-pointer text-primary-800 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground transition-colors"
-						key={n}
+						className={cn(
+							"flex items-center justify-between group cursor-pointer transition-colors",
+							option.active
+								? "text-foreground"
+								: "text-primary-800 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground",
+						)}
+						key={option.label}
+						onClick={() => onToggle(option.label)}
+						onKeyUp={(e) => {
+							if (e.key === "Enter") {
+								onToggle(option.label);
+							}
+						}}
 					>
-						<span className="font-mono text-xs uppercase">{n}</span>
-						<span className="text-[10px] font-mono bg-primary/10 px-2 py-0.5 rounded-full">
-							{number.indexOf(n) + 1}
+						<span className="font-mono text-xs uppercase">{option.label}</span>
+						<span
+							className={cn(
+								"text-[10px] font-mono px-2 py-0.5 rounded-full",
+								option.active
+									? "bg-primary text-primary-foreground"
+									: "bg-primary/10",
+							)}
+						>
+							{option.count}
 						</span>
 					</li>
 				))}
@@ -247,6 +273,10 @@ function MachineCard({ machine }: { machine: Machines }) {
 export default function Library() {
 	const [tab, setTab] = useState<Tab>("beans");
 	const [search, setSearch] = useState("");
+	const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+	const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
+	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
 	const beans = useLiveQuery(() => db.Beans.toArray(), []);
 	const machines = useLiveQuery(() => db.Machines.toArray(), []);
@@ -260,38 +290,149 @@ export default function Library() {
 		[machines],
 	);
 
+	const countryCounts = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const bean of sortedBeans) {
+			for (const country of bean.origin ?? []) {
+				const trimmed = country.trim();
+				if (!trimmed) continue;
+				counts.set(trimmed, (counts.get(trimmed) ?? 0) + 1);
+			}
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}, [sortedBeans]);
+
+	const processCounts = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const bean of sortedBeans) {
+			const process = bean.process?.trim();
+			if (!process || process === "?") continue;
+			counts.set(process, (counts.get(process) ?? 0) + 1);
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}, [sortedBeans]);
+
+	const typeCounts = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const machine of sortedMachines) {
+			const type = machine.type?.trim();
+			if (!type) continue;
+			counts.set(type, (counts.get(type) ?? 0) + 1);
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}, [sortedMachines]);
+
+	const brandCounts = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const machine of sortedMachines) {
+			const brand = machine.brand?.trim();
+			if (!brand) continue;
+			counts.set(brand, (counts.get(brand) ?? 0) + 1);
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}, [sortedMachines]);
+
+	const toggleSelection = (
+		value: string,
+		setter: Dispatch<SetStateAction<string[]>>,
+	) => {
+		setter((prev) =>
+			prev.includes(value)
+				? prev.filter((item) => item !== value)
+				: [...prev, value],
+		);
+	};
+
 	const filteredBeans = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		if (!q) return sortedBeans;
-		return sortedBeans.filter((b) =>
-			[
-				b.name,
-				b.brand,
-				...(b.origin ?? []),
-				...(b.flavors ?? []),
-				...(b.tastingNotes ?? []),
-				...(b.variety ?? []),
-				b.dominantNote,
-				b.process,
-			]
-				.filter(Boolean)
-				.join(" ")
-				.toLowerCase()
-				.includes(q),
-		);
-	}, [sortedBeans, search]);
+		return sortedBeans.filter((b) => {
+			const matchesSearch =
+				!q ||
+				[
+					b.name,
+					b.brand,
+					...(b.origin ?? []),
+					...(b.flavors ?? []),
+					...(b.tastingNotes ?? []),
+					...(b.variety ?? []),
+					b.dominantNote,
+					b.process,
+				]
+					.filter(Boolean)
+					.join(" ")
+					.toLowerCase()
+					.includes(q);
+			const matchesCountry =
+				selectedCountries.length === 0 ||
+				(b.origin ?? []).some((country) =>
+					selectedCountries.includes(country.trim()),
+				);
+			const matchesProcess =
+				selectedProcesses.length === 0 ||
+				selectedProcesses.includes(b.process?.trim());
+			return matchesSearch && matchesCountry && matchesProcess;
+		});
+	}, [search, selectedCountries, selectedProcesses, sortedBeans]);
 
 	const filteredMachines = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		if (!q) return sortedMachines;
-		return sortedMachines.filter((m) =>
-			[m.name, m.brand, m.model, m.type]
-				.filter(Boolean)
-				.join(" ")
-				.toLowerCase()
-				.includes(q),
-		);
-	}, [sortedMachines, search]);
+		return sortedMachines.filter((m) => {
+			const matchesSearch =
+				!q ||
+				[m.name, m.brand, m.model, m.type]
+					.filter(Boolean)
+					.join(" ")
+					.toLowerCase()
+					.includes(q);
+			const matchesType =
+				selectedTypes.length === 0 ||
+				(m.type != null && selectedTypes.includes(m.type.trim()));
+			const matchesBrand =
+				selectedBrands.length === 0 ||
+				(m.brand != null && selectedBrands.includes(m.brand.trim()));
+			return matchesSearch && matchesType && matchesBrand;
+		});
+	}, [search, selectedBrands, selectedTypes, sortedMachines]);
+
+	const beanCountryOptions = useMemo(
+		() =>
+			countryCounts.map(([label, count]) => ({
+				label,
+				count,
+				active: selectedCountries.includes(label),
+			})),
+		[countryCounts, selectedCountries],
+	);
+
+	const beanProcessOptions = useMemo(
+		() =>
+			processCounts.map(([label, count]) => ({
+				label,
+				count,
+				active: selectedProcesses.includes(label),
+			})),
+		[processCounts, selectedProcesses],
+	);
+
+	const machineTypeOptions = useMemo(
+		() =>
+			typeCounts.map(([label, count]) => ({
+				label,
+				count,
+				active: selectedTypes.includes(label),
+			})),
+		[selectedTypes, typeCounts],
+	);
+
+	const machineBrandOptions = useMemo(
+		() =>
+			brandCounts.map(([label, count]) => ({
+				label,
+				count,
+				active: selectedBrands.includes(label),
+			})),
+		[brandCounts, selectedBrands],
+	);
 
 	return (
 		<div className="flex gap-6">
@@ -333,14 +474,39 @@ export default function Library() {
 						onChange={(e) => setSearch(e.target.value)}
 					/>
 					<div className="flex flex-col gap-4 my-6">
-						<SomethingHere
-							number={["Afirca", "Ethiopia", "Colombia"]}
-							title="Countries"
-						/>
-						<SomethingHere
-							number={["qsd", "123", "s", "qsdqsd"]}
-							title="Random Bullshit"
-						/>
+						{tab === "beans" ? (
+							<>
+								<SomethingHere
+									title="Countries"
+									options={beanCountryOptions}
+									onToggle={(value) =>
+										toggleSelection(value, setSelectedCountries)
+									}
+								/>
+								<SomethingHere
+									title="Process"
+									options={beanProcessOptions}
+									onToggle={(value) =>
+										toggleSelection(value, setSelectedProcesses)
+									}
+								/>
+							</>
+						) : (
+							<>
+								<SomethingHere
+									title="Type"
+									options={machineTypeOptions}
+									onToggle={(value) => toggleSelection(value, setSelectedTypes)}
+								/>
+								<SomethingHere
+									title="Brand"
+									options={machineBrandOptions}
+									onToggle={(value) =>
+										toggleSelection(value, setSelectedBrands)
+									}
+								/>
+							</>
+						)}
 					</div>
 				</div>
 			</div>
