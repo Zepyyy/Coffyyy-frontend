@@ -21,18 +21,31 @@ const ROAST_COLORS: Record<number, string> = {
 	10: "bg-tag-purple-900 text-tag-purple-100 dark:bg-tag-purple-900 dark:text-tag-purple-100 dark:border-tag-purple-100 dark:border",
 };
 
-function SomethingHere() {
+function SomethingHere({
+	number,
+	title,
+}: {
+	number: Array<string>;
+	title: string;
+}) {
 	return (
-		<div className="rounded-xl bg-primary/5 border border-primary/15 p-4 space-y-3">
-			<p className="text-2xl font-bold text-ellipsis overflow-hidden">
-				Something here
+		<div className="rounded-xl bg-primary-700/10 border border-primary-700/25 p-6 space-y-3">
+			<p className="text-xl text-primary-800 dark:text-primary-100 italic font-News">
+				{title}
 			</p>
-			<div className="squiggly-line" />
-			<ul>
-				<li> Maybe </li>
-				<li>a </li>
-				<li>list </li>
-				<li>there </li>
+			<div className="squiggly-line opacity-40" />
+			<ul className="space-y-3 grid grid-cols-1">
+				{number.map((n) => (
+					<li
+						className="flex items-center justify-between group cursor-pointer text-primary-800 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground transition-colors"
+						key={n}
+					>
+						<span className="font-mono text-xs uppercase">{n}</span>
+						<span className="text-[10px] font-mono bg-primary/10 px-2 py-0.5 rounded-full">
+							{number.indexOf(n) + 1}
+						</span>
+					</li>
+				))}
 			</ul>
 		</div>
 	);
@@ -281,113 +294,120 @@ export default function Library() {
 	}, [sortedMachines, search]);
 
 	return (
-		<div className="space-y-6 flex-1 mx-auto w-full px-4 py-6 relative max-w-5xl">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight">Library</h1>
-					<p className="mt-1 text-sm text-muted-foreground">
+		<div className="flex gap-6">
+			<div className="flex flex-col h-fit flex-wrap mx-32 my-8 space-y-4">
+				<div className="border-l-5 border-primary-200 pl-5 mb-6">
+					<h1 className="text-5xl tracking-tight font-News italic text-foreground/90">
+						Library
+					</h1>
+					<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
 						Your beans and equipment
 					</p>
 				</div>
-				<Link
-					to="/log"
-					className="px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity"
-				>
-					+ Add new
-				</Link>
+				<div className="flex-wrap min-w-fit max-w-1/2 mx-auto my-4">
+					<div className="flex items-center gap-1 rounded-xl bg-muted p-1 w-fit">
+						{(["beans", "machines"] as Tab[]).map((t) => (
+							<button
+								key={t}
+								type="button"
+								onClick={() => setTab(t)}
+								className={cn(
+									"px-4 py-1.5 rounded-lg text-sm font-medium transition-opacity capitalize",
+									tab === t
+										? "bg-background text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								{t === "beans"
+									? `Beans${sortedBeans.length > 0 ? ` (${sortedBeans.length})` : ""}`
+									: `Machines${sortedMachines.length > 0 ? ` (${sortedMachines.length})` : ""}`}
+							</button>
+						))}
+					</div>
+				</div>
+				<div className="space-y-3">
+					<input
+						className="h-10 w-full max-w-sm rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+						placeholder={`Search ${tab}…`}
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+					/>
+					<div className="flex flex-col gap-4 my-6">
+						<SomethingHere
+							number={["Afirca", "Ethiopia", "Colombia"]}
+							title="Countries"
+						/>
+						<SomethingHere
+							number={["qsd", "123", "s", "qsdqsd"]}
+							title="Random Bullshit"
+						/>
+					</div>
+				</div>
 			</div>
-
-			{/* Tabs */}
-			<div className="flex items-center gap-1 rounded-xl bg-muted p-1 w-fit">
-				{(["beans", "machines"] as Tab[]).map((t) => (
-					<button
-						key={t}
-						type="button"
-						onClick={() => setTab(t)}
-						className={cn(
-							"px-4 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize",
-							tab === t
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
+			<div className="flex max-w-7xl pl-24">
+				{/* Content */}
+				{tab === "beans" && (
+					<div>
+						{filteredBeans.length === 0 ? (
+							<div className="rounded-xl border border-dashed border-border p-8 text-center">
+								<p className="text-muted-foreground text-sm">
+									{sortedBeans.length === 0
+										? "No beans yet."
+										: "No beans match your search."}
+								</p>
+								{sortedBeans.length === 0 && (
+									<Link
+										to="/log/bean"
+										className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
+									>
+										Add your first bean
+									</Link>
+								)}
+							</div>
+						) : (
+							<div className="grid grid-cols-1 gap-3 md:grid-cols-3 my-12">
+								{filteredBeans.map((bean) => (
+									<BeanCard
+										key={bean.id ?? `${bean.name}-${bean.brand}`}
+										bean={bean}
+									/>
+								))}
+							</div>
 						)}
-					>
-						{t === "beans"
-							? `Beans${sortedBeans.length > 0 ? ` (${sortedBeans.length})` : ""}`
-							: `Machines${sortedMachines.length > 0 ? ` (${sortedMachines.length})` : ""}`}
-					</button>
-				))}
+					</div>
+				)}
+
+				{tab === "machines" && (
+					<div>
+						{filteredMachines.length === 0 ? (
+							<div className="rounded-xl border border-dashed border-border p-8 text-center">
+								<p className="text-muted-foreground text-sm">
+									{sortedMachines.length === 0
+										? "No equipment yet."
+										: "No machines match your search."}
+								</p>
+								{sortedMachines.length === 0 && (
+									<Link
+										to="/log/machine"
+										className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
+									>
+										Add your first machine
+									</Link>
+								)}
+							</div>
+						) : (
+							<div className="grid grid-cols-1 gap-3 md:grid-cols-3 my-12">
+								{filteredMachines.map((machine) => (
+									<MachineCard
+										key={machine.id ?? `${machine.name}-${machine.model}`}
+										machine={machine}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				)}
 			</div>
-
-			{/* Search */}
-			<input
-				className="h-10 w-full max-w-sm rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-				placeholder={`Search ${tab}…`}
-				value={search}
-				onChange={(e) => setSearch(e.target.value)}
-			/>
-
-			{/* Content */}
-			{tab === "beans" && (
-				<div>
-					{filteredBeans.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-border p-8 text-center">
-							<p className="text-muted-foreground text-sm">
-								{sortedBeans.length === 0
-									? "No beans yet."
-									: "No beans match your search."}
-							</p>
-							{sortedBeans.length === 0 && (
-								<Link
-									to="/log/bean"
-									className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-								>
-									Add your first bean
-								</Link>
-							)}
-						</div>
-					) : (
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							{filteredBeans.map((bean) => (
-								<BeanCard
-									key={bean.id ?? `${bean.name}-${bean.brand}`}
-									bean={bean}
-								/>
-							))}
-						</div>
-					)}
-				</div>
-			)}
-
-			{tab === "machines" && (
-				<div>
-					{filteredMachines.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-border p-8 text-center">
-							<p className="text-muted-foreground text-sm">
-								{sortedMachines.length === 0
-									? "No equipment yet."
-									: "No machines match your search."}
-							</p>
-							{sortedMachines.length === 0 && (
-								<Link
-									to="/log/machine"
-									className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-								>
-									Add your first machine
-								</Link>
-							)}
-						</div>
-					) : (
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							{filteredMachines.map((machine) => (
-								<MachineCard
-									key={machine.id ?? `${machine.name}-${machine.model}`}
-									machine={machine}
-								/>
-							))}
-						</div>
-					)}
-				</div>
-			)}
 		</div>
 	);
 }

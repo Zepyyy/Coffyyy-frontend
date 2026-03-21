@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Marck+Script&family=Oregano:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Crimson+Pro:ital,wght@0,200..900;1,200..900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Marck+Script&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Oregano:ital@0;1&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Recursive:wght@300..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,6 +6,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --font-*: initial;
+    --font-serif-text: "Crimson Pro", serif;
+    --font-serif-title: "Oregano", serif;
+    --font-Inter: "Inter", sans-serif;
+    --font-Script: "Marck Script", sans-serif;
+    --font-Bricolage: "Bricolage Grotesque", sans-serif;
+    --font-Playfair: "Playfair Display", serif;
+    --font-Lora: "Lora", serif;
+    --font-News: "Newsreader", serif;
+    --font-Recursive: "Recursive", serif;
+    --font-Mono: "JetBrains Mono", monospace;
+
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
@@ -140,11 +152,11 @@
             var(--primary-200) 1px,
             transparent 2px
         );
-        background-size: 32px 32px;
+        background-size: 48px 48px;
     }
 
     .squiggly-line {
-        background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 T 75 10 T 100 10' stroke='%23d6ccc0' fill='transparent' stroke-width='1'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 T 75 10 T 100 10' stroke='%2341352d' fill='transparent' stroke-width='1'/%3E%3C/svg%3E");
         background-repeat: repeat-x;
         height: 20px;
     }
@@ -212,11 +224,11 @@
             var(--primary-900) 1px,
             transparent 2px
         );
-        background-size: 32px 32px;
+        background-size: 48px 48px;
     }
 
     .squiggly-line {
-        background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 T 75 10 T 100 10' stroke='%2341352d' fill='transparent' stroke-width='1'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 10 Q 12.5 0, 25 10 T 50 10 T 75 10 T 100 10' stroke='%23d6ccc0' fill='transparent' stroke-width='1'/%3E%3C/svg%3E");
         background-repeat: repeat-x;
         height: 20px;
     }
