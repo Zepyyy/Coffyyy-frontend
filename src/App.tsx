@@ -29,10 +29,10 @@ export default function App() {
 								to={to}
 								className={({ isActive }) =>
 									cn(
-										"px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+										"flex px-3 py-1.5 rounded-lg text-sm transition-normal duration-150 font-thin tracking-widest",
 										isActive
-											? "bg-foreground text-background"
-											: "text-muted-foreground hover:text-foreground hover:bg-muted",
+											? "underline underline-offset-4 decoration-wavy decoration-2 font-bold"
+											: "text-muted-foreground hover:text-foreground hover:underline delay-75 underline-offset-2 decoration-wavy decoration-2 ",
 									)
 								}
 							>
