@@ -27,7 +27,7 @@ type FilterOption = {
 	active: boolean;
 };
 
-function SomethingHere({
+function Filter({
 	title,
 	options,
 	onToggle,
@@ -38,10 +38,10 @@ function SomethingHere({
 }) {
 	return (
 		<div className="rounded-xl bg-primary-700/10 border border-primary-700/25 p-6 space-y-3">
-			<p className="text-xl text-primary-800 dark:text-primary-100 italic font-News">
+			<p className="text-2xl text-primary-800 dark:text-primary-100 italic font-News">
 				{title}
 			</p>
-			<div className="squiggly-line opacity-40" />
+			<div className="squiggly-line opacity-30" />
 			<ul className="space-y-3 grid grid-cols-1">
 				{options.map((option) => (
 					<li
@@ -49,7 +49,7 @@ function SomethingHere({
 							"flex items-center justify-between group cursor-pointer transition-colors",
 							option.active
 								? "text-foreground"
-								: "text-primary-800 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground",
+								: "text-primary-800/70 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground",
 						)}
 						key={option.label}
 						onClick={() => onToggle(option.label)}
@@ -59,7 +59,7 @@ function SomethingHere({
 							}
 						}}
 					>
-						<span className="font-mono text-xs uppercase">{option.label}</span>
+						<span className="font-mono text-sm uppercase">{option.label}</span>
 						<span
 							className={cn(
 								"text-[10px] font-mono px-2 py-0.5 rounded-full",
@@ -87,9 +87,13 @@ function BeanCard({ bean }: { bean: Beans }) {
 			: null;
 
 	return (
-		<article className="rounded-xl border border-border bg-card p-4 space-y-3">
+		<article className="border border-primary/15 bg-background-light p-8">
+			<div className="text-xl font-News italic font-bold truncate mt-12">
+				{bean.name || "Unnamed bean"}
+			</div>
+			<div>qsdqsd</div>
 			<div className="flex items-start justify-between gap-2">
-				<div className="min-w-0 flex-1">
+				<div className="flex-1">
 					<p className="font-semibold truncate">
 						{bean.name || "Unnamed bean"}
 					</p>
@@ -436,7 +440,7 @@ export default function Library() {
 
 	return (
 		<div className="flex gap-6">
-			<div className="flex flex-col h-fit flex-wrap mx-32 my-8 space-y-4">
+			<div className="flex flex-col h-fit flex-wrap my-8 space-y-4 shrink mx-auto">
 				<div className="border-l-5 border-primary-200 pl-5 mb-6">
 					<h1 className="text-5xl tracking-tight font-News italic text-foreground/90">
 						Library
@@ -476,14 +480,14 @@ export default function Library() {
 					<div className="flex flex-col gap-4 my-6">
 						{tab === "beans" ? (
 							<>
-								<SomethingHere
+								<Filter
 									title="Countries"
 									options={beanCountryOptions}
 									onToggle={(value) =>
 										toggleSelection(value, setSelectedCountries)
 									}
 								/>
-								<SomethingHere
+								<Filter
 									title="Process"
 									options={beanProcessOptions}
 									onToggle={(value) =>
@@ -493,12 +497,12 @@ export default function Library() {
 							</>
 						) : (
 							<>
-								<SomethingHere
+								<Filter
 									title="Type"
 									options={machineTypeOptions}
 									onToggle={(value) => toggleSelection(value, setSelectedTypes)}
 								/>
-								<SomethingHere
+								<Filter
 									title="Brand"
 									options={machineBrandOptions}
 									onToggle={(value) =>
@@ -510,7 +514,7 @@ export default function Library() {
 					</div>
 				</div>
 			</div>
-			<div className="flex max-w-7xl pl-24">
+			<div className="flex max-w-7xl mr-32">
 				{/* Content */}
 				{tab === "beans" && (
 					<div>
