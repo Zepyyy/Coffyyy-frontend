@@ -129,7 +129,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 	];
 
 	return (
-		<div className="border border-primary/15 text-nowrap overflow-hidden z-20 relative bg-background min-h-fit my-2 mx-1">
+		<div className="border border-primary/15 text-nowrap overflow-hidden z-20 relative bg-background my-2 mx-1">
 			<div
 				className={cn(
 					"p-6 space-y-6 relative",
