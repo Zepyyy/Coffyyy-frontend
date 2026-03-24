@@ -22,7 +22,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 					variant={
 						machine.type === "Espresso" ? "blueColored" : "purpleColored"
 					}
-					className="absolute top-0 right-3 border-t-0 rounded-t-none"
+					className="absolute top-0 right-3 border-t-0 rounded-t-none pt-6"
 				/>
 			</article>
 
