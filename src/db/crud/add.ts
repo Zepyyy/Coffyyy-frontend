@@ -40,7 +40,7 @@ async function addRandomMachine() {
 				name: "Random Machine",
 				brand: "Sage",
 				capacity: "capacity 2",
-				grindRange: "grdinrange2",
+				grindRange: "fine",
 				purchaseDate: "qsd",
 				induction: false,
 				model: "MODEL",

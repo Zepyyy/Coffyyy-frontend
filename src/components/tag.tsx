@@ -2,7 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import clsx from "clsx";
 
 const colorVariant = cva(
-	"cursor-pointer flex items-center text-xs md:text-sm font-semibold tracking-tight px-2 py-1 rounded-lg border",
+	"cursor-pointer flex items-center font-semibold tracking-tight rounded-lg border w-fit max-w-fit",
 	{
 		variants: {
 			variant: {
@@ -19,12 +19,14 @@ const colorVariant = cva(
 				orangeColored:
 					"bg-tag-orange-900 border-tag-orange-100 shadow-xs hover:bg-tag-orange-900/50 text-tag-orange-100",
 				light:
-					"border-1 border-primary border-dashed bg-transparent hover:bg-accent dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+					"border-1 border-primary border-dashed bg-transparent hover:bg-accent dark:bg-input/30 dark:border-input dark:hover:bg-input/50 pointer-events-none",
 				default: "bg-background/80 border-background/80 hover:bg-background/50",
 			},
-		},
-		defaultVariants: {
-			variant: "default",
+			size: {
+				sm: "px-2 py-0.5 text-xs rounded-xs",
+				lg: "px-2 py-1 text-sm",
+				default: "px-2 py-0.5 text-xs rounded-xs",
+			},
 		},
 	},
 );
@@ -35,9 +37,15 @@ export interface TagProps
 	text?: string;
 }
 
-export default function Tag({ className, variant, text, ...props }: TagProps) {
+export default function Tag({
+	className,
+	variant = "default",
+	size = "default",
+	text,
+	...props
+}: TagProps) {
 	return (
-		<p className={clsx(colorVariant({ variant, className }))} {...props}>
+		<p className={clsx(colorVariant({ variant, size, className }))} {...props}>
 			<span>{text ?? "tag"}</span>
 		</p>
 	);

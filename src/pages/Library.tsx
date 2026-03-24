@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 type Tab = "beans" | "machines";
 
 export default function Library() {
-	const [tab, setTab] = useState<Tab>("beans");
+	const [tab, setTab] = useState<Tab>("machines");
 	const [search, setSearch] = useState("");
 	const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
 	const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
@@ -313,7 +313,7 @@ export default function Library() {
 								)}
 							</div>
 						) : (
-							<div className="grid grid-cols-1 gap-3 md:grid-cols-3 my-12">
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-3 my-3 mx-auto">
 								{filteredMachines.map((machine) => (
 									<MachineCard
 										key={machine.id ?? `${machine.name}-${machine.model}`}

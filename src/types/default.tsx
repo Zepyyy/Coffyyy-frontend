@@ -49,7 +49,7 @@ export type Machines = {
 	id: number;
 	name?: string;
 	brand?: string;
-	type?: string;
+	type?: "Espresso" | "Moka Pot";
 	purchaseDate?: string;
 	model?: string;
 	induction?: boolean;

@@ -1,57 +1,84 @@
 import { useState } from "react";
 import { deleteMachine } from "@/db/crud/delete";
 import type { Machines } from "@/types/default";
+import Tag from "../tag";
+import { Separator } from "../ui/separator";
 
 export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	return (
-		<article className="rounded-xl border border-border bg-card p-4 space-y-3">
-			<div className="flex items-start justify-between gap-2">
+		<div className="border border-primary/15 text-nowrap overflow-hidden z-20 relative bg-background my-2 mx-1">
+			<article className="p-6 relative">
+				<div className="text-2xl font-News font-semibold">
+					{machine.name || "Unnamed bean"}
+				</div>
+				<div className="text-md font-Bricolage font-light dark:text-tag-primary-200 tracking-widest">
+					{machine.brand} {machine.model ? ` · ${machine.model}` : ""}
+				</div>
+				<Tag
+					text={machine.type}
+					size="sm"
+					variant={
+						machine.type === "Espresso" ? "blueColored" : "purpleColored"
+					}
+					className="absolute top-0 right-3 border-t-0 rounded-t-none"
+				/>
+			</article>
+
+			<Separator />
+
+			<article className="flex flex-row flex-wrap justify-between p-6 gap-5">
 				<div>
-					<p className="font-semibold">{machine.name || "Unnamed machine"}</p>
-					{machine.brand && (
-						<p className="text-xs text-muted-foreground mt-0.5">
-							{machine.brand}
-							{machine.model ? ` · ${machine.model}` : ""}
-						</p>
+					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
+						grindRange
+					</div>
+					<div className="text-foreground font-medium font-Recursive text-sm">
+						{machine.grindRange}
+					</div>
+				</div>
+				<div>
+					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
+						Capacity
+					</div>
+					<div className="text-foreground font-medium font-Recursive text-sm">
+						{machine.capacity}
+					</div>
+				</div>
+				<div>
+					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
+						Bought
+					</div>
+					<div className="text-foreground font-medium font-Recursive text-sm">
+						{machine.purchaseDate}
+					</div>
+				</div>
+			</article>
+			<div className="squiggly-line opacity-20 w-full scale-x-150 scale-y-75" />
+			<article className="p-6">
+				<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
+					Induction
+				</div>
+				<div className="text-foreground font-medium font-Recursive text-sm">
+					{machine.induction ? (
+						<Tag
+							text="Yes"
+							variant={"light"}
+							size="sm"
+							className="px-1.5! py-0.5!"
+						/>
+					) : (
+						<Tag
+							text="No"
+							variant={"light"}
+							size="sm"
+							className="px-1.5! py-0.5!"
+						/>
 					)}
 				</div>
-				{machine.type && (
-					<span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium shrink-0">
-						{machine.type}
-					</span>
-				)}
-			</div>
+			</article>
 
-			<div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-				{machine.grindRange && (
-					<p>
-						<span className="text-foreground/50">Grind </span>
-						{machine.grindRange}
-					</p>
-				)}
-				{machine.capacity && (
-					<p>
-						<span className="text-foreground/50">Capacity </span>
-						{machine.capacity}
-					</p>
-				)}
-				{machine.purchaseDate && (
-					<p>
-						<span className="text-foreground/50">Bought </span>
-						{machine.purchaseDate}
-					</p>
-				)}
-				{typeof machine.induction === "boolean" && (
-					<p>
-						<span className="text-foreground/50">Induction </span>
-						{machine.induction ? "Yes" : "No"}
-					</p>
-				)}
-			</div>
-
-			<div className="flex justify-end pt-1">
+			<div className="flex justify-end pb-1">
 				{confirmDelete ? (
 					<div className="flex items-center gap-2">
 						<span className="text-xs text-muted-foreground">Sure?</span>
@@ -82,6 +109,6 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 					</button>
 				)}
 			</div>
-		</article>
+		</div>
 	);
 }
