@@ -8,7 +8,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	return (
-		<div className="border border-primary/15 text-nowrap overflow-hidden z-20 relative bg-background my-2 mx-1">
+		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			<article className="p-6 relative">
 				<div className="text-2xl font-News font-semibold">
 					{machine.name || "Unnamed bean"}
@@ -26,7 +26,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 
 			<Separator />
 
-			<article className="flex flex-row flex-wrap justify-between p-6 gap-5">
+			<article className="flex flex-row flex-wrap justify-between gap-5 p-6">
 				<div>
 					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 						grindRange
@@ -52,7 +52,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 					</div>
 				</div>
 			</article>
-			<div className="squiggly-line opacity-20 w-full scale-x-150 scale-y-75" />
+			<div className="squiggly-line w-full scale-x-150 scale-y-75 opacity-20" />
 			<article className="p-6">
 				<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 					Induction
@@ -66,7 +66,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 				</div>
 			</article>
 
-			<div className="flex justify-end pb-1">
+			<div className="mt-auto flex justify-end px-6 pb-3">
 				{confirmDelete ? (
 					<div className="flex items-center gap-2">
 						<span className="text-xs text-muted-foreground">Sure?</span>

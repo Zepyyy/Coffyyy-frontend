@@ -129,7 +129,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 	];
 
 	return (
-		<div className="border border-primary/15 text-nowrap overflow-hidden z-20 relative bg-background my-2 mx-1">
+		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			<div
 				className={cn(
 					"p-6 space-y-6 relative",
@@ -138,7 +138,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 			>
 				<div
 					className={cn(
-						"text-8xl font-News font-semibold absolute top-1/2 -translate-y-1/2 pt-6 left-0 opacity-5 select-none",
+						"text-8xl font-News font-semibold absolute top-1/2 -translate-y-1/2 pt-6 left-0 opacity-5 select-none text-nowrap",
 						colorSwatch[bean.dominantNote]?.textColor,
 					)}
 				>
@@ -172,7 +172,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 			</div>
 
 			<Separator />
-			<div className="p-6 space-y-6">
+			<div className="flex flex-1 flex-col p-6">
 				<article className="flex flex-wrap justify-between">
 					{parameters.map(({ label, singleValue, values }) => (
 						<div key={label}>
@@ -185,33 +185,40 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 						</div>
 					))}
 				</article>
-				<div className="squiggly-line opacity-20 w-full scale-x-125 scale-y-75" />
-				<article className="text-wrap">
+				<div className="squiggly-line mt-6 w-full scale-x-125 scale-y-75 opacity-20" />
+				<article className="mt-6 text-wrap">
 					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 						Notes
 					</div>
-					<span className="text-foreground font-medium font-Recursive text-sm">
+					<span
+						className="block text-sm font-medium font-Recursive text-foreground overflow-hidden"
+						style={{
+							display: "-webkit-box",
+							WebkitBoxOrient: "vertical",
+							WebkitLineClamp: 3,
+						}}
+					>
 						{/*{bean.flavors}*/}
 						{tastingNotes}
 					</span>
 				</article>
-				<div className="absolute bottom-2 right-5">
+				<div className="mt-auto flex justify-end pt-6">
 					{confirmDelete ? (
 						<div className="flex items-center gap-2 text-sm">
 							<span className="text-xs text-muted-foreground">Sure?</span>
-							<button
-								type="button"
-								onClick={() => deleteBean(bean.id)}
-								className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-							>
-								Delete
-							</button>
 							<button
 								type="button"
 								onClick={() => setConfirmDelete(false)}
 								className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
 							>
 								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => deleteBean(bean.id)}
+								className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+							>
+								Delete
 							</button>
 						</div>
 					) : (

@@ -7,6 +7,7 @@ import MachineCard from "@/components/library/MachineCard";
 import { Button } from "@/components/ui/button";
 import {
 	addRandomBean,
+	addRandomBean2,
 	addRandomMachine,
 	addRandomMachine2,
 } from "@/db/crud/add";
@@ -16,7 +17,7 @@ import { cn } from "@/lib/utils";
 type Tab = "beans" | "machines";
 
 export default function Library() {
-	const [tab, setTab] = useState<Tab>("machines");
+	const [tab, setTab] = useState<Tab>("beans");
 	const [search, setSearch] = useState("");
 	const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
 	const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
@@ -180,167 +181,164 @@ export default function Library() {
 	);
 
 	return (
-		<div className="flex relative">
-			<div className="sm:flex flex-col hidden h-fit flex-wrap space-y-4 sticky top-20 left-10 mx-6">
-				<div className="border-l-5 border-primary-200 pl-5 mb-6">
-					<h1 className="text-5xl tracking-tight font-News italic text-foreground/90">
-						Library
-					</h1>
-					<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-						Your beans and equipment
-					</p>
-				</div>
-				<div className="flex-wrap min-w-fit max-w-1/2 mx-auto my-4">
-					<div className="flex items-center gap-1 rounded-xl bg-background/15 w-fit">
-						{(["beans", "machines"] as Tab[]).map((t) => (
-							<button
-								key={t}
-								type="button"
-								onClick={() => setTab(t)}
-								className={cn(
-									"px-4 py-1.5 text-sm font-medium transition-opacity capitalize",
-									tab === t
-										? "bg-primary-200/15 text-foreground border-primary-200 border border-b-4"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-							>
-								{t === "beans"
-									? `Beans${sortedBeans.length > 0 ? ` (${sortedBeans.length})` : ""}`
-									: `Machines${sortedMachines.length > 0 ? ` (${sortedMachines.length})` : ""}`}
-							</button>
-						))}
-					</div>
-				</div>
-				<div className="space-y-3">
-					<input
-						className="h-10 w-full max-w-sm rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-						placeholder={`Search ${tab}…`}
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-					<div className="flex flex-col gap-4 my-6">
-						{tab === "beans" ? (
-							<>
-								<FilterCard
-									title="Countries"
-									options={beanCountryOptions}
-									onToggle={(value) =>
-										toggleSelection(value, setSelectedCountries)
-									}
-								/>
-								<FilterCard
-									title="Process"
-									options={beanProcessOptions}
-									onToggle={(value) =>
-										toggleSelection(value, setSelectedProcesses)
-									}
-								/>
-							</>
-						) : (
-							<>
-								<FilterCard
-									title="Type"
-									options={machineTypeOptions}
-									onToggle={(value) => toggleSelection(value, setSelectedTypes)}
-								/>
-								<FilterCard
-									title="Brand"
-									options={machineBrandOptions}
-									onToggle={(value) =>
-										toggleSelection(value, setSelectedBrands)
-									}
-								/>
-							</>
-						)}
-					</div>
-					<div className="flex flex-col">
-						<Button
-							className=""
-							variant={"add"}
-							onClick={() => addRandomBean()}
-						>
-							Add Bean
-						</Button>
-						<Button
-							className=""
-							variant={"add"}
-							onClick={() => addRandomMachine()}
-						>
-							Add Espresso
-						</Button>
-						<Button
-							className=""
-							variant={"add"}
-							onClick={() => addRandomMachine2()}
-						>
-							Add Moka Pot
-						</Button>
-					</div>
-				</div>
-			</div>
-			<div className="flex max-w-7xl mx-auto">
-				{/* Content */}
-				{tab === "beans" && (
-					<div>
-						{filteredBeans.length === 0 ? (
-							<div className="rounded-xl border border-dashed border-border p-8 text-center">
-								<p className="text-muted-foreground text-sm">
-									{sortedBeans.length === 0
-										? "No beans yet."
-										: "No beans match your search."}
-								</p>
-								{sortedBeans.length === 0 && (
-									<Link
-										to="/log/bean"
-										className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-									>
-										Add your first bean
-									</Link>
-								)}
-							</div>
-						) : (
-							<div className="grid grid-cols-1 gap-4 md:grid-cols-3 my-3 mx-auto">
-								{filteredBeans.map((bean) => (
-									<BeanCard
-										key={bean.id ?? `${bean.name}-${bean.brand}`}
-										bean={bean}
-									/>
-								))}
-							</div>
-						)}
-					</div>
-				)}
+		<div className="mx-auto w-full max-w-7xl">
+			<div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
+				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
+					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+						<div className="border-l-5 border-primary-200 pl-5">
+							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+								Library
+							</h1>
+							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+								Your beans and equipment
+							</p>
+						</div>
 
-				{tab === "machines" && (
-					<div>
-						{filteredMachines.length === 0 ? (
-							<div className="rounded-xl border border-dashed border-border p-8 text-center">
-								<p className="text-muted-foreground text-sm">
-									{sortedMachines.length === 0
-										? "No equipment yet."
-										: "No machines match your search."}
-								</p>
-								{sortedMachines.length === 0 && (
-									<Link
-										to="/log/machine"
-										className="mt-3 inline-block px-4 py-2 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-									>
-										Add your first machine
-									</Link>
-								)}
-							</div>
-						) : (
-							<div className="grid grid-cols-1 gap-4 md:grid-cols-3 my-3 mx-auto">
-								{filteredMachines.map((machine) => (
-									<MachineCard
-										key={machine.id ?? `${machine.name}-${machine.model}`}
-										machine={machine}
+						<div className="flex w-full items-center gap-1 bg-background/15 p-1">
+							{(["beans", "machines"] as Tab[]).map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => setTab(t)}
+									className={cn(
+										"flex-1 px-4 py-1.5 text-sm font-medium capitalize transition-opacity",
+										tab === t
+											? "border border-primary-200 border-b-4 bg-primary-200/15 text-foreground"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									{t === "beans"
+										? `Beans${sortedBeans.length > 0 ? ` (${sortedBeans.length})` : ""}`
+										: `Machines${sortedMachines.length > 0 ? ` (${sortedMachines.length})` : ""}`}
+								</button>
+							))}
+						</div>
+
+						<input
+							className="h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+							placeholder={`Search ${tab}...`}
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+
+						<div className="space-y-4">
+							{tab === "beans" ? (
+								<>
+									<FilterCard
+										title="Countries"
+										options={beanCountryOptions}
+										onToggle={(value) =>
+											toggleSelection(value, setSelectedCountries)
+										}
 									/>
-								))}
-							</div>
-						)}
+									<FilterCard
+										title="Process"
+										options={beanProcessOptions}
+										onToggle={(value) =>
+											toggleSelection(value, setSelectedProcesses)
+										}
+									/>
+								</>
+							) : (
+								<>
+									<FilterCard
+										title="Type"
+										options={machineTypeOptions}
+										onToggle={(value) =>
+											toggleSelection(value, setSelectedTypes)
+										}
+									/>
+									<FilterCard
+										title="Brand"
+										options={machineBrandOptions}
+										onToggle={(value) =>
+											toggleSelection(value, setSelectedBrands)
+										}
+									/>
+								</>
+							)}
+						</div>
+
+						<div className="grid grid-cols-1 gap-2 pt-1">
+							<Button variant="add" onClick={() => addRandomBean()}>
+								Add Bean
+							</Button>
+							<Button variant="add" onClick={() => addRandomBean2()}>
+								Add RandomBean2
+							</Button>
+							<Button variant="add" onClick={() => addRandomMachine()}>
+								Add Espresso
+							</Button>
+							<Button variant="add" onClick={() => addRandomMachine2()}>
+								Add Moka Pot
+							</Button>
+						</div>
 					</div>
-				)}
+				</aside>
+
+				<section className="min-w-0">
+					{tab === "beans" && (
+						<>
+							{filteredBeans.length === 0 ? (
+								<div className="rounded-xl border border-dashed border-border p-8 text-center">
+									<p className="text-sm text-muted-foreground">
+										{sortedBeans.length === 0
+											? "No beans yet."
+											: "No beans match your search."}
+									</p>
+									{sortedBeans.length === 0 && (
+										<Link
+											to="/log/bean"
+											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
+										>
+											Add your first bean
+										</Link>
+									)}
+								</div>
+							) : (
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+									{filteredBeans.map((bean) => (
+										<BeanCard
+											key={bean.id ?? `${bean.name}-${bean.brand}`}
+											bean={bean}
+										/>
+									))}
+								</div>
+							)}
+						</>
+					)}
+
+					{tab === "machines" && (
+						<>
+							{filteredMachines.length === 0 ? (
+								<div className="rounded-xl border border-dashed border-border p-8 text-center">
+									<p className="text-sm text-muted-foreground">
+										{sortedMachines.length === 0
+											? "No equipment yet."
+											: "No machines match your search."}
+									</p>
+									{sortedMachines.length === 0 && (
+										<Link
+											to="/log/machine"
+											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
+										>
+											Add your first machine
+										</Link>
+									)}
+								</div>
+							) : (
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+									{filteredMachines.map((machine) => (
+										<MachineCard
+											key={machine.id ?? `${machine.name}-${machine.model}`}
+											machine={machine}
+										/>
+									))}
+								</div>
+							)}
+						</>
+					)}
+				</section>
 			</div>
 		</div>
 	);

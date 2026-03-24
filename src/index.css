@@ -113,12 +113,12 @@
     --tag-blue-100: oklch(0.374 0.11 263);
     --tag-yellow-900: oklch(0.949 0.032 76);
     --tag-yellow-100: oklch(0.536 0.109 69);
-    --tag-red-900: oklch(0.953 0.014 17);
+    --tag-red-900: oklch(0.921 0.024 18);
     --tag-red-100: oklch(0.425 0.137 25);
     --tag-purple-900: oklch(0.842 0.073 316);
     --tag-purple-100: oklch(0.273 0.105 312);
-    --tag-orange-900: oklch(0.811 0.067 53);
-    --tag-orange-100: oklch(0.29 0.026 54);
+    --tag-orange-900: oklch(0.857 0.05 54);
+    --tag-orange-100: oklch(0.404 0.081 49);
 
     --primary: oklch(0.4731 0.0363 74.69);
     --primary-foreground: oklch(0.985 0 0);
@@ -180,7 +180,7 @@
     --primary-800: oklch(0.4731 0.0363 74.69);
     --primary-900: oklch(0.339 0.022 56);
 
-    --tag-teal-100: oklch(0.779 0.046 189);
+    --tag-teal-100: oklch(0.806 0.072 188);
     --tag-teal-900: oklch(0.293 0.025 222);
     --tag-green-100: hsl(143 75.2% 79%);
     --tag-green-900: hsl(145 73.2% 13%);

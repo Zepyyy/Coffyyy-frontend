@@ -33,6 +33,66 @@ async function addRandomBean() {
 		return error;
 	}
 }
+
+function SelectRandom<T>(arr: T[]): T {
+	return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function SelectMultiple<T>(arr: T[], count: number): T[] {
+	const result: T[] = [];
+	for (let i = 0; i < count; i++) {
+		result.push(SelectRandom(arr));
+	}
+	return result;
+}
+
+async function addRandomBean2() {
+	try {
+		return await db.Beans.bulkAdd([
+			{
+				botanic: "Arabica",
+				name: "Random Bean",
+				brand: "Lugat",
+				designation: "Pure Origin",
+				dominantNote: SelectRandom([
+					"Fruity",
+					"Nutty",
+					"Floral",
+					"Sweet",
+					"Sour",
+					"Spices",
+					"Roasted",
+					"Green",
+				]),
+				finished: false,
+				flavors: ["mango", "Banan", "Lime"],
+				origin: [SelectRandom(["Colombia", "France"])],
+				process: "Honey",
+				rating: 5,
+				roastLevel: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
+				status: SelectRandom(["Excellent", "Good", "Fair", "Poor"]),
+				tastingNotes: SelectMultiple(
+					[
+						"mango",
+						"Banan",
+						"Lime",
+						"Apple",
+						"Orange",
+						"qsd",
+						"JustRandomStuff",
+						"ALongAssFlavorRightThere",
+						"I",
+						"smol",
+					],
+					4,
+				),
+				variety: [SelectRandom(["Castillo", "Geisha"])],
+			} as Omit<Beans, "id">,
+		]);
+	} catch (error) {
+		return error;
+	}
+}
 async function addRandomMachine() {
 	try {
 		return await db.Machines.bulkAdd([
@@ -90,6 +150,7 @@ export {
 	addBrew,
 	addMachine,
 	addRandomBean,
+	addRandomBean2,
 	addRandomMachine,
 	addRandomMachine2,
 };
