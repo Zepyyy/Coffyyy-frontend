@@ -79,10 +79,10 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			{/* Header row */}
 			<article
-				className={`p-6 relative w-full ${colorSwatch[bean.dominantNote]?.bgColor}`}
+				className={`p-4 relative w-full ${colorSwatch[bean.dominantNote]?.bgColor} overflow-hidden`}
 			>
 				<div
-					className={`text-3xl font-Lora font-semibold leading-none tracking-wide ${colorSwatch[bean.dominantNote]?.textColor}`}
+					className={`text-2xl font-Lora font-semibold leading-tight tracking-wide ${colorSwatch[bean.dominantNote]?.textColor}`}
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
@@ -90,11 +90,11 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 				<div
 					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium dark:text-tag-primary-200 ${colorSwatch[bean.dominantNote]?.secondaryTextColor}`}
 				>
-					{bean.origin.join(", ")}
+					{bean.origin.join(", ")} · {bean.brand}
 				</div>
 				{/* Background text effect */}
 				<div
-					className={`text-8xl font-Lora font-semibold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${colorSwatch[bean.dominantNote]?.textColor}`}
+					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${colorSwatch[bean.dominantNote]?.textColor}`}
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
@@ -106,7 +106,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 			</article>
 
 			<Separator />
-			<div className="flex flex-1 flex-col p-6">
+			<div className="flex flex-1 flex-col p-4">
 				<article className="flex flex-wrap justify-between">
 					{parameters.map(({ label, singleValue, values }) => (
 						<div key={label}>
@@ -119,8 +119,8 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 						</div>
 					))}
 				</article>
-				<div className="squiggly-line mt-6 w-full scale-x-125 scale-y-75 opacity-20" />
-				<article className="mt-6 text-wrap">
+				<div className="squiggly-line mt-4 w-full scale-x-125 scale-y-75 opacity-20" />
+				<article className="mt-4 text-wrap">
 					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 						Flavors
 					</div>
@@ -136,7 +136,7 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 						{tastingNotes}
 					</span>
 				</article>
-				<div className="mt-auto flex justify-end pt-6">
+				<div className="mt-auto flex justify-end pt-4">
 					{confirmDelete ? (
 						<div className="flex items-center gap-2 text-sm">
 							<span className="text-xs text-muted-foreground">Sure?</span>
