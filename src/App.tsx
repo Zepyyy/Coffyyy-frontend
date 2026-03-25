@@ -9,7 +9,7 @@ const NAV_LINKS = [
 	{ to: "/designsystem", label: "Design System" },
 	{ to: "/log", label: "Log" },
 	{ to: "/library", label: "Library" },
-	{ to: "/brews", label: "Brews" },
+	{ to: "/history", label: "History" },
 ];
 
 export default function App() {

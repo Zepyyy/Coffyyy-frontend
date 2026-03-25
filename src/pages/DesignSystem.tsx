@@ -1,3 +1,12 @@
+import {
+	AlertCircle,
+	CheckCircle,
+	ChevronDown,
+	ChevronRight,
+	Coffee,
+	Search,
+	XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
@@ -172,6 +181,29 @@ function Section({
 	);
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+	return (
+		<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+			{children}
+		</p>
+	);
+}
+
+function SubSection({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="space-y-3 rounded-xl border border-border bg-background p-4">
+			<SectionLabel>{label}</SectionLabel>
+			{children}
+		</div>
+	);
+}
+
 export default function DesignSystem() {
 	const [togglePressed, setTogglePressed] = useState(false);
 	const [viewMode, setViewMode] = useState("components");
@@ -190,6 +222,8 @@ export default function DesignSystem() {
 					colors, components, and usage examples here as the app grows.
 				</p>
 			</header>
+
+			{/* ── TOKENS ──────────────────────────────────────────────────────── */}
 
 			<Section
 				title="Core Colors"
@@ -217,25 +251,38 @@ export default function DesignSystem() {
 				title="Typography"
 				description="Quick visual check of families used in the interface."
 			>
-				<div className="space-y-3">
-					<p className="font-News text-4xl leading-none">Newsreader display</p>
-					<p className="font-Bricolage text-xl">Bricolage body copy</p>
-					<p className="font-Recursive text-lg">Recursive utility text</p>
-					<p className="font-Mono text-sm uppercase tracking-[0.16em]">
+				<div className="space-y-3 text-4xl">
+					<p className="font-News leading-none">
+						Newsreader display <span className="italic">(Titles)</span>
+					</p>
+					<p className="font-Script">
+						Marck Script <span className="italic">(Titles)</span>
+					</p>
+					<p className="font-Lora">
+						Lora <span className="italic">(Titles)</span>
+					</p>
+					<p className="font-Crimson">
+						Crimson Pro <span className="italic">(Body)</span>
+					</p>
+					<p className="font-Bricolage">
+						Bricolage body <span className="italic">(Body)</span>
+					</p>
+					<p className="font-Recursive">Recursive utility text</p>
+					<p className="font-Mono uppercase tracking-[0.16em]">
 						JetBrains mono labels
 					</p>
+					<p className="font-Alan">Alan Sans (Body)</p>
 				</div>
 			</Section>
+
+			{/* ── PRIMITIVES ──────────────────────────────────────────────────── */}
 
 			<Section
 				title="Components"
 				description="Live examples of your reusable primitives."
 			>
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-					<div className="space-y-4 rounded-xl border border-border bg-background p-4">
-						<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-							Buttons
-						</p>
+					<SubSection label="Buttons">
 						<div className="flex flex-wrap items-center gap-2">
 							<Button>Default</Button>
 							<Button variant="outline">Outline</Button>
@@ -245,12 +292,9 @@ export default function DesignSystem() {
 							<Button variant="destructive">Delete</Button>
 							<Button variant="link">Link style</Button>
 						</div>
-					</div>
+					</SubSection>
 
-					<div className="space-y-4 rounded-xl border border-border bg-background p-4">
-						<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-							Tags
-						</p>
+					<SubSection label="Tags">
 						<div className="flex flex-wrap items-center gap-2">
 							<Tag variant="default" text="Default" />
 							<Tag variant="light" text="Light" />
@@ -261,12 +305,9 @@ export default function DesignSystem() {
 							<Tag variant="purple" text="Purple" />
 							<Tag variant="orange" text="Orange" />
 						</div>
-					</div>
+					</SubSection>
 
-					<div className="space-y-4 rounded-xl border border-border bg-background p-4">
-						<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-							Toggle
-						</p>
+					<SubSection label="Toggle">
 						<Toggle
 							pressed={togglePressed}
 							onPressedChange={setTogglePressed}
@@ -275,12 +316,9 @@ export default function DesignSystem() {
 						>
 							{togglePressed ? "Enabled" : "Disabled"}
 						</Toggle>
-					</div>
+					</SubSection>
 
-					<div className="space-y-4 rounded-xl border border-border bg-background p-4">
-						<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-							Toggle Group
-						</p>
+					<SubSection label="Toggle Group">
 						<ToggleGroup
 							type="single"
 							value={viewMode}
@@ -294,9 +332,210 @@ export default function DesignSystem() {
 							<ToggleGroupItem value="colors">Colors</ToggleGroupItem>
 							<ToggleGroupItem value="type">Type</ToggleGroupItem>
 						</ToggleGroup>
-					</div>
+					</SubSection>
 				</div>
 			</Section>
+
+			{/* ── INPUTS ──────────────────────────────────────────────────────── */}
+
+			<Section
+				title="Inputs & Form Controls"
+				description="Form elements styled to match the design language."
+			>
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+					<SubSection label="Text Input">
+						<div className="space-y-3">
+							<div className="space-y-1">
+								<label
+									className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200 underline decoration-dotted decoration-2"
+									htmlFor="bean-name"
+								>
+									Bean Name
+								</label>
+								<input
+									className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-Recursive placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+									placeholder="e.g. Ethiopia Yirgacheffe"
+									readOnly
+								/>
+							</div>
+							<div className="space-y-1">
+								<label
+									className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200 underline decoration-dotted decoration-2"
+									htmlFor="Search"
+								>
+									Search
+								</label>
+								<div className="relative">
+									<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+									<input
+										className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm font-Recursive placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+										placeholder="Search beans…"
+										readOnly
+									/>
+								</div>
+							</div>
+						</div>
+					</SubSection>
+
+					<SubSection label="Textarea">
+						<div className="space-y-1">
+							<label
+								className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200 underline decoration-dotted decoration-2"
+								htmlFor="tasting-notes"
+							>
+								Tasting Notes
+							</label>
+							<textarea
+								className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm font-Recursive placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+								rows={4}
+								placeholder="Describe the flavors you're experiencing…"
+								readOnly
+							/>
+						</div>
+					</SubSection>
+
+					<SubSection label="Rating Sliders">
+						<div className="space-y-3">
+							{(["Acidity", "Bitterness", "Sweetness"] as const).map(
+								(label, i) => (
+									<div key={label} className="space-y-1">
+										<div className="flex justify-between">
+											<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200">
+												{label}
+											</span>
+											<span className="font-Mono text-[10px] text-muted-foreground">
+												{[6, 4, 8][i]}/10
+											</span>
+										</div>
+										<div className="h-2 w-full rounded-full bg-muted">
+											<div
+												className="h-full rounded-full bg-primary/70 transition-all"
+												style={{ width: `${[60, 40, 80][i]}%` }}
+											/>
+										</div>
+									</div>
+								),
+							)}
+						</div>
+					</SubSection>
+
+					<SubSection label="Select & Segmented Control">
+						<div className="space-y-3">
+							<div className="space-y-1">
+								<label
+									className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200 underline decoration-dotted decoration-2"
+									htmlFor="Process"
+								>
+									Process
+								</label>
+								<div className="relative">
+									<select className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2 pr-8 text-sm font-Recursive focus:outline-none focus:ring-1 focus:ring-primary/40">
+										<option>Natural</option>
+										<option>Washed</option>
+										<option>Honey</option>
+										<option>Anaerobic</option>
+									</select>
+									<ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+								</div>
+							</div>
+							<div className="space-y-1">
+								<label
+									className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-primary-800/70 dark:text-primary-200 underline decoration-dotted decoration-2"
+									htmlFor="RoastLevel"
+								>
+									Roast Level
+								</label>
+								<div className="flex gap-2">
+									{["Light", "Medium", "Dark"].map((l) => (
+										<button
+											key={l}
+											type="button"
+											className={`flex-1 rounded-lg border py-1.5 text-xs font-Mono uppercase tracking-widest transition-colors ${
+												l === "Medium"
+													? "border-primary bg-primary text-primary-foreground"
+													: "border-border text-muted-foreground hover:border-primary/40"
+											}`}
+										>
+											{l}
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+					</SubSection>
+				</div>
+			</Section>
+
+			{/* ── DATA DISPLAY ────────────────────────────────────────────────── */}
+
+			<Section
+				title="Data Display"
+				description="Stats, ratings, and metrics in the design language."
+			>
+				{/* Stat tiles */}
+				<div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+					{[
+						{ label: "Total Beans", value: "24", sub: "in library" },
+						{ label: "Brews Logged", value: "138", sub: "all time" },
+						{ label: "Avg. Rating", value: "7.4", sub: "out of 10" },
+						{ label: "Countries", value: "12", sub: "origins" },
+					].map(({ label, value, sub }) => (
+						<div
+							key={label}
+							className="space-y-1 rounded-xl border border-border bg-background p-4"
+						>
+							<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+								{label}
+							</p>
+							<p className="font-News text-3xl leading-none text-primary-800 dark:text-primary-100">
+								{value}
+							</p>
+							<p className="font-Mono text-[10px] text-muted-foreground">
+								{sub}
+							</p>
+						</div>
+					))}
+				</div>
+
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+					<SubSection label="Rating Dots">
+						<div className="space-y-3">
+							{[
+								{ label: "Overall", score: 8 },
+								{ label: "Aroma", score: 7 },
+								{ label: "Aftertaste", score: 9 },
+							].map(({ label, score }) => (
+								<div key={label} className="flex items-center gap-3">
+									<span className="w-20 shrink-0 font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+										{label}
+									</span>
+									<div className="flex gap-1">
+										{Array.from({ length: 10 }).map((_, i) => (
+											<div
+												key={`${label} - ${score} - ${i + 1}`}
+												className={`size-2 rounded-full ${i < score ? "bg-primary" : "bg-muted"}`}
+											/>
+										))}
+									</div>
+									<span className="font-Mono text-xs text-muted-foreground">
+										{score}
+									</span>
+								</div>
+							))}
+						</div>
+					</SubSection>
+
+					<SubSection label="Flavor Wheel (placeholder)">
+						<div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-border">
+							<p className="font-Mono text-xs text-muted-foreground">
+								[ radar / wheel chart ]
+							</p>
+						</div>
+					</SubSection>
+				</div>
+			</Section>
+
+			{/* ── CARDS ───────────────────────────────────────────────────────── */}
 
 			<Section
 				title="Library Cards"
@@ -353,6 +592,333 @@ export default function DesignSystem() {
 				</div>
 			</Section>
 
+			{/* ── BREW SESSION CARD ───────────────────────────────────────────── */}
+
+			<Section
+				title="Brew Session Card"
+				description="Design concept for logging and viewing individual brew sessions."
+			>
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+					{/* Compact list items */}
+					<div className="space-y-2">
+						<SectionLabel>List Item</SectionLabel>
+						<div className="space-y-2 mt-2">
+							{[
+								{
+									bean: "Ethiopia Yirgacheffe",
+									machine: "Aeropress",
+									rating: 8,
+									notes: "Fruity, floral, bright",
+									color: "bg-tag-teal-900",
+								},
+								{
+									bean: "Colombia Huila",
+									machine: "V60",
+									rating: 7,
+									notes: "Nutty, caramel, smooth",
+									color: "bg-tag-orange-900",
+								},
+								{
+									bean: "Kenya AA",
+									machine: "Chemex",
+									rating: 9,
+									notes: "Berry, citrus, complex",
+									color: "bg-tag-blue-900",
+								},
+							].map((brew) => (
+								<div
+									key={brew.bean}
+									className="group flex cursor-pointer items-center gap-4 rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:border-primary/30"
+								>
+									<div
+										className={`size-8 shrink-0 rounded-full ${brew.color} flex items-center justify-center`}
+									>
+										<span className="font-News text-sm text-white/90">
+											{brew.rating}
+										</span>
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="truncate font-Recursive text-sm font-medium">
+											{brew.bean}
+										</p>
+										<p className="truncate font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+											{brew.machine} · {brew.notes}
+										</p>
+									</div>
+									<ChevronRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Full brew card */}
+					<div className="space-y-2">
+						<SectionLabel>Full Card</SectionLabel>
+						<div className="mt-2 overflow-hidden border border-primary/15 bg-background">
+							<div className="relative bg-tag-teal-900 p-5">
+								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-tag-teal-100/60">
+									Session #138
+								</p>
+								<p className="mt-0.5 font-Lora text-2xl font-semibold leading-tight text-tag-teal-100">
+									Ethiopia Yirgacheffe
+								</p>
+								<p className="mt-1 font-Mono text-xs uppercase tracking-widest text-tag-teal-100/60">
+									Aeropress · 15g · 240ml
+								</p>
+								<div className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full border border-tag-teal-100/20">
+									<span className="font-News text-lg text-tag-teal-100">8</span>
+								</div>
+							</div>
+							<Separator />
+							<div className="grid grid-cols-3 gap-4 p-5">
+								{[
+									{ label: "Acidity", val: 7 },
+									{ label: "Bitterness", val: 4 },
+									{ label: "Sweetness", val: 8 },
+								].map(({ label, val }) => (
+									<div key={label}>
+										<p className="mb-1 font-Mono text-[10px] uppercase tracking-widest text-primary-800/60 underline decoration-dotted decoration-2 dark:text-primary-200/60">
+											{label}
+										</p>
+										<div className="flex gap-0.5">
+											{Array.from({ length: 5 }).map((_, i) => (
+												<div
+													key={`${label} - ${i + 1}`}
+													className={`h-1 flex-1 rounded-full ${i < Math.round(val / 2) ? "bg-primary/70" : "bg-muted"}`}
+												/>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+							<div className="squiggly-line w-full scale-x-125 scale-y-75 opacity-20" />
+							<div className="p-5 pt-3">
+								<p className="mb-1 font-Mono text-[10px] uppercase tracking-widest text-primary-800/60 underline decoration-dotted decoration-2 dark:text-primary-200/60">
+									Notes
+								</p>
+								<p className="font-Recursive text-sm text-muted-foreground">
+									Bright and complex. Strong citrus on the nose. Long floral
+									aftertaste.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</Section>
+
+			{/* ── LAYOUT PATTERNS ─────────────────────────────────────────────── */}
+
+			<Section
+				title="Layout Patterns"
+				description="Grid and composition blueprints for new pages."
+			>
+				<div className="space-y-6">
+					{/* Split panel */}
+					<div>
+						<SectionLabel>Split Panel — sidebar + content</SectionLabel>
+						<div className="mt-3 flex h-40 overflow-hidden rounded-xl border border-dashed border-border">
+							<div className="w-44 shrink-0 border-r border-dashed border-border bg-primary-700/5 p-3">
+								<div className="mb-2 h-4 w-16 rounded bg-primary/20" />
+								<div className="space-y-2">
+									{Array.from({ length: 4 }).map((_, i) => (
+										<div
+											key={`split-panel-${i + 1}`}
+											className="h-5 rounded bg-primary/10"
+										/>
+									))}
+								</div>
+							</div>
+							<div className="flex-1 p-3">
+								<div className="grid h-full grid-cols-3 gap-2 content-start">
+									{Array.from({ length: 6 }).map((_, i) => (
+										<div
+											key={`masonry-${i + 1}`}
+											className="h-14 rounded-lg bg-muted/40"
+										/>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Masonry */}
+					<div>
+						<SectionLabel>Masonry / Mixed Sizes</SectionLabel>
+						<div className="mt-3 overflow-hidden rounded-xl border border-dashed border-border p-3">
+							<div className="grid grid-cols-4 gap-2">
+								<div className="col-span-2 row-span-2 h-36 rounded-lg bg-primary-700/10" />
+								<div className="h-16 rounded-lg bg-muted/40" />
+								<div className="h-16 rounded-lg bg-muted/40" />
+								<div className="h-16 rounded-lg bg-tag-teal-900/20" />
+								<div className="h-16 rounded-lg bg-muted/40" />
+							</div>
+						</div>
+					</div>
+
+					{/* Table */}
+					<div>
+						<SectionLabel>Table / Log View</SectionLabel>
+						<div className="mt-3 overflow-hidden rounded-xl border border-border">
+							<div className="grid grid-cols-4 border-b border-border bg-muted/30 px-4 py-2">
+								{["Bean", "Machine", "Rating", "Date"].map((h) => (
+									<p
+										key={h}
+										className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+									>
+										{h}
+									</p>
+								))}
+							</div>
+							{[
+								["Ethiopia Yirgacheffe", "Aeropress", "8/10", "Today"],
+								["Colombia Huila", "V60", "7/10", "Yesterday"],
+								["Kenya AA", "Chemex", "9/10", "2d ago"],
+							].map((row, i) => (
+								<div
+									key={row.join("-")}
+									className={`grid grid-cols-4 px-4 py-3 transition-colors hover:bg-muted/20 ${i !== 2 ? "border-b border-border" : ""}`}
+								>
+									{row.map((cell, j) => (
+										<p
+											key={cell}
+											className={`text-sm ${j === 0 ? "font-Recursive font-medium" : j === 2 ? "font-Mono text-primary-700 dark:text-primary-200" : "font-Recursive text-muted-foreground"}`}
+										>
+											{cell}
+										</p>
+									))}
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Full-width hero */}
+					<div>
+						<SectionLabel>Hero / Dashboard Banner</SectionLabel>
+						<div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+							<div className="relative col-span-2 overflow-hidden rounded-xl border border-primary/20 bg-primary-700/10 px-6 py-8">
+								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] opacity-60">
+									Quick add
+								</p>
+								<p className="mt-1 font-News text-3xl tracking-tight text-primary-800 dark:text-primary-100">
+									Log a Brew
+								</p>
+								<div className="absolute -right-4 -top-4 size-24 rounded-full bg-primary/5" />
+							</div>
+							<div className="flex flex-col gap-3">
+								<div className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-4">
+									<div className="size-8 rounded-full bg-muted flex items-center justify-center text-lg">
+										🫘
+									</div>
+									<div>
+										<p className="text-sm font-semibold">Add a Bean</p>
+										<p className="text-xs text-muted-foreground">
+											24 in library
+										</p>
+									</div>
+								</div>
+								<div className="flex flex-1 items-center gap-3 rounded-xl border border-border bg-background px-4 py-4">
+									<div className="size-8 rounded-full bg-muted flex items-center justify-center text-lg">
+										⚙️
+									</div>
+									<div>
+										<p className="text-sm font-semibold">Add Equipment</p>
+										<p className="text-xs text-muted-foreground">
+											138 brews logged
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</Section>
+
+			{/* ── STATES ──────────────────────────────────────────────────────── */}
+
+			<Section
+				title="States"
+				description="Empty states, loading skeletons, and feedback messages."
+			>
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+					{/* Empty state */}
+					<SubSection label="Empty State">
+						<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+							<div className="flex size-12 items-center justify-center rounded-full bg-muted">
+								<Coffee className="size-6 text-muted-foreground" />
+							</div>
+							<div>
+								<p className="font-News text-lg text-primary-800 dark:text-primary-100">
+									No beans yet
+								</p>
+								<p className="mt-0.5 font-Recursive text-sm text-muted-foreground">
+									Add your first bean to get started.
+								</p>
+							</div>
+							<Button size="sm" variant="outline">
+								Add a bean
+							</Button>
+						</div>
+					</SubSection>
+
+					{/* Skeleton */}
+					<SubSection label="Skeleton Loader">
+						<div className="animate-pulse space-y-3">
+							<div className="h-24 rounded-lg bg-muted" />
+							<div className="space-y-2">
+								<div className="h-3 w-3/4 rounded bg-muted" />
+								<div className="h-3 w-1/2 rounded bg-muted" />
+								<div className="h-3 w-5/6 rounded bg-muted" />
+							</div>
+							<div className="flex gap-2">
+								<div className="h-6 w-16 rounded-full bg-muted" />
+								<div className="h-6 w-12 rounded-full bg-muted" />
+							</div>
+						</div>
+					</SubSection>
+
+					{/* Notifications */}
+					<SubSection label="Notifications">
+						<div className="space-y-2">
+							<div className="flex items-start gap-2 rounded-lg border border-tag-green-900 bg-tag-green-900/20 px-3 py-2.5">
+								<CheckCircle className="mt-0.5 size-4 shrink-0 text-tag-green-100" />
+								<div>
+									<p className="font-Recursive text-sm font-medium text-tag-green-100">
+										Bean added
+									</p>
+									<p className="font-Mono text-[10px] text-tag-green-100/70">
+										Ethiopia Yirgacheffe saved
+									</p>
+								</div>
+							</div>
+							<div className="flex items-start gap-2 rounded-lg border border-tag-red-900 bg-tag-red-900/20 px-3 py-2.5">
+								<XCircle className="mt-0.5 size-4 shrink-0 text-tag-red-100" />
+								<div>
+									<p className="font-Recursive text-sm font-medium text-tag-red-100">
+										Error
+									</p>
+									<p className="font-Mono text-[10px] text-tag-red-100/70">
+										Something went wrong
+									</p>
+								</div>
+							</div>
+							<div className="flex items-start gap-2 rounded-lg border border-tag-yellow-900 bg-tag-yellow-900/20 px-3 py-2.5">
+								<AlertCircle className="mt-0.5 size-4 shrink-0 text-tag-yellow-100" />
+								<div>
+									<p className="font-Recursive text-sm font-medium text-tag-yellow-100">
+										Heads up
+									</p>
+									<p className="font-Mono text-[10px] text-tag-yellow-100/70">
+										Grind size not set
+									</p>
+								</div>
+							</div>
+						</div>
+					</SubSection>
+				</div>
+			</Section>
+
+			{/* ── COMPOSITION SANDBOX ─────────────────────────────────────────── */}
+
 			<Section
 				title="Composition Sandbox"
 				description="A quick interaction zone to evaluate spacing, borders, and contrast combinations."
@@ -383,6 +949,234 @@ export default function DesignSystem() {
 						</div>
 						<div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
 							Surface C
+						</div>
+					</div>
+				</div>
+			</Section>
+
+			{/* ── IDEAS ───────────────────────────────────────────────────────── */}
+
+			<Section
+				title="Ideas"
+				description="Rough concepts and explorations — not yet implemented."
+			>
+				<div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+					{/* Concept A — Timeline */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept A
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Timeline View
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							A chronological scroll of brew sessions, grouped by day.
+							Full-bleed color bands per dominant note.
+						</p>
+						<div className="space-y-1.5">
+							{(["Today", "Yesterday", "Last week"] as const).map((day, i) => (
+								<div key={day} className="flex items-start gap-3">
+									<div className="mt-1.5 size-2 shrink-0 rounded-full bg-primary/50" />
+									<div className="flex-1">
+										<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+											{day}
+										</p>
+										<div
+											className={`mt-1 h-8 rounded-md ${["bg-tag-teal-900/40", "bg-tag-orange-900/40", "bg-tag-blue-900/40"][i]}`}
+										/>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Concept B — Flavor Map */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept B
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Flavor Map
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							A 2D scatter plot mapping beans by acidity vs. sweetness. Hover to
+							preview the bean card.
+						</p>
+						<div className="relative h-32 overflow-hidden rounded-lg border border-dashed border-border">
+							{[
+								{ x: 20, y: 70, color: "bg-tag-teal-900" },
+								{ x: 50, y: 40, color: "bg-tag-orange-900" },
+								{ x: 80, y: 60, color: "bg-tag-blue-900" },
+								{ x: 35, y: 20, color: "bg-tag-green-900" },
+								{ x: 65, y: 80, color: "bg-tag-purple-900" },
+							].map((dot) => (
+								<div
+									key={dot.color}
+									className={`absolute size-3 rounded-full ${dot.color} opacity-70`}
+									style={{ left: `${dot.x}%`, top: `${dot.y}%` }}
+								/>
+							))}
+							<p className="absolute bottom-1 left-2 font-Mono text-[9px] uppercase tracking-widest text-muted-foreground">
+								Acidity →
+							</p>
+						</div>
+					</div>
+
+					{/* Concept C — Brew Dial */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept C
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Brew Dial
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							A circular dial UI for dialing in espresso — ratio, time, and
+							grind all in one view.
+						</p>
+						<div className="flex items-center justify-center py-2">
+							<div className="relative size-24">
+								<div className="size-24 rounded-full border-4 border-primary/20" />
+								<div className="absolute inset-3 rounded-full border-4 border-dashed border-primary/40" />
+								<div className="absolute inset-6 flex items-center justify-center rounded-full border-2 border-primary/60">
+									<span className="font-News text-xs text-primary-700 dark:text-primary-200">
+										1:15
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Concept D — Note card */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept D
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Tasting Note Stack
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							A stack of flavor tags with size indicating intensity. Could
+							replace the plain comma list.
+						</p>
+						<div className="flex flex-wrap gap-2 pt-1">
+							{[
+								{
+									label: "Citrus",
+									size: "text-lg",
+									variant: "default" as const,
+								},
+								{
+									label: "Floral",
+									size: "text-base",
+									variant: "blue" as const,
+								},
+								{
+									label: "Caramel",
+									size: "text-sm",
+									variant: "yellow" as const,
+								},
+								{
+									label: "Bergamot",
+									size: "text-xs",
+									variant: "green" as const,
+								},
+								{
+									label: "Vanilla",
+									size: "text-xs",
+									variant: "purple" as const,
+								},
+							].map(({ label, variant }) => (
+								<Tag key={label} text={label} variant={variant} />
+							))}
+						</div>
+					</div>
+
+					{/* Concept E — Split metric */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept E
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Split Metric Card
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							A card split diagonally or by line — left shows the label, right
+							shows a large number.
+						</p>
+						<div className="overflow-hidden rounded-lg border border-border">
+							<div className="flex">
+								<div className="flex-1 border-r border-border bg-primary-700/10 p-3">
+									<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+										Avg. rating
+									</p>
+									<p className="font-News text-4xl text-primary-800 dark:text-primary-100 leading-none mt-1">
+										7.4
+									</p>
+								</div>
+								<div className="flex-1 p-3">
+									<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+										Best bean
+									</p>
+									<p className="font-Lora text-sm font-semibold text-foreground mt-1">
+										Kenya AA
+									</p>
+									<p className="font-Mono text-[10px] text-muted-foreground mt-0.5">
+										9.1 avg.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Concept F — Progress ring */}
+					<div className="space-y-3 rounded-xl border border-dashed border-primary/30 bg-primary-700/5 p-4">
+						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-primary-800/60 dark:text-primary-200/60">
+							Concept F
+						</p>
+						<p className="font-News text-xl text-primary-800 dark:text-primary-100">
+							Streak / Progress
+						</p>
+						<p className="font-Recursive text-sm text-muted-foreground">
+							Track brewing streaks or weekly goals. Could live on the home
+							dashboard.
+						</p>
+						<div className="flex items-center gap-4">
+							<div className="relative size-16 shrink-0">
+								<svg viewBox="0 0 36 36" className="size-16 -rotate-90">
+									<title>Streak Progress</title>
+									<circle
+										cx="18"
+										cy="18"
+										r="15.9"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+										className="text-muted"
+									/>
+									<circle
+										cx="18"
+										cy="18"
+										r="15.9"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="2"
+										strokeDasharray="75 25"
+										className="text-primary"
+									/>
+								</svg>
+								<span className="absolute inset-0 flex items-center justify-center font-News text-sm text-primary-800 dark:text-primary-100">
+									75%
+								</span>
+							</div>
+							<div>
+								<p className="font-Recursive text-sm font-medium">
+									Weekly Goal
+								</p>
+								<p className="font-Mono text-[10px] text-muted-foreground uppercase tracking-widest">
+									3 of 4 brews
+								</p>
+							</div>
 						</div>
 					</div>
 				</div>

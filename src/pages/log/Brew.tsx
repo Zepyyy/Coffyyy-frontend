@@ -5,33 +5,33 @@ import { db } from "@/db/db";
 import { buildBrewSuggestions } from "@/lib/brewSuggestions";
 import { cn } from "@/lib/utils";
 
-type BrewForm = {
-	bean: string;
-	date: Date;
+export type BrewForm = {
+	bean: string | undefined;
 	overallRating: string;
 	grindSize: string;
+	date: Date;
 	acidity: string;
 	adjustementNeeded: string;
 	aftertaste: string;
 	bitterness: string;
 	mouthfeel: string;
 	strength: string;
-	machine: string;
-	tasteProfiles: string[];
+	machine: string | undefined;
+	tasteProfiles: Array<string>;
 };
 
 const INITIAL: BrewForm = {
-	bean: "",
+	bean: undefined,
 	date: new Date(),
-	overallRating: "",
+	overallRating: "default",
 	grindSize: "",
-	acidity: "",
-	adjustementNeeded: "",
-	aftertaste: "",
-	bitterness: "",
-	mouthfeel: "",
-	strength: "",
-	machine: "",
+	acidity: "default",
+	adjustementNeeded: "default",
+	aftertaste: "default",
+	bitterness: "default",
+	mouthfeel: "default",
+	strength: "default",
+	machine: undefined,
 	tasteProfiles: [],
 };
 
@@ -80,11 +80,12 @@ function OptionChips({
 	onChange,
 }: {
 	options: string[];
-	value: string;
+	value: string | undefined;
 	onChange: (v: string) => void;
 }) {
 	return (
 		<div className="flex flex-wrap gap-1.5">
+			{options === undefined && <p>There's nothing here...</p>}
 			{options.map((opt) => (
 				<button
 					key={opt}
@@ -236,14 +237,51 @@ export default function Brew() {
 			await addBrew({
 				bean: form.bean,
 				date: form.date,
-				overallRating: form.overallRating,
+				overallRating: form.overallRating as
+					| "Excellent"
+					| "Good"
+					| "Mid"
+					| "Horrible"
+					| "Burnt🔥"
+					| "default",
 				grindSize: form.grindSize,
-				acidity: form.acidity,
-				adjustementNeeded: form.adjustementNeeded,
-				aftertaste: form.aftertaste,
-				bitterness: form.bitterness,
-				mouthfeel: form.mouthfeel,
-				strength: form.strength,
+				acidity: form.acidity as
+					| "⚡ Too sharp/sour"
+					| "🍋 Bright/Lively"
+					| "😊 Balanced"
+					| "😴 Flat/Dull"
+					| "default",
+				adjustementNeeded: form.adjustementNeeded as
+					| "Keep this setting 👍"
+					| "Grind finer next time ⬇️"
+					| "Grind coarser next time ⬆️"
+					| "Try different machine 🔄"
+					| "Fuck this bean ‼️"
+					| "default",
+				aftertaste: form.aftertaste as
+					| "✨ Amazing - lingering sweetness"
+					| "👍 Pleasant"
+					| "😐 Neutral"
+					| "👎 Unpleasant/harsh"
+					| "default",
+				bitterness: form.bitterness as
+					| "👍 Barely noticeable"
+					| "🍫 Pleasant bitter"
+					| "😐 None"
+					| "😖 Too bitter"
+					| "default",
+				mouthfeel: form.mouthfeel as
+					| "💧 Thin/Watery"
+					| "😊 Balanced"
+					| "😐 Neutral"
+					| "😖 Too watery"
+					| "🔥 Fluffy/airy"
+					| "default",
+				strength: form.strength as
+					| "‼️ Too strong"
+					| "🍃 Just right"
+					| "💧Too weak"
+					| "default",
 				machine: form.machine,
 				tasteProfiles: form.tasteProfiles,
 			});
@@ -271,33 +309,14 @@ export default function Brew() {
 				<section className="space-y-3">
 					<SectionTitle>Bean</SectionTitle>
 					<div className="space-y-2">
-						<FieldLabel required>Bean name</FieldLabel>
-						{suggestions.bean.length > 0 && (
-							<div className="flex flex-wrap gap-1.5">
-								{suggestions.bean.map((b) => (
-									<button
-										key={b}
-										type="button"
-										onClick={() => setField("bean", b)}
-										className={cn(
-											"px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-											form.bean === b
-												? "bg-foreground text-background"
-												: "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-										)}
-									>
-										{b}
-									</button>
-								))}
-							</div>
-						)}
-						<input
-							className="h-11 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-							placeholder="e.g. Ethiopian Natural — Morning Blend"
-							value={form.bean}
-							onChange={(e) => setField("bean", e.target.value)}
-							required
-						/>
+						<div className="space-y-1.5">
+							<FieldLabel required>The bean</FieldLabel>
+							<OptionChips
+								options={suggestions.bean.map((b) => b)}
+								value={form.bean}
+								onChange={(v) => setField("bean", v)}
+							/>
+						</div>
 					</div>
 				</section>
 
@@ -318,31 +337,14 @@ export default function Brew() {
 
 						<div className="space-y-1.5">
 							<FieldLabel>Machine / method</FieldLabel>
-							{suggestions.machine.length > 0 && (
-								<div className="flex flex-wrap gap-1 mb-1.5">
-									{suggestions.machine.map((m) => (
-										<button
-											key={m}
-											type="button"
-											onClick={() => setField("machine", m)}
-											className={cn(
-												"px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-												form.machine === m
-													? "bg-foreground text-background"
-													: "bg-muted text-muted-foreground hover:text-foreground",
-											)}
-										>
-											{m}
-										</button>
-									))}
-								</div>
-							)}
-							<input
-								className="h-11 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-								placeholder="e.g. AeroPress, Espresso"
-								value={form.machine}
-								onChange={(e) => setField("machine", e.target.value)}
-							/>
+							<div className="space-y-1.5">
+								<FieldLabel>Process</FieldLabel>
+								<OptionChips
+									options={suggestions.machine.map((m) => m)}
+									value={form.machine}
+									onChange={(v) => setField("machine", v)}
+								/>
+							</div>
 						</div>
 					</div>
 
@@ -431,7 +433,7 @@ export default function Brew() {
 					{status && <p className="text-sm text-muted-foreground">{status}</p>}
 					<button
 						type="submit"
-						disabled={!form.bean.trim() || isSaving}
+						disabled={!form.bean || isSaving}
 						className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
 					>
 						{isSaving ? "Saving…" : "Save Brew"}

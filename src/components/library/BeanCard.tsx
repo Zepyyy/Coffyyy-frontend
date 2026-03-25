@@ -130,43 +130,47 @@ export default function BeanCard({ bean }: { bean: Beans }) {
 
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
+			{/* Header row */}
 			<div
 				className={cn(
-					"p-6 space-y-6 relative",
+					"p-6 relative w-full",
 					colorSwatch[bean.dominantNote]?.bgColor,
 				)}
 			>
-				<div
+				{/* Top left icon */}
+				<NoteIcon
+					strokeWidth={2}
 					className={cn(
-						"text-8xl font-News font-semibold absolute top-1/2 -translate-y-1/2 pt-6 left-0 opacity-5 select-none text-nowrap",
+						"size-6 absolute top-5 right-5",
 						colorSwatch[bean.dominantNote]?.textColor,
 					)}
-				>
-					{bean.name || "Unnamed bean"}
-				</div>
+				/>
 				<article className="">
 					<div
 						className={cn(
-							"text-2xl font-News font-semibold",
+							"text-3xl font-Lora font-semibold leading-none tracking-wide",
 							colorSwatch[bean.dominantNote]?.textColor,
 						)}
 					>
 						{bean.name || "Unnamed bean"}
 					</div>
-					<NoteIcon
-						strokeWidth={2}
-						className={cn(
-							"size-6 absolute top-5 right-5",
-							colorSwatch[bean.dominantNote]?.textColor,
-						)}
-					/>
+
 					<div
 						className={cn(
-							"text-md font-Bricolage font-light dark:text-tag-primary-200 tracking-widest",
+							"text-sm font-Mono uppercase tracking-[0.12em] font-medium dark:text-tag-primary-200",
 							colorSwatch[bean.dominantNote]?.secondaryTextColor,
 						)}
 					>
 						{origin} / {/*{bean.country && bean.country} */} El Paraiso
+					</div>
+					{/* Background text effect */}
+					<div
+						className={cn(
+							"text-8xl font-Lora font-semibold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap",
+							colorSwatch[bean.dominantNote]?.textColor,
+						)}
+					>
+						{bean.name || "Unnamed bean"}
 					</div>
 				</article>
 			</div>

@@ -1,16 +1,12 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { Coffee } from "lucide-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Link } from "react-router";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
 import { Button } from "@/components/ui/button";
-import {
-	addRandomBean,
-	addRandomBean2,
-	addRandomMachine,
-	addRandomMachine2,
-} from "@/db/crud/add";
+import { addRandomBean, addRandomMachine } from "@/db/crud/add";
 import { db } from "@/db/db";
 import { cn } from "@/lib/utils";
 
@@ -181,8 +177,8 @@ export default function Library() {
 	);
 
 	return (
-		<div className="mx-auto w-full max-w-7xl">
-			<div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
+		<div className="mx-auto w-full max-w-4/5">
+			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
 				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
@@ -261,16 +257,10 @@ export default function Library() {
 
 						<div className="grid grid-cols-1 gap-2 pt-1">
 							<Button variant="add" onClick={() => addRandomBean()}>
-								Add Bean
-							</Button>
-							<Button variant="add" onClick={() => addRandomBean2()}>
-								Add RandomBean2
+								Add Random Bean
 							</Button>
 							<Button variant="add" onClick={() => addRandomMachine()}>
-								Add Espresso
-							</Button>
-							<Button variant="add" onClick={() => addRandomMachine2()}>
-								Add Moka Pot
+								Add Random Machine
 							</Button>
 						</div>
 					</div>
@@ -278,21 +268,33 @@ export default function Library() {
 
 				<section className="min-w-0">
 					{tab === "beans" && (
-						<>
+						<div>
 							{filteredBeans.length === 0 ? (
-								<div className="rounded-xl border border-dashed border-border p-8 text-center">
-									<p className="text-sm text-muted-foreground">
-										{sortedBeans.length === 0
-											? "No beans yet."
-											: "No beans match your search."}
-									</p>
-									{sortedBeans.length === 0 && (
-										<Link
-											to="/log/bean"
-											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
-										>
-											Add your first bean
-										</Link>
+								<div className="rounded-xl border border-dashed border-border p-2 text-center">
+									{sortedBeans.length === 0 ? (
+										<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+											<div className="flex size-12 items-center justify-center rounded-full bg-muted">
+												<Coffee className="size-6 text-muted-foreground" />
+											</div>
+											<div>
+												<p className="font-News text-lg text-primary-800 dark:text-primary-100">
+													No beans yet
+												</p>
+												<p className="mt-0.5 font-Recursive text-sm text-muted-foreground">
+													Add your first bean to get started.
+												</p>
+											</div>
+											<Link
+												to="/log/bean"
+												className="h-9 px-4 py-2 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium outline-none border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
+											>
+												Add a bean
+											</Link>
+										</div>
+									) : (
+										<p className="text-sm text-muted-foreground">
+											No beans match your search.
+										</p>
 									)}
 								</div>
 							) : (
@@ -305,11 +307,11 @@ export default function Library() {
 									))}
 								</div>
 							)}
-						</>
+						</div>
 					)}
 
 					{tab === "machines" && (
-						<>
+						<div>
 							{filteredMachines.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border p-8 text-center">
 									<p className="text-sm text-muted-foreground">
@@ -336,7 +338,7 @@ export default function Library() {
 									))}
 								</div>
 							)}
-						</>
+						</div>
 					)}
 				</section>
 			</div>

@@ -42,7 +42,7 @@ export function buildBrewSuggestions(
 	beanNames: string[],
 	machineNames: string[],
 ): BrewSuggestions {
-	const bean: Array<string> = beanNames;
+	const bean: string[] = beanNames;
 	const grindSize: Array<string> = [];
 	const overallRating: Array<string> = [
 		"Excellent",

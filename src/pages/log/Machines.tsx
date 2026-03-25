@@ -9,7 +9,7 @@ type MachineForm = {
 	name: string;
 	brand: string;
 	model: string;
-	type: "Espresso" | "Moka Pot";
+	type: string;
 	grindRange: string;
 	capacity: string;
 	purchaseDate: string;
@@ -20,7 +20,7 @@ const INITIAL: MachineForm = {
 	name: "",
 	brand: "",
 	model: "",
-	type: "Espresso",
+	type: "",
 	grindRange: "",
 	capacity: "",
 	purchaseDate: "",
@@ -158,11 +158,6 @@ export default function Machines() {
 
 					<div className="space-y-1.5">
 						<FieldLabel required>Name</FieldLabel>
-						<SuggestionChips
-							options={suggestions.names}
-							value={form.name}
-							onChange={(v) => setField("name", v)}
-						/>
 						<input
 							className="h-12 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
 							placeholder="e.g. Daily Driver, The Beast"
@@ -214,6 +209,12 @@ export default function Machines() {
 							options={suggestions.types}
 							value={form.type}
 							onChange={(v) => setField("type", v as "Espresso" | "Moka Pot")}
+						/>
+						<input
+							className="h-11 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+							placeholder="e.g. Drip"
+							value={form.type}
+							onChange={(e) => setField("type", e.target.value)}
 						/>
 					</div>
 

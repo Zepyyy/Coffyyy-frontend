@@ -8,7 +8,7 @@
         "build": "tsc -b && vite build",
         "lint": "eslint .",
         "preview": "vite preview",
-        "biome": "bunx biome format --write ./src"
+        "biome": "bunx --bun @biomejs/biome format --write ./src"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.2.1",

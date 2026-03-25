@@ -65,14 +65,13 @@ export default function Home() {
 			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<Link
 					to="/log/brew"
-					className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary text-primary-foreground px-6 py-8 transition-transform hover:scale-[1.01] sm:col-span-2"
+					className="group relative overflow-hidden rounded-2xl border border-primary/20 bg-primary-700/10 text-foreground px-6 py-8 transition-transform hover:scale-[1.01] sm:col-span-2"
 				>
-					<div className="absolute inset-0 bg-linear-to-tr from-primary/20 to-transparent group-hover:from-primary/40 transition-colors" />
 					<div className="relative">
-						<p className="text-xs uppercase tracking-wider opacity-70">
+						<p className="text-xs opacity-70 font-Mono uppercase tracking-[0.16em]">
 							Quick add
 						</p>
-						<p className="mt-1 text-3xl font-bold tracking-tight">Log a Brew</p>
+						<p className="mt-1 text-4xl tracking-tight font-News">Log a Brew</p>
 					</div>
 				</Link>
 
