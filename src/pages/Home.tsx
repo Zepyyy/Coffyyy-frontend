@@ -1,7 +1,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Link } from "react-router";
 import { db } from "@/db/db";
-import type { Beans, Brews } from "@/types/default";
+import type { Beans } from "@/types/BeanTypes";
+import type { Brews } from "@/types/default";
 
 type Ranked = { label: string; value: number };
 

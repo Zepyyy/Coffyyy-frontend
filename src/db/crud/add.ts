@@ -63,8 +63,18 @@ async function addRandomBean() {
 				]),
 				finished: false,
 				flavors: ["mango", "Banan", "Lime"],
-				origin: [SelectRandom(["Colombia", "France", "Venezuela", "Brazil", "Argentina"])],
-				process: [SelectRandom(["Natural", "Honey", "Washed", "Semi-Processed"])],
+				origin: [
+					SelectRandom([
+						"Colombia",
+						"France",
+						"Venezuela",
+						"Brazil",
+						"Argentina",
+					]),
+				],
+				process: [
+					SelectRandom(["Natural", "Honey", "Washed", "Semi-Processed"]),
+				],
 				rating: SelectRandom([1, 2, 3, 4, 5]),
 				roastLevel: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
 				status: SelectRandom(["Excellent", "Good", "Fair", "Poor"]),

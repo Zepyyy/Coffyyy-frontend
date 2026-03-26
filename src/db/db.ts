@@ -1,5 +1,6 @@
 import { Dexie, type EntityTable } from "dexie";
-import type { Beans, Brews, Machines } from "@/types/default";
+import type { Beans } from "@/types/BeanTypes";
+import type { Brews, Machines } from "@/types/default";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;

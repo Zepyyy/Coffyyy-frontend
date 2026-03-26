@@ -59,7 +59,7 @@ export function buildBeanSuggestions(beans: Array<Beans>): BeanSuggestions {
 
 	for (const bean of beans) {
 		if (bean.name) names.push(bean.name);
-        if (bean.brand) brands.push(bean.brand);
+		if (bean.brand) brands.push(bean.brand);
 		processes.push(...(bean.process ?? []));
 		origins.push(...(bean.origin ?? []));
 		varieties.push(...(bean.variety ?? []));

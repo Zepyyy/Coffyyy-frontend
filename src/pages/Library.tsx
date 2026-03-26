@@ -106,10 +106,10 @@ export default function Library() {
 					.join(" ")
 					.toLowerCase()
 					.includes(q);
-            const matchesCountry =
-                selectedCountries.length === 0 ||
+			const matchesCountry =
+				selectedCountries.length === 0 ||
 				(b.origin ?? []).some((origin) =>
-                selectedCountries.includes(origin.trim()),
+					selectedCountries.includes(origin.trim()),
 				);
 			const matchesProcess =
 				selectedProcesses.length === 0 ||

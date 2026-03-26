@@ -286,19 +286,17 @@ export default function BeansLog() {
 							</p>
 						</div>
 						<div className="bg-background p-2 border border-primary/20">
-							<p className="text-sm text-foreground py-1">
-								Status: {status}
-							</p>
-								{Object.entries(form).map(([key, value], index) => (
-									<div key={index}>
-										<p className="text-sm text-muted-foreground space-x-4">
-											<span>{key}: </span>
-											<span className="font-mono text-foreground">
-												{Array.isArray(value) ? value.join(", ") : value}
-											</span>
-										</p>
-									</div>
-								))}
+							<p className="text-sm text-foreground py-1">Status: {status}</p>
+							{Object.entries(form).map(([key, value], index) => (
+								<div key={index}>
+									<p className="text-sm text-muted-foreground space-x-4">
+										<span>{key}: </span>
+										<span className="font-mono text-foreground">
+											{Array.isArray(value) ? value.join(", ") : value}
+										</span>
+									</p>
+								</div>
+							))}
 						</div>
 					</div>
 				</aside>
