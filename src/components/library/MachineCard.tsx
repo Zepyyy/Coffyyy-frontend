@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { deleteMachine } from "@/db/crud/delete";
-import type { Machines } from "@/types/default";
-import Tag from "../tag";
+import type { Machines } from "@/types/MachineTypes";
 import { Separator } from "../ui/separator";
+import Tag from "../ui/tag";
 
 export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);

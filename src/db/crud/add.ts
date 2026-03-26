@@ -1,6 +1,7 @@
-import type { Brews, Machines } from "@/types/default";
-import { db } from "../db";
 import type { Beans } from "@/types/BeanTypes";
+import type { Brews } from "@/types/BrewTypes";
+import type { Machines } from "@/types/MachineTypes";
+import { db } from "../db";
 
 async function addBean(bean: Omit<Beans, "id">) {
 	try {

@@ -1,26 +1,15 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { type ChangeEvent, useMemo, useState } from "react";
-import QuickCard from "@/components/QuickCard";
+import FieldLabel from "@/components/log/FieldLabel";
+import MultiChips from "@/components/log/MultiChips";
+import OptionChips from "@/components/log/OptionChips";
+import QuickCard from "@/components/log/QuickCard";
+import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
 import { db } from "@/db/db";
 import { buildBrewSuggestions } from "@/lib/brewSuggestions";
-import { cn } from "@/lib/utils";
 import type { BeanCardProps } from "@/types/BeanTypes";
-
-export type BrewForm = {
-	bean: string | undefined;
-	overallRating: string;
-	grindSize: string;
-	date: Date;
-	acidity: string;
-	adjustementNeeded: string;
-	aftertaste: string;
-	bitterness: string;
-	mouthfeel: string;
-	strength: string;
-	machine: string | undefined;
-	tasteProfiles: Array<string>;
-};
+import type { BrewForm } from "@/types/BrewTypes";
 
 const INITIAL: BrewForm = {
 	bean: undefined,
@@ -29,7 +18,7 @@ const INITIAL: BrewForm = {
 	grindSize: "",
 	acidity: "",
 	adjustementNeeded: "",
-	aftertaste: "",  
+	aftertaste: "",
 	bitterness: "",
 	mouthfeel: "",
 	strength: "",
@@ -48,148 +37,6 @@ const SAVE_MESSAGES = [
 	"Delicious. Documented. Done.",
 	"Saved! May your next cup be even better.",
 ];
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-	return (
-		<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-			{children}
-		</p>
-	);
-}
-
-function FieldLabel({
-	children,
-	required,
-}: {
-	children: React.ReactNode;
-	required?: boolean;
-}) {
-	return (
-		<label className="text-sm font-medium" htmlFor={children as string}>
-			{children}
-			{required && (
-				<span className="ml-1 text-xs text-muted-foreground font-normal">
-					required
-				</span>
-			)}
-		</label>
-	);
-}
-
-function OptionChips({
-	options,
-	value,
-	onChange,
-}: {
-	options: string[];
-	value: string | undefined;
-	onChange: (v: string) => void;
-}) {
-	return (
-		<div className="flex flex-wrap gap-1.5">
-			{options === undefined && <p>There's nothing here...</p>}
-			{options.map((opt) => (
-				<button
-					key={opt}
-					type="button"
-					onClick={() => onChange(value === opt ? "" : opt)}
-					className={cn(
-						"px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-						value === opt
-							? "bg-foreground text-background"
-							: "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-					)}
-				>
-					{opt}
-				</button>
-			))}
-		</div>
-	);
-}
-
-function MultiChips({
-	suggestions,
-	selected,
-	onToggle,
-	customInput,
-	onCustomChange,
-	onCustomAdd,
-	placeholder,
-}: {
-	suggestions: string[];
-	selected: string[];
-	onToggle: (v: string) => void;
-	customInput: string;
-	onCustomChange: (v: string) => void;
-	onCustomAdd: () => void;
-	placeholder: string;
-}) {
-	return (
-		<div className="space-y-2">
-			{suggestions.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{suggestions.map((s) => (
-						<button
-							key={s}
-							type="button"
-							onClick={() => onToggle(s)}
-							className={cn(
-								"px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-								selected.includes(s)
-									? "bg-foreground text-background"
-									: "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-							)}
-						>
-							{s}
-						</button>
-					))}
-				</div>
-			)}
-			<div className="flex gap-2">
-				<input
-					className="h-10 flex-1 rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-					placeholder={placeholder}
-					value={customInput}
-					onChange={(e) => onCustomChange(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === ",") {
-							e.preventDefault();
-							onCustomAdd();
-						}
-					}}
-				/>
-				{customInput.trim() && (
-					<button
-						type="button"
-						onClick={onCustomAdd}
-						className="px-3 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-					>
-						Add
-					</button>
-				)}
-			</div>
-			{selected.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{selected.map((s) => (
-						<span
-							key={s}
-							className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
-						>
-							{s}
-							<button
-								type="button"
-								onClick={() => onToggle(s)}
-								className="opacity-60 hover:opacity-100 leading-none"
-							>
-								×
-							</button>
-						</span>
-					))}
-				</div>
-			)}
-		</div>
-	);
-}
 
 export default function BrewLog() {
 	const [form, setForm] = useState<BrewForm>(INITIAL);
@@ -389,7 +236,7 @@ export default function BrewLog() {
 										<FieldLabel>Process</FieldLabel>
 										<OptionChips
 											options={suggestions.machine.map((m) => m)}
-											value={form.machine}
+											value={form.machine ?? ""}
 											onChange={(v) => setField("machine", v)}
 										/>
 									</div>

@@ -1,13 +1,4 @@
-import type { Machines } from "@/types/default";
-
-export type MachineSuggestions = {
-	names: Array<string>;
-	brands: Array<string>;
-	models: Array<string>;
-	types: Array<string>;
-	grindRanges: Array<string>;
-	capacities: Array<string>;
-};
+import type { MachineSuggestions, Machines } from "@/types/MachineTypes";
 
 function uniqueSorted(values: Array<string>) {
 	return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort(

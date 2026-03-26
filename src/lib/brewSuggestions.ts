@@ -1,19 +1,5 @@
 import type { BeanCardProps } from "@/types/BeanTypes";
-import type { Brews } from "@/types/default";
-
-export type BrewSuggestions = {
-	bean: Array<BeanCardProps>;
-	grindSize: Array<string>;
-	overallRating: Array<string>;
-	adjustementNeeded: Array<string>;
-	aftertaste: Array<string>;
-	acidity: Array<string>;
-	bitterness: Array<string>;
-	mouthfeel: Array<string>;
-	strength: Array<string>;
-	machine: Array<string>;
-	tasteProfiles: Array<string>;
-};
+import type { BrewSuggestions, Brews } from "@/types/BrewTypes";
 
 function rankByUsage(values: Array<string>): Array<string> {
 	const counts = new Map<string, { label: string; count: number }>();

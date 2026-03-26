@@ -2,11 +2,11 @@ import { useState } from "react";
 import { getRandomBean, getRandomMachine } from "@/db/crud/add";
 import { db } from "@/db/db";
 import { cn } from "@/lib/utils";
-import type { Brews as BrewType } from "@/types/default";
+import type { Brews } from "@/types/BrewTypes";
 
 const colorSwatch: Partial<
 	Record<
-		BrewType["overallRating"],
+		Brews["overallRating"],
 		{
 			bgColor: string;
 			textColor: string;
@@ -51,9 +51,9 @@ const RATING_COLORS: Record<string, string> = {
 		"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
 };
 
-type EditForm = Omit<BrewType, "id">;
+type EditForm = Omit<Brews, "id">;
 
-async function toEditForm(brew: BrewType): Promise<EditForm> {
+async function toEditForm(brew: Brews): Promise<EditForm> {
 	const randomBean = await getRandomBean();
 	const randomMachine = await getRandomMachine();
 	return {
@@ -87,7 +87,7 @@ export function BrewCard({
 	brew,
 	onDelete,
 }: {
-	brew: BrewType;
+	brew: Brews;
 	onDelete: (id: number) => Promise<void>;
 }) {
 	const [editing, setEditing] = useState(false);

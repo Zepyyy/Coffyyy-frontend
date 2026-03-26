@@ -36,10 +36,6 @@ export default function History() {
 
 	const pageCount = Math.max(1, Math.ceil(sourceBrews.length / PAGE_SIZE));
 
-	// useEffect(() => {
-	// 	if (page > pageCount) setPage(pageCount);
-	// }, [page, pageCount]);
-
 	const pageStart = (page - 1) * PAGE_SIZE;
 	const pageItems = sourceBrews.slice(pageStart, pageStart + PAGE_SIZE);
 

@@ -1,24 +1,14 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { type ChangeEvent, useMemo, useState } from "react";
-import { Separator } from "@/components/ui/separator";
+import FieldLabel from "@/components/log/FieldLabel";
+import MultiChips from "@/components/log/MultiChips";
+import OptionChips from "@/components/log/OptionChips";
+import SectionTitle from "@/components/log/SectionTitle";
 import { addBean } from "@/db/crud/add";
 import { db } from "@/db/db";
 import { buildBeanSuggestions } from "@/lib/beanSuggestions";
-import { cn, colorSwatch } from "@/lib/utils";
-
-type BeanForm = {
-	name: string;
-	brand: string;
-	roastLevel: string;
-	process: string[];
-	botanic: string;
-	designation: string;
-	origin: string[];
-	variety: string[];
-	dominantNote: string;
-	flavors: string[];
-	tastingNotes: string[];
-};
+import { cn } from "@/lib/utils";
+import type { BeanForm } from "@/types/BeanTypes";
 
 const INITIAL: BeanForm = {
 	name: "",
@@ -45,138 +35,6 @@ const SAVE_MESSAGES = [
 ];
 
 const ROAST_LEVELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-	return (
-		<p className="text-sm font-semibold font-Mono uppercase tracking-widest text-muted-foreground mb-4">
-			{children}
-			<Separator className="w-auto bg-primary " />
-		</p>
-	);
-}
-
-function FieldLabel({
-	children,
-	required,
-}: {
-	children: React.ReactNode;
-	required?: boolean;
-}) {
-	return (
-		<label
-			className="font-Lora text-lg font-medium"
-			htmlFor={children as string}
-		>
-			{children}
-			{required && (
-				<span className="ml-1 text-xs text-muted-foreground font-normal">
-					required
-				</span>
-			)}
-		</label>
-	);
-}
-
-function OptionChips({
-	options,
-	value,
-	onChange,
-}: {
-	options: string[];
-	value: string;
-	onChange: (v: string) => void;
-}) {
-	return (
-		<div className="flex flex-wrap gap-1.5">
-			{options.map((opt) => (
-				<button
-					key={opt}
-					type="button"
-					onClick={() => onChange(value === opt ? "" : opt)}
-					className={cn(
-						"border px-3 py-1.5 font-Recursive text-sm transition-all",
-						value === opt
-							? "border-primary bg-primary text-primary-foreground"
-							: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-					)}
-				>
-					{opt}
-				</button>
-			))}
-		</div>
-	);
-}
-
-function MultiChips({
-	suggestions,
-	selected,
-	onToggle,
-	customInput,
-	onCustomChange,
-	onCustomAdd,
-	placeholder,
-}: {
-	suggestions: string[];
-	selected: string[];
-	onToggle: (v: string) => void;
-	customInput: string;
-	onCustomChange: (v: string) => void;
-	onCustomAdd: () => void;
-	placeholder: string;
-}) {
-	const allChips = [
-		...suggestions,
-		...selected.filter((s) => !suggestions.includes(s)),
-	];
-
-	return (
-		<div className="space-y-2">
-			{allChips.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{allChips.map((s) => (
-						<button
-							key={s}
-							type="button"
-							onClick={() => onToggle(s)}
-							className={cn(
-								"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors",
-								selected.includes(s)
-									? "border-primary/30 bg-primary/5 text-primary-800 dark:text-primary-200"
-									: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-							)}
-						>
-							{s}
-							{selected.includes(s) ? <span>×</span> : <span>+</span>}
-						</button>
-					))}
-				</div>
-			)}
-			<div className="flex gap-2">
-				<input
-					className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
-					placeholder={placeholder}
-					value={customInput}
-					onChange={(e) => onCustomChange(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === ",") {
-							e.preventDefault();
-							onCustomAdd();
-						}
-					}}
-				/>
-				{customInput.trim() && (
-					<button
-						type="button"
-						onClick={onCustomAdd}
-						className="px-3 rounded-lg bg-muted text-sm font-medium hover:bg-muted/70 transition-colors"
-					>
-						Add
-					</button>
-				)}
-			</div>
-		</div>
-	);
-}
 
 export default function BeansLog() {
 	const [form, setForm] = useState<BeanForm>(INITIAL);
@@ -431,6 +289,7 @@ export default function BeansLog() {
 										options={suggestions.botanics}
 										value={form.botanic}
 										onChange={(v) => setField("botanic", v)}
+										unknown="?"
 									/>
 								</div>
 								<div className="space-y-1.5">
@@ -439,6 +298,7 @@ export default function BeansLog() {
 										options={suggestions.designations}
 										value={form.designation}
 										onChange={(v) => setField("designation", v)}
+										unknown="?"
 									/>
 								</div>
 							</div>
@@ -467,21 +327,12 @@ export default function BeansLog() {
 
 							<div className="space-y-1.5">
 								<FieldLabel>Dominant note</FieldLabel>
-								<div className="flex flex-wrap gap-1.5 mb-1.5">
-									{suggestions.dominantNotes.map((note) => (
-										<button
-											key={note}
-											type="button"
-											onClick={() => setField("dominantNote", note)}
-											className={`flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-all ${form.dominantNote === note ? "border-primary bg-primary/5 text-foreground" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"}`}
-										>
-											<span
-												className={`w-2 h-2 rounded-full ${colorSwatch[note]?.secondaryBgColor}`}
-											/>
-											{note}
-										</button>
-									))}
-								</div>
+								<OptionChips
+									options={suggestions.dominantNotes}
+									value={form.dominantNote}
+									onChange={(v) => setField("dominantNote", v)}
+									withDot
+								/>
 							</div>
 
 							<div className="space-y-1.5">

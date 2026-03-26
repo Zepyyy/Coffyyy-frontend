@@ -1,17 +1,4 @@
-import type { Beans } from "@/types/BeanTypes";
-
-export type BeanSuggestions = {
-	names: Array<string>;
-	processes: Array<string>;
-	botanics: Array<string>;
-	designations: Array<string>;
-	brands: Array<string>;
-	origins: Array<string>;
-	varieties: Array<string>;
-	dominantNotes: Array<Beans["dominantNote"]>;
-	flavors: Array<string>;
-	tastingNotes: Array<string>;
-};
+import type { BeanSuggestions, Beans } from "@/types/BeanTypes";
 
 function rankByUsage(values: Array<string>): Array<string> {
 	const counts = new Map<string, { label: string; count: number }>();
