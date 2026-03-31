@@ -254,7 +254,7 @@ export default function BrewLog() {
 								</div>
 
 								<div className="space-y-1.5">
-									<FieldLabel>Process</FieldLabel>
+									<FieldLabel>Machine</FieldLabel>
 									<OptionChips
 										options={suggestions.machine.map((m) => m)}
 										value={form.machine ?? ""}
