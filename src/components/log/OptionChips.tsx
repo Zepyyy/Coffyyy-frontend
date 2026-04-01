@@ -30,7 +30,7 @@ export default function OptionChips({
 						type="button"
 						onClick={() => onChange(value === opt ? "" : opt)}
 						className={cn(
-							"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-all",
+							"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors",
 							opt === unknown
 								? value === opt
 									? "border-primary bg-primary/5 text-primary-900 dark:text-primary-200 border-dashed"

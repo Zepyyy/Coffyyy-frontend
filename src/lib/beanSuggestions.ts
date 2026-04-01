@@ -44,6 +44,7 @@ export function buildBeanSuggestions(beans: Array<Beans>): BeanSuggestions {
 	const flavors: Array<string> = [];
 	const tastingNotes: Array<string> = [];
 
+	// Add values from alreadu registered beans
 	for (const bean of beans) {
 		if (bean.name) names.push(bean.name);
 		if (bean.brand) brands.push(bean.brand);

@@ -1,6 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo, useState } from "react";
-import { BrewCard } from "@/components/history/BrewCard";
 import { Button } from "@/components/ui/button";
 import { addRandomBrew } from "@/db/crud/add";
 import { db } from "@/db/db";
@@ -30,18 +29,7 @@ export default function History() {
 		// .filter((v): v is string => Boolean(v)),
 	).size;
 	const topRating = getTopValue(sourceBrews.map((b) => b.overallRating));
-	const topProfile = getTopValue(
-		sourceBrews.flatMap((b) => b.tasteProfiles ?? []),
-	);
-
 	const pageCount = Math.max(1, Math.ceil(sourceBrews.length / PAGE_SIZE));
-
-	const pageStart = (page - 1) * PAGE_SIZE;
-	const pageItems = sourceBrews.slice(pageStart, pageStart + PAGE_SIZE);
-
-	async function deleteBrew(id: number) {
-		await db.Brews.delete(id);
-	}
 
 	return (
 		<div className="mx-auto w-full max-w-7xl">
@@ -63,7 +51,6 @@ export default function History() {
 								{ label: "Total brews", value: String(totalBrews) },
 								{ label: "Unique beans", value: String(uniqueBeans) },
 								{ label: "Top rating", value: topRating },
-								{ label: "Top profile", value: topProfile },
 							].map(({ label, value }) => (
 								<div
 									key={label}
@@ -139,23 +126,6 @@ export default function History() {
 							</button>
 						)}*/}
 					</div>
-
-					{/* List */}
-					{pageItems.length === 0 ? (
-						<div className="rounded-xl border border-dashed border-border p-8 text-center">
-							<p className="text-muted-foreground text-sm">
-								{totalBrews === 0
-									? "☕ Nothing logged yet. Go brew something!"
-									: "No brews match your filters."}
-							</p>
-						</div>
-					) : (
-						<div className="space-y-2">
-							{pageItems.map((brew) => (
-								<BrewCard key={brew.id} brew={brew} onDelete={deleteBrew} />
-							))}
-						</div>
-					)}
 
 					{/* Pagination */}
 					{pageCount > 1 && (

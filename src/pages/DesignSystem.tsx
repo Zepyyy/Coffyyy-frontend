@@ -16,6 +16,7 @@ import Header from "@/components/Header";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
+import Dial from "@/components/log/Dial";
 import QuickCard from "@/components/log/QuickCard";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -292,7 +293,17 @@ export default function DesignSystem() {
 					<SubSection label="Buttons">
 						<div className="flex flex-wrap items-center gap-2">
 							<Button>Default</Button>
+							<Button variant="option" size="xs">
+								Option
+							</Button>
+							<Button variant="chips" size="sm">
+								Chips
+							</Button>
+							<Button variant="steps" size="md">
+								Steps
+							</Button>
 							<Button variant="outline">Outline</Button>
+
 							<Button variant="secondary">Secondary</Button>
 							<Button variant="ghost">Ghost</Button>
 							<Button variant="add">Add</Button>
@@ -306,6 +317,7 @@ export default function DesignSystem() {
 							<Tag variant="default" text="Default" />
 							<Tag variant="light" text="Light" />
 							<Tag variant="green" text="Green" />
+							<Tag variant="teal" text="Teal" />
 							<Tag variant="yellow" text="Yellow" />
 							<Tag variant="blue" text="Blue" />
 							<Tag variant="red" text="Red" />
@@ -517,9 +529,9 @@ export default function DesignSystem() {
 										{label}
 									</span>
 									<div className="flex gap-1">
-										{Array.from({ length: 10 }).map((_, i) => (
+										{Array.from({ length: 10 }).map((value, i) => (
 											<div
-												key={`${label} - ${score} - ${i + 1}`}
+												key={`${label} - ${score} - ${value}`}
 												className={`size-2 rounded-full ${i < score ? "bg-primary" : "bg-muted"}`}
 											/>
 										))}
@@ -687,9 +699,9 @@ export default function DesignSystem() {
 											{label}
 										</p>
 										<div className="flex gap-0.5">
-											{Array.from({ length: 5 }).map((_, i) => (
+											{Array.from({ length: 5 }).map((value, i) => (
 												<div
-													key={`${label} - ${i + 1}`}
+													key={`${label} - ${value}`}
 													className={`h-1 flex-1 rounded-full ${i < Math.round(val / 2) ? "bg-primary/70" : "bg-muted"}`}
 												/>
 											))}
@@ -726,9 +738,9 @@ export default function DesignSystem() {
 							<div className="w-44 shrink-0 border-r border-dashed border-border bg-primary-700/5 p-3">
 								<div className="mb-2 h-4 w-16 rounded bg-primary/20" />
 								<div className="space-y-2">
-									{Array.from({ length: 4 }).map((_, i) => (
+									{Array.from({ length: 4 }).map((value) => (
 										<div
-											key={`split-panel-${i + 1}`}
+											key={`split-panel-${value}`}
 											className="h-5 rounded bg-primary/10"
 										/>
 									))}
@@ -736,9 +748,9 @@ export default function DesignSystem() {
 							</div>
 							<div className="flex-1 p-3">
 								<div className="grid h-full grid-cols-3 gap-2 content-start">
-									{Array.from({ length: 6 }).map((_, i) => (
+									{Array.from({ length: 6 }).map((value) => (
 										<div
-											key={`masonry-${i + 1}`}
+											key={`masonry-${value}`}
 											className="h-14 rounded-lg bg-muted/40"
 										/>
 									))}
@@ -1040,7 +1052,14 @@ export default function DesignSystem() {
 							A circular dial UI for dialing in espresso — ratio, time, and
 							grind all in one view.
 						</p>
-						<div className="flex items-center justify-center py-2">
+						<div className="flex items-center justify-center gap-1.5">
+							<Dial
+								min={12}
+								max={24}
+								helpers={false}
+								value={18}
+								onChange={(value) => console.log(value)}
+							/>
 							<div className="relative size-24">
 								<div className="size-24 rounded-full border-4 border-primary/20" />
 								<div className="absolute inset-3 rounded-full border-4 border-dashed border-primary/40" />

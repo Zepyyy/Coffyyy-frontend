@@ -18,6 +18,12 @@ export const buttonVariants = cva(
 				transparent:
 					"text-foreground border-none shadow-none inset-shadow-none active:shadow-none active:inset-shadow-none",
 				add: "border border-dashed border-primary/30 bg-primary/5 text-primary-800/80 dark:text-primary-200/80 hover:bg-primary/10 dark:hover:bg-primary/10",
+				option:
+					"border font-Recursive text-sm transition-all border-border bg-background text-muted-foreground hover:border-primary/60 hover:dark:border-primary/40 hover:text-foreground",
+				chips:
+					"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+				steps:
+					"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50",
 			},
 			size: {
 				default: "px-4 py-2 has-[>svg]:px-3 rounded-sm",

@@ -11,6 +11,7 @@ export const tagVariants = cva(
 					"bg-tag-yellow-900 border-tag-yellow-100 shadow-xs hover:bg-tag-yellow-900/50 text-tag-yellow-100",
 				blue: "bg-tag-blue-900 border-tag-blue-100 shadow-xs hover:bg-tag-blue-900/50 text-tag-blue-100",
 				red: "bg-tag-red-900 border-tag-red-100 shadow-xs hover:bg-tag-red-900/50 text-tag-red-100",
+				teal: "bg-tag-teal-900 border-tag-teal-100 shadow-xs hover:bg-tag-teal-900/50 text-tag-teal-100",
 				purple:
 					"bg-tag-purple-900 border-tag-purple-100 shadow-xs hover:bg-tag-purple-900/50 text-tag-purple-100",
 				orange:

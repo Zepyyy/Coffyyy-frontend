@@ -145,13 +145,8 @@ async function addRandomBrew() {
 	try {
 		return await db.Brews.bulkAdd([
 			{
-				acidity: SelectRandom([
-					"⚡ Too sharp/sour",
-					"🍋 Bright/Lively",
-					"😊 Balanced",
-					"😴 Flat/Dull",
-				]),
 				bean: await getRandomBean(),
+				date: new Date(),
 				overallRating: SelectRandom([
 					"Excellent",
 					"Good",
@@ -160,38 +155,24 @@ async function addRandomBrew() {
 					"Burnt🔥",
 				]),
 				grindSize: SelectRandom(["fine", "medium", "coarse"]),
-				date: new Date(),
-				adjustementNeeded: SelectRandom([
-					"Keep this setting 👍",
-					"Grind finer next time ⬇️",
-					"Grind coarser next time ⬆️",
-					"Try different machine 🔄",
-					"Fuck this bean ‼️",
+				beanWeight: SelectRandom([
+					10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 				]),
-				aftertaste: SelectRandom([
-					"✨ Amazing - lingering sweetness",
-					"👍 Pleasant",
-					"😐 Neutral",
-					"👎 Unpleasant/harsh",
+				espressoWeight: SelectRandom([
+					1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 				]),
-				bitterness: SelectRandom([
-					"👍 Barely noticeable",
-					"🍫 Pleasant bitter",
-					"😐 Neutral",
-					"👎 Unpleasant/harsh",
+				flow: SelectRandom(["even", "uneven"]),
+				extractionTime: SelectRandom([
+					"30s",
+					"40s",
+					"50s",
+					"60s",
+					"70s",
+					"80s",
+					"90s",
+					"100s",
 				]),
-				mouthfeel: SelectRandom([
-					"✨ Amazing - lingering sweetness",
-					"👍 Pleasant",
-					"😐 Neutral",
-					"👎 Unpleasant/harsh",
-				]),
-				strength: SelectRandom(["‼️ Too strong", "🍃 Just right", "💧Too weak"]),
 				machine: await getRandomMachine(),
-				tasteProfiles: SelectMultiple(
-					["TasteOPfi", "AHAH", "LOUP", "OKOK", "Pofil", "LimePfo"],
-					2,
-				),
 			} as Omit<Brews, "id">,
 		]);
 	} catch (error) {

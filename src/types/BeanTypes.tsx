@@ -28,6 +28,8 @@ export type BeanCardProps = {
 	origin: string[];
 	dominantNote: Beans["dominantNote"];
 	selected: boolean;
+	process?: string[];
+	roastLevel?: number;
 };
 
 export type MultiTagInputProps = {
