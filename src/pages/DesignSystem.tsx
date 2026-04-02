@@ -617,17 +617,9 @@ export default function DesignSystem() {
 			>
 				<div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
 					<LogCard
-						frontContent={["QSD", "okoko", "AHAH"]}
-						backContent={["zzzz", "euh", "ah c le back"]}
+						frontContent={[{ title: "title", value: "value" }]}
+						backContent={[{ title: "title", value: "value" }]}
 						className="bg-red-200"
-					/>
-					<LogCard
-						frontContent={["QSD", "okoko", "AHAH"]}
-						backContent={["zzzz", "euh", "ah c le back"]}
-					/>
-					<LogCard
-						frontContent={["QSD", "okoko", "AHAH"]}
-						backContent={["zzzz", "euh", "ah c le back"]}
 					/>
 				</div>
 			</Section>
