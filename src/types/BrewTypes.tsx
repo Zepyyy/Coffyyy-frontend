@@ -7,7 +7,7 @@ export type Brews = {
 	espressoWeight: number;
 	extractionTime: string | undefined;
 	flow: string | undefined;
-	overallRating: string;
+	overallRating: number;
 	grindSize: string;
 	date: Date;
 	machine: string | undefined;
@@ -19,7 +19,7 @@ export type BrewForm = {
 	espressoWeight: number;
 	extractionTime: string;
 	flow: string;
-	overallRating: string;
+	overallRating: "Excellent" | "Good" | "Mid" | "Horrible" | "Burnt" | "";
 	grindSize: string;
 	date: Date;
 	machine: string;
@@ -27,11 +27,5 @@ export type BrewForm = {
 
 export type BrewSuggestions = {
 	bean: Array<BeanCardProps>;
-	grindSize: Array<string>;
-	beanWeight: Array<number>;
-	espressoWeight: Array<number>;
-	extractionTime: Array<string>;
-	flow: Array<string>;
-	overallRating: Array<string>;
 	machine: Array<string>;
 };

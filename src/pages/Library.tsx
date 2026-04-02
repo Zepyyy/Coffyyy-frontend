@@ -1,4 +1,3 @@
-import { useLiveQuery } from "dexie-react-hooks";
 import { Coffee } from "lucide-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -7,9 +6,18 @@ import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
 import { Button } from "@/components/ui/button";
 import { addRandomBean, addRandomMachine } from "@/db/crud/add";
-import { db } from "@/db/db";
+import {
+	useGetAllBeans,
+	useGetBeanCount,
+	useGetBeanFilters,
+} from "@/hooks/api/useBeans";
+import {
+	useGetAllMachines,
+	useGetMachineCount,
+	useGetMachineFilters,
+} from "@/hooks/api/useMachines";
 import { cn } from "@/lib/utils";
-import type { Beans } from "@/types/BeanTypes";
+import type { BeanFilters } from "@/types/BeanTypes";
 
 type Tab = "beans" | "machines";
 
@@ -21,60 +29,55 @@ export default function Library() {
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
-	const beans = useLiveQuery(() => db.Beans.toArray(), []);
-	const machines = useLiveQuery(() => db.Machines.toArray(), []);
+	const beanFilters = useGetBeanFilters();
+	const machineFilters = useGetMachineFilters();
+	const beansCount = useGetBeanCount();
+	const machinesCount = useGetMachineCount();
+	const allBeans = useGetAllBeans();
+	const allMachines = useGetAllMachines();
 
-	const sortedBeans = useMemo(
-		() => [...(beans ?? [])].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)),
-		[beans],
-	);
-	const sortedMachines = useMemo(
-		() => [...(machines ?? [])].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)),
-		[machines],
-	);
-
-	const countryCounts = useMemo(() => {
+	const originCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const bean of sortedBeans) {
-			for (const country of bean.origin ?? []) {
-				const trimmed = country.trim();
+		for (const bean of beanFilters) {
+			for (const origin of bean.origin ?? []) {
+				const trimmed = origin.trim();
 				if (!trimmed) continue;
 				counts.set(trimmed, (counts.get(trimmed) ?? 0) + 1);
 			}
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [sortedBeans]);
+	}, [beanFilters]);
 
 	const processCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const bean of sortedBeans as Beans[]) {
+		for (const bean of beanFilters) {
 			for (const process of bean.process ?? []) {
 				if (!process || process === "?") continue;
 				counts.set(process, (counts.get(process) ?? 0) + 1);
 			}
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [sortedBeans]);
+	}, [beanFilters]);
 
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of sortedMachines) {
+		for (const machine of machineFilters) {
 			const type = machine.type?.trim();
 			if (!type) continue;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [sortedMachines]);
+	}, [machineFilters]);
 
 	const brandCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of sortedMachines) {
+		for (const machine of machineFilters) {
 			const brand = machine.brand?.trim();
 			if (!brand) continue;
 			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [sortedMachines]);
+	}, [machineFilters]);
 
 	const toggleSelection = (
 		value: string,
@@ -89,19 +92,10 @@ export default function Library() {
 
 	const filteredBeans = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return sortedBeans.filter((b: Beans) => {
+		return beanFilters.filter((b: BeanFilters) => {
 			const matchesSearch =
 				!q ||
-				[
-					b.name,
-					b.brand,
-					...(b.origin ?? []),
-					...(b.flavors ?? []),
-					...(b.tastingNotes ?? []),
-					...(b.variety ?? []),
-					b.dominantNote,
-					b.process,
-				]
+				[...(b.origin ?? []), b.dominantNote, b.process]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
@@ -118,11 +112,11 @@ export default function Library() {
 				);
 			return matchesSearch && matchesCountry && matchesProcess;
 		});
-	}, [search, selectedCountries, selectedProcesses, sortedBeans]);
+	}, [search, selectedCountries, selectedProcesses, beanFilters]);
 
 	const filteredMachines = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return sortedMachines.filter((m) => {
+		return machineFilters.filter((m) => {
 			const matchesSearch =
 				!q ||
 				[m.name, m.brand, m.model, m.type]
@@ -138,16 +132,16 @@ export default function Library() {
 				(m.brand != null && selectedBrands.includes(m.brand.trim()));
 			return matchesSearch && matchesType && matchesBrand;
 		});
-	}, [search, selectedBrands, selectedTypes, sortedMachines]);
+	}, [search, selectedBrands, selectedTypes, machineFilters]);
 
 	const beanCountryOptions = useMemo(
 		() =>
-			countryCounts.map(([label, count]) => ({
+			originCounts.map(([label, count]) => ({
 				label,
 				count,
 				active: selectedCountries.includes(label),
 			})),
-		[countryCounts, selectedCountries],
+		[originCounts, selectedCountries],
 	);
 
 	const beanProcessOptions = useMemo(
@@ -208,8 +202,8 @@ export default function Library() {
 									)}
 								>
 									{t === "beans"
-										? `Beans${sortedBeans.length > 0 ? ` (${sortedBeans.length})` : ""}`
-										: `Machines${sortedMachines.length > 0 ? ` (${sortedMachines.length})` : ""}`}
+										? `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`
+										: `Machines${machinesCount > 0 ? ` (${machinesCount})` : ""}`}
 								</button>
 							))}
 						</div>
@@ -275,7 +269,7 @@ export default function Library() {
 						<div>
 							{filteredBeans.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border p-2 text-center">
-									{sortedBeans.length === 0 ? (
+									{allBeans.length === 0 ? (
 										<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
 											<div className="flex size-12 items-center justify-center rounded-full bg-muted">
 												<Coffee className="size-6 text-muted-foreground" />
@@ -303,7 +297,7 @@ export default function Library() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-									{filteredBeans.map((bean) => (
+									{allBeans.map((bean) => (
 										<BeanCard
 											key={bean.id ?? `${bean.name}-${bean.brand}`}
 											bean={bean}
@@ -319,11 +313,11 @@ export default function Library() {
 							{filteredMachines.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border p-8 text-center">
 									<p className="text-sm text-muted-foreground">
-										{sortedMachines.length === 0
+										{allMachines.length === 0
 											? "No equipment yet."
 											: "No machines match your search."}
 									</p>
-									{sortedMachines.length === 0 && (
+									{allMachines.length === 0 && (
 										<Link
 											to="/log/machine"
 											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
@@ -334,7 +328,7 @@ export default function Library() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-									{filteredMachines.map((machine) => (
+									{allMachines.map((machine) => (
 										<MachineCard
 											key={machine.id ?? `${machine.name}-${machine.model}`}
 											machine={machine}

@@ -73,3 +73,15 @@ export const colorSwatch: Record<Note, Swatch> = {
 		border: "border border-tag-yellow-500",
 	},
 };
+
+export function SelectRandom<T>(arr: T[]): T {
+	return arr[Math.floor(Math.random() * arr.length)];
+}
+
+export function SelectMultiple<T>(arr: T[], count: number): T[] {
+	const result: T[] = [];
+	for (let i = 0; i < count; i++) {
+		result.push(SelectRandom(arr));
+	}
+	return result;
+}

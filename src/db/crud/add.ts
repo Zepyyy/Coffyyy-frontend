@@ -1,7 +1,9 @@
+import { SelectMultiple, SelectRandom } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
 import { db } from "../db";
+import { getRandomBean, getRandomMachine } from "./get";
 
 async function addBean(bean: Omit<Beans, "id">) {
 	try {
@@ -15,30 +17,6 @@ async function addBean(bean: Omit<Beans, "id">) {
 	} catch (error) {
 		return error;
 	}
-}
-
-export async function getRandomBean(): Promise<Beans["name"] | undefined> {
-	const beans = await db.Beans.toArray();
-	return SelectRandom(beans.map((bean) => bean.name));
-}
-
-export async function getRandomMachine(): Promise<
-	Machines["name"] | undefined
-> {
-	const machines = await db.Machines.toArray();
-	return SelectRandom(machines.map((machine) => machine.name));
-}
-
-function SelectRandom<T>(arr: T[]): T {
-	return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function SelectMultiple<T>(arr: T[], count: number): T[] {
-	const result: T[] = [];
-	for (let i = 0; i < count; i++) {
-		result.push(SelectRandom(arr));
-	}
-	return result;
 }
 
 async function addRandomBean() {
@@ -147,13 +125,7 @@ async function addRandomBrew() {
 			{
 				bean: await getRandomBean(),
 				date: new Date(),
-				overallRating: SelectRandom([
-					"Excellent",
-					"Good",
-					"Mid",
-					"Horrible",
-					"Burnt🔥",
-				]),
+				overallRating: SelectRandom([1, 2, 3, 4, 5]),
 				grindSize: SelectRandom(["fine", "medium", "coarse"]),
 				beanWeight: SelectRandom([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]),
 				espressoWeight: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),

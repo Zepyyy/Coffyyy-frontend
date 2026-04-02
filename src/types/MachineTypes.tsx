@@ -20,10 +20,18 @@ export type MachineForm = {
 };
 
 export type MachineSuggestions = {
-	names: Array<string>;
 	brands: Array<string>;
 	models: Array<string>;
 	types: Array<string>;
 	grindRanges: Array<string>;
 	capacities: Array<string>;
+};
+
+export type MachineFilters = {
+	name: string;
+	brand: string;
+	model: string;
+	type: string;
+	grindRange: string;
+	capacity: string;
 };

@@ -1,13 +1,16 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { type ChangeEvent, useMemo, useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import { addBean } from "@/db/crud/add";
-import { db } from "@/db/db";
-import { buildBeanSuggestions } from "@/lib/beanSuggestions";
+import { useGetBeanSuggestions } from "@/hooks/api/useBeans";
+import {
+	DEFAULT_BOTANICS,
+	DEFAULT_DESIGNATIONS,
+	DEFAULT_DOMINANT_NOTES,
+} from "@/lib/defaults";
 import { validateRequiredFields } from "@/lib/formValidation";
 import { cn } from "@/lib/utils";
 import type { BeanForm } from "@/types/BeanTypes";
@@ -60,8 +63,7 @@ export default function BeansLog() {
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	const beans = useLiveQuery(() => db.Beans.toArray(), []);
-	const suggestions = useMemo(() => buildBeanSuggestions(beans ?? []), [beans]);
+	const suggestions = useGetBeanSuggestions();
 
 	function clearFieldError(field: keyof BeanForm) {
 		setFieldErrors((prev) => {
@@ -322,7 +324,7 @@ export default function BeansLog() {
 								<div className="space-y-1.5">
 									<FieldLabel>Botanic</FieldLabel>
 									<OptionChips
-										options={suggestions.botanics}
+										options={DEFAULT_BOTANICS}
 										value={form.botanic}
 										onChange={(v) => setField("botanic", v)}
 										unknown="?"
@@ -331,7 +333,7 @@ export default function BeansLog() {
 								<div className="space-y-1.5">
 									<FieldLabel>Designation</FieldLabel>
 									<OptionChips
-										options={suggestions.designations}
+										options={DEFAULT_DESIGNATIONS}
 										value={form.designation}
 										onChange={(v) => setField("designation", v)}
 										unknown="?"
@@ -364,7 +366,7 @@ export default function BeansLog() {
 							<div className="space-y-1.5">
 								<FieldLabel required>Dominant note</FieldLabel>
 								<OptionChips
-									options={suggestions.dominantNotes}
+									options={DEFAULT_DOMINANT_NOTES}
 									value={form.dominantNote}
 									onChange={(v) => setField("dominantNote", v)}
 									withDot

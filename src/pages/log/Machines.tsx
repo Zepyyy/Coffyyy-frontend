@@ -1,12 +1,10 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { type ChangeEvent, useMemo, useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import { addMachine } from "@/db/crud/add";
-import { db } from "@/db/db";
+import { useGetMachineSuggestions } from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
-import { buildMachineSuggestions } from "@/lib/machineSuggestions";
 import type { MachineForm } from "@/types/MachineTypes";
 
 const INITIAL: MachineForm = {
@@ -42,6 +40,7 @@ export default function MachinesLog() {
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
+	const suggestions = useGetMachineSuggestions();
 
 	const [customBrand, setCustomBrand] = useState("");
 	const [customModel, setCustomModel] = useState("");
@@ -50,12 +49,6 @@ export default function MachinesLog() {
 	const [fieldErrors, setFieldErrors] = useState<
 		Partial<Record<keyof MachineForm, string>>
 	>({});
-
-	const machines = useLiveQuery(() => db.Machines.toArray(), []);
-	const suggestions = useMemo(
-		() => buildMachineSuggestions(machines ?? []),
-		[machines],
-	);
 
 	function setField<K extends keyof MachineForm>(
 		field: K,

@@ -4,9 +4,11 @@ import type { BeanCardProps } from "@/types/BeanTypes";
 
 export default function QuickCard({
 	bean,
+	selected,
 	onClick,
 }: {
 	bean: BeanCardProps;
+	selected?: boolean;
 	onClick?: () => void;
 }) {
 	const swatch = colorSwatch[bean.dominantNote];
@@ -14,7 +16,7 @@ export default function QuickCard({
 		<button
 			type="button"
 			data-slot="toggle"
-			className={`relative overflow-hidden border cursor-pointer transition-colors text-start bg-background ${bean.selected ? " border-primary/40 bg-primary/5 backdrop-blur-xs" : "border-border bg-background hover:border-primary/40"}`}
+			className={`relative overflow-hidden border cursor-pointer transition-colors text-start bg-background ${selected ? " border-primary/40 bg-primary/5 backdrop-blur-xs" : "border-border bg-background hover:border-primary/40"}`}
 			onClick={() => onClick?.()}
 		>
 			<div className={`h-1.5 w-full ${swatch.stripe}`} />
@@ -26,7 +28,7 @@ export default function QuickCard({
 					{bean.origin.join(", ")}
 				</p>
 			</div>
-			{bean.selected && (
+			{selected && (
 				<div className="absolute right-1.5 top-2.5 flex size-4 items-center justify-center rounded-full bg-primary">
 					<Check className="size-2.5 text-primary-foreground" />
 				</div>

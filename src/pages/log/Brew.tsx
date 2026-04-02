@@ -1,5 +1,4 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { type ChangeEvent, useMemo, useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import Dial from "@/components/log/Dial";
 import FieldLabel from "@/components/log/FieldLabel";
 import OptionChips from "@/components/log/OptionChips";
@@ -7,11 +6,10 @@ import QuickCard from "@/components/log/QuickCard";
 import SectionDescription from "@/components/log/SectionDescription";
 import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
-import { db } from "@/db/db";
-import { buildBrewSuggestions } from "@/lib/brewSuggestions";
+import { useGetBrewSuggestions } from "@/hooks/api/useBrews";
+import { DEFAULT_FLOW, DEFAULT_OVERALL_RATING } from "@/lib/defaults";
 import { validateRequiredFields } from "@/lib/formValidation";
 import { cn } from "@/lib/utils";
-import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewForm } from "@/types/BrewTypes";
 
 const INITIAL: BrewForm = {
@@ -127,32 +125,25 @@ export default function BrewLog() {
 		Partial<Record<keyof BrewForm, string>>
 	>({});
 
-	const beanRecords = useLiveQuery(() => db.Beans.toArray(), []);
-	const machineRecords = useLiveQuery(() => db.Machines.toArray(), []);
 	const [step, setStep] = useState(1);
 
-	const suggestions = useMemo(
-		() =>
-			buildBrewSuggestions(
-				beanRecords?.map(
-					(b) =>
-						({
-							name: b.name ?? "",
-							origin: b.origin ?? [],
-							dominantNote: b.dominantNote ?? "",
-							selected: false,
-							process: b.process ?? [],
-							roastLevel: b.roastLevel ?? 0,
-						}) as BeanCardProps,
-				) ?? [],
-				machineRecords?.map((m) => m.name ?? "") ?? [],
-			),
-		[beanRecords, machineRecords],
-	);
+	const suggestions = useGetBrewSuggestions();
 
 	function setField<K extends keyof BrewForm>(field: K, value: BrewForm[K]) {
 		setForm((f) => ({ ...f, [field]: value }));
 	}
+
+	const overallRatingToNumber = (overallRating: BrewForm["overallRating"]) => {
+		const ratingMap: Record<BrewForm["overallRating"], number> = {
+			Excellent: 5,
+			Good: 4,
+			Mid: 3,
+			Horrible: 2,
+			Burnt: 1,
+			"": 0,
+		};
+		return ratingMap[overallRating];
+	};
 
 	async function handleSubmit(e: ChangeEvent) {
 		e.preventDefault();
@@ -171,13 +162,7 @@ export default function BrewLog() {
 				bean: form.bean,
 				date: form.date,
 				beanWeight: form.beanWeight,
-				overallRating: form.overallRating as
-					| "Excellent"
-					| "Good"
-					| "Mid"
-					| "Horrible"
-					| "Burnt🔥"
-					| "default",
+				overallRating: overallRatingToNumber(form.overallRating),
 				grindSize: form.grindSize,
 				machine: form.machine,
 				espressoWeight: form.espressoWeight,
@@ -229,6 +214,8 @@ export default function BrewLog() {
 	const espressoRatio = form.beanWeight
 		? (form.espressoWeight / form.beanWeight).toFixed(1)
 		: null;
+
+	const [selectedBean, setSelectedBean] = useState<string | null>(null);
 	return (
 		<div className="mx-auto w-full">
 			<div className="grid lg:grid-cols-[16rem_minmax(0,1fr)] mx-6">
@@ -291,13 +278,16 @@ export default function BrewLog() {
 												{suggestions.bean.map((beanInfo) => (
 													<QuickCard
 														key={beanInfo.name}
+														selected={selectedBean === beanInfo.name}
 														bean={{
 															name: beanInfo.name,
 															origin: beanInfo.origin,
 															dominantNote: beanInfo.dominantNote,
-															selected: beanInfo.name === form.bean,
 														}}
-														onClick={() => setField("bean", beanInfo.name)}
+														onClick={() => {
+															setField("bean", beanInfo.name);
+															setSelectedBean(beanInfo.name);
+														}}
 													/>
 												))}
 											</div>
@@ -367,7 +357,7 @@ export default function BrewLog() {
 										<div className="space-y-2">
 											<FieldLabel required>Flow</FieldLabel>
 											<OptionChips
-												options={suggestions.flow.map((f) => f)}
+												options={DEFAULT_FLOW}
 												value={form.flow}
 												onChange={(v) => setField("flow", v)}
 											/>
@@ -385,9 +375,14 @@ export default function BrewLog() {
 									<div className="space-y-1.5">
 										<FieldLabel required>Overall rating</FieldLabel>
 										<OptionChips
-											options={suggestions.overallRating}
+											options={DEFAULT_OVERALL_RATING}
 											value={form.overallRating}
-											onChange={(v) => setField("overallRating", v)}
+											onChange={(v) =>
+												setField(
+													"overallRating",
+													v as BrewForm["overallRating"],
+												)
+											}
 											requiredField={fieldErrors.overallRating}
 										/>
 									</div>

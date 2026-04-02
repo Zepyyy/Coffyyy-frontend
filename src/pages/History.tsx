@@ -1,36 +1,9 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { addRandomBrew } from "@/db/crud/add";
-import { db } from "@/db/db";
 
-const PAGE_SIZE = 10;
-
-function getTopValue(values: Array<string | undefined>): string {
-	if (values.length === 0) return "—";
-	const counts = new Map<string, number>();
-	for (const value of values) {
-		const key = value?.trim();
-		if (!key) continue;
-		counts.set(key, (counts.get(key) ?? 0) + 1);
-	}
-	const [winner] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] ?? [];
-	return winner ?? "—";
-}
+// const PAGE_SIZE = 10;
 
 export default function History() {
-	const brews = useLiveQuery(() => db.Brews.toArray(), []);
-	const [page, setPage] = useState(1);
-
-	const sourceBrews = useMemo(() => brews ?? [], [brews]);
-	const totalBrews = sourceBrews.length;
-	const uniqueBeans = new Set(
-		sourceBrews.map((b) => b.bean?.toLowerCase()),
-		// .filter((v): v is string => Boolean(v)),
-	).size;
-	const topRating = getTopValue(sourceBrews.map((b) => b.overallRating));
-	const pageCount = Math.max(1, Math.ceil(sourceBrews.length / PAGE_SIZE));
-
 	return (
 		<div className="mx-auto w-full max-w-7xl">
 			<div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
@@ -48,9 +21,9 @@ export default function History() {
 						{/* Stats summary */}
 						<div className="space-y-4">
 							{[
-								{ label: "Total brews", value: String(totalBrews) },
-								{ label: "Unique beans", value: String(uniqueBeans) },
-								{ label: "Top rating", value: topRating },
+								{ label: "qsdqsd", value: "1" },
+								// { label: "Total brews", value: String(totalBrews) },
+								// { label: "Unique beans", value: String(uniqueBeans) },
 							].map(({ label, value }) => (
 								<div
 									key={label}
@@ -126,34 +99,6 @@ export default function History() {
 							</button>
 						)}*/}
 					</div>
-
-					{/* Pagination */}
-					{pageCount > 1 && (
-						<div className="flex items-center justify-between gap-2">
-							<p className="text-xs text-muted-foreground">
-								{sourceBrews.length} result{sourceBrews.length !== 1 ? "s" : ""}{" "}
-								· page {page} of {pageCount}
-							</p>
-							<div className="flex gap-2">
-								<button
-									type="button"
-									onClick={() => setPage((p) => Math.max(1, p - 1))}
-									disabled={page <= 1}
-									className="px-3 py-1.5 rounded-lg bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-								>
-									← Prev
-								</button>
-								<button
-									type="button"
-									onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-									disabled={page >= pageCount}
-									className="px-3 py-1.5 rounded-lg bg-muted text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
-								>
-									Next →
-								</button>
-							</div>
-						</div>
-					)}
 				</section>
 			</div>
 		</div>
