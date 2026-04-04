@@ -8,4 +8,8 @@ async function deleteMachine(machineId: number) {
 	await db.Machines.delete(machineId);
 }
 
-export { deleteBean, deleteMachine };
+async function deleteBrewById(brewId: number) {
+	await db.Brews.delete(brewId);
+}
+
+export { deleteBean, deleteBrewById, deleteMachine };
