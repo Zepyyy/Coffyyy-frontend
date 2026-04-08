@@ -4,7 +4,7 @@ import "./index.css";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./App.tsx";
 import { CatchAll } from "./pages/CatchAll.tsx";
-// import DesignSystem from "./pages/DesignSystem.tsx";
+import DesignSystem from "./pages/DesignSystem.tsx";
 import History from "./pages/History.tsx";
 import Home from "./pages/Home.tsx";
 import Library from "./pages/Library.tsx";
@@ -22,7 +22,7 @@ createRoot(document.getElementById("root")!).render(
 					<Route path="/" element={<App />}>
 						<Route index element={<Navigate to="/home" replace />} />
 						<Route path="home" element={<Home />} />
-						{/*<Route path="designsystem" element={<DesignSystem />} />*/}
+						<Route path="designsystem" element={<DesignSystem />} />
 						<Route path="history" element={<History />} />
 						<Route path="library" element={<Library />} />
 						<Route path="log">

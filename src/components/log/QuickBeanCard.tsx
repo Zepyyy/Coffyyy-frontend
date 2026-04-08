@@ -16,7 +16,7 @@ export default function QuickBeanCard({
 		<button
 			type="button"
 			data-slot="toggle"
-			className={`relative overflow-hidden border cursor-pointer transition-colors text-start bg-background ${selected ? " border-primary/40 bg-primary/5 backdrop-blur-xs" : "border-border bg-background hover:border-primary/40"}`}
+			className={`relative h-fit overflow-hidden border cursor-pointer transition-colors text-start bg-background ${selected ? " border-primary/40 bg-primary/5 backdrop-blur-xs" : "border-border bg-background hover:border-primary/40"}`}
 			onClick={() => onClick?.()}
 		>
 			<div className={`h-1.5 w-full ${swatch.stripe}`} />

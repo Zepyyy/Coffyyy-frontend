@@ -1,8 +1,8 @@
 import { type ChangeEvent, useState } from "react";
+import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
 import FieldLabel from "@/components/log/FieldLabel";
 import OptionChips from "@/components/log/OptionChips";
-import QuickCard from "@/components/log/QuickBeanCard";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SectionDescription from "@/components/log/SectionDescription";
 import SectionTitle from "@/components/log/SectionTitle";
@@ -280,15 +280,17 @@ export default function BrewLog() {
 											<FieldLabel required>The bean</FieldLabel>
 											<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
 												{suggestions.bean.map((beanInfo) => (
-													<QuickCard
+													<BeanSelectorCard
 														key={beanInfo.name}
-														selected={selectedBeanId === beanInfo.id}
 														bean={{
 															id: beanInfo.id,
 															name: beanInfo.name,
 															origin: beanInfo.origin,
 															dominantNote: beanInfo.dominantNote,
+															process: beanInfo.process,
+															roastLevel: beanInfo.roastLevel,
 														}}
+														selected={selectedBeanId === beanInfo.id}
 														onClick={() => {
 															setField("beanId", beanInfo.id);
 															setSelectedBeanId(beanInfo.id);
