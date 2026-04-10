@@ -14,7 +14,7 @@ import {
 } from "@/hooks/api/useStats";
 import type { Beans } from "@/types/BeanTypes";
 
-function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
+function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 	const [selectedBeanId, setSelectedBeanId] = useState<number | undefined>();
 	const beanInsights = useBeanBrewInsights(selectedBeanId);
 	const brewCount = useBrewCountForBeanId(selectedBeanId);
@@ -23,19 +23,12 @@ function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
 	return (
 		<section className="space-y-4 w-full">
 			<div className="flex items-center justify-between">
-				<div className="border-l-4 border-primary/30 pl-4">
-					<h2 className="font-News text-xl text-foreground/90">
-						Quick Settings
-					</h2>
-					<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground mt-0.5">
-						Dial-in guidance per bean
-					</p>
-				</div>
+				<h2 className="font-News text-2xl text-foreground/90">Beans</h2>
 				<Link
 					to="/library"
 					className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
 				>
-					View all →
+					Manage →
 				</Link>
 			</div>
 
@@ -67,7 +60,7 @@ function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
 }
 
 export default function Home() {
-	const recentBrews = useRecentBrews(5);
+	const recentBrews = useRecentBrews(3);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
 	const unratedBrew = useLatestUnratedBrew();
@@ -79,34 +72,22 @@ export default function Home() {
 		unratedBrew && unratedBrew.id !== dismissedBrewId ? unratedBrew : null;
 
 	return (
-		<div className="w-full mx-auto max-w-5xl px-6 space-y-10">
-			{/* Quick Actions */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-				<Link
-					to="/log/brew"
-					className="group relative overflow-hidden border border-primary/20 bg-primary-700/10 px-6 py-8 transition-all hover:bg-primary-700/15 hover:border-primary/30 backdrop-blur-sm"
-				>
+		<div className="w-full mx-auto max-w-5xl px-6 space-y-8">
+			{/* Quick action */}
+			<Link
+				to="/log/brew"
+				className="group relative overflow-hidden flex items-center justify-between border border-primary/20 bg-primary-700/10 px-6 py-5 transition-all hover:bg-primary-700/15 hover:border-primary/30 backdrop-blur-sm"
+			>
+				<div>
 					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 						Quick add
 					</p>
-					<p className="mt-1 text-4xl tracking-tight font-News text-foreground/90">
+					<p className="mt-0.5 text-3xl tracking-tight font-News text-foreground/90">
 						Log a Brew
 					</p>
-					<Coffee className="absolute right-6 bottom-6 size-8 text-primary/20 group-hover:text-primary/30 transition-colors" />
-				</Link>
-				<Link
-					to="/library"
-					className="group relative overflow-hidden border border-border bg-background px-6 py-8 transition-all hover:border-foreground/20"
-				>
-					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-						Your beans and equipment
-					</p>
-					<p className="mt-1 text-4xl tracking-tight font-News text-foreground/90">
-						Library →
-					</p>
-					<BookOpen className="absolute right-6 bottom-6 size-8 text-muted-foreground/20 group-hover:text-muted-foreground/30 transition-colors" />
-				</Link>
-			</div>
+				</div>
+				<Coffee className="size-8 text-primary/20 group-hover:text-primary/30 transition-colors" />
+			</Link>
 
 			{/* Taste rating prompt for latest unrated brew */}
 			{pendingRating && (
@@ -121,23 +102,21 @@ export default function Home() {
 				/>
 			)}
 
-			{/* Quick Settings per Bean */}
-			{allBeans.length > 0 && <QuickSettingsSection allBeans={allBeans} />}
+			{/* Bean selection + panel */}
+			{allBeans.length > 0 && <BeanSection allBeans={allBeans} />}
 
-			{/* Recent Brews */}
+			{/* Recent brews */}
 			{recentBrews.length > 0 && (
 				<section className="space-y-4">
 					<div className="flex items-center justify-between">
-						<div className="border-l-4 border-primary/30 pl-4">
-							<h2 className="font-News text-xl text-foreground/90">
-								Recent Brews
-							</h2>
-						</div>
+						<h2 className="font-News text-2xl text-foreground/90">
+							Recent Brews
+						</h2>
 						<Link
 							to="/history"
-							className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
+							className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
 						>
-							View all →
+							<BookOpen className="size-3" /> History →
 						</Link>
 					</div>
 					<div className="space-y-1.5">

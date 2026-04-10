@@ -24,20 +24,6 @@ const noteIcon: Partial<Record<Beans["dominantNote"], LucideIcon>> = {
 	Sweet: Cake,
 };
 
-function RoastDots({ level }: { level: number | undefined }) {
-	const levelToShow = level ?? 0;
-	return (
-		<div className="flex gap-0.5">
-			{Array.from({ length: 10 }).map((_, i) => (
-				<span
-					// biome-ignore lint/suspicious/noArrayIndexKey: static list
-					key={i}
-					className={`h-1.5 w-1.5 rounded-full ${i < levelToShow ? "bg-current opacity-70" : "bg-current opacity-15"}`}
-				/>
-			))}
-		</div>
-	);
-}
 export default function BeanSelectorCard({
 	bean,
 	selected,
@@ -61,15 +47,15 @@ export default function BeanSelectorCard({
 			}`}
 		>
 			<div className={`h-1 w-full ${swatch.stripe}`} />
-			<div className="p-3 space-y-2">
+			<div className="p-4 space-y-3">
 				<div className="flex items-start justify-between gap-2">
 					<p
-						className={`font-Lora text-base font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
+						className={`font-Lora text-lg font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
 					>
 						{bean.name}
 					</p>
 					<NoteIcon
-						className={`size-4 shrink-0 mt-0.5 ${selected ? swatch.text : "text-muted-foreground/40"}`}
+						className={`size-5 shrink-0 mt-0.5 ${selected ? swatch.text : "text-muted-foreground/40"}`}
 						strokeWidth={1.5}
 					/>
 				</div>
@@ -78,10 +64,14 @@ export default function BeanSelectorCard({
 				>
 					{bean.origin.slice(0, 2).join(", ")}
 				</p>
+				{/* Roast level bar */}
 				<div
-					className={`${selected ? swatch.text : "text-muted-foreground/50"}`}
+					className={`h-1 w-full ${selected ? "bg-current/15" : "bg-foreground/8"}`}
 				>
-					<RoastDots level={bean.roastLevel} />
+					<div
+						className={`h-full transition-all ${selected ? "bg-current/50" : "bg-foreground/25"}`}
+						style={{ width: `${((bean.roastLevel ?? 0) / 10) * 100}%` }}
+					/>
 				</div>
 			</div>
 		</button>

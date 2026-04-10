@@ -63,4 +63,9 @@ export type BeanBrewInsights = {
 	lastBrew: Brews | null;
 	adjustments: BrewAdjustment[];
 	dialIn: BeanDialInState;
+	recentBrewScores: Array<{
+		taste: number | null;
+		strength: number | null;
+		rating: number | null;
+	}>;
 };

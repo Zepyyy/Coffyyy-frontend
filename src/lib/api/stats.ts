@@ -269,6 +269,15 @@ export async function getBeanBrewInsights(
 	const lastBrew = brews[0] ?? null;
 	const adjustments = buildAdjustments(lastBrew, averageExtractionSeconds);
 
+	const recentBrewScores = brews
+		.slice(0, 8)
+		.reverse()
+		.map((brew) => ({
+			taste: brew.tasteScore ?? null,
+			strength: brew.strengthScore ?? null,
+			rating: brew.overallRating ?? null,
+		}));
+
 	return {
 		beanId,
 		target: {
@@ -292,6 +301,7 @@ export async function getBeanBrewInsights(
 		lastBrew,
 		adjustments,
 		dialIn,
+		recentBrewScores,
 	};
 }
 
