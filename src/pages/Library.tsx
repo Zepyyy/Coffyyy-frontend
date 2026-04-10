@@ -6,19 +6,10 @@ import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
 import { Button } from "@/components/ui/button";
 import { addRandomBean, addRandomMachine } from "@/db/crud/add";
-import {
-	useAllBeans,
-	useBeanCount,
-	useBeanFilters,
-} from "@/hooks/api/useBeans";
-import {
-	useAllMachines,
-	useMachineCount,
-	useMachineFilters,
-} from "@/hooks/api/useMachines";
+import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
+import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { cn } from "@/lib/utils";
-import type { BeanFilters } from "@/types/BeanTypes";
 
 type Tab = "beans" | "machines";
 
@@ -26,29 +17,31 @@ export default function Library() {
 	const [tab, setTab] = useState<Tab>("beans");
 	const [search, setSearch] = useState("");
 	const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-	const [selectedProcesses, setSelectedProcesses] = useState<string[]>([]);
+	const [selectedBrand, setSelectedBrand] = useState<string[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
-	const beanFilters = useBeanFilters();
-	const machineFilters = useMachineFilters();
 	const beansCount = useBeanCount();
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
-	const beanDialInStates = useBeanDialInStates(
-		allBeans
-			.map((bean) => bean.id)
-			.filter((beanId): beanId is number => typeof beanId === "number"),
+
+	const beanIds = useMemo(
+		() =>
+			allBeans
+				.map((b) => b.id)
+				.filter((id): id is number => typeof id === "number"),
+		[allBeans],
 	);
-	const beanDialInStateMap = new Map(
-		beanDialInStates.map((state) => [state.beanId, state]),
+	const beanDialInStates = useBeanDialInStates(beanIds);
+	const beanDialInStateMap = useMemo(
+		() => new Map(beanDialInStates.map((s) => [s.beanId, s])),
+		[beanDialInStates],
 	);
-	console.log(beanDialInStateMap);
 
 	const originCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const bean of beanFilters) {
+		for (const bean of allBeans) {
 			for (const origin of bean.origin ?? []) {
 				const trimmed = origin.trim();
 				if (!trimmed) continue;
@@ -56,38 +49,37 @@ export default function Library() {
 			}
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [beanFilters]);
+	}, [allBeans]);
 
-	const processCounts = useMemo(() => {
+	const brandCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const bean of beanFilters) {
-			for (const process of bean.process ?? []) {
-				if (!process || process === "?") continue;
-				counts.set(process, (counts.get(process) ?? 0) + 1);
-			}
+		for (const bean of allBeans) {
+			const brand = bean.brand?.trim();
+			if (!brand || brand === "?") continue;
+			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [beanFilters]);
+	}, [allBeans]);
 
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of machineFilters) {
+		for (const machine of allMachines) {
 			const type = machine.type?.trim();
 			if (!type) continue;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [machineFilters]);
+	}, [allMachines]);
 
-	const brandCounts = useMemo(() => {
+	const brandsCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of machineFilters) {
+		for (const machine of allMachines) {
 			const brand = machine.brand?.trim();
 			if (!brand) continue;
 			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [machineFilters]);
+	}, [allMachines]);
 
 	const toggleSelection = (
 		value: string,
@@ -102,10 +94,10 @@ export default function Library() {
 
 	const filteredBeans = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return beanFilters.filter((b: BeanFilters) => {
+		return allBeans.filter((b) => {
 			const matchesSearch =
 				!q ||
-				[...(b.origin ?? []), b.dominantNote, b.process]
+				[...(b.origin ?? []), b.dominantNote, b.brand]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
@@ -115,18 +107,16 @@ export default function Library() {
 				(b.origin ?? []).some((origin) =>
 					selectedCountries.includes(origin.trim()),
 				);
-			const matchesProcess =
-				selectedProcesses.length === 0 ||
-				(b.process ?? []).some((process) =>
-					selectedProcesses.includes(process.trim()),
-				);
-			return matchesSearch && matchesCountry && matchesProcess;
+			const matchesBrand =
+				selectedBrand.length === 0 ||
+				(b.brand != null && selectedBrand.includes(b.brand.trim()));
+			return matchesSearch && matchesCountry && matchesBrand;
 		});
-	}, [search, selectedCountries, selectedProcesses, beanFilters]);
+	}, [search, selectedCountries, selectedBrand, allBeans]);
 
 	const filteredMachines = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return machineFilters.filter((m) => {
+		return allMachines.filter((m) => {
 			const matchesSearch =
 				!q ||
 				[m.name, m.brand, m.model, m.type]
@@ -142,7 +132,7 @@ export default function Library() {
 				(m.brand != null && selectedBrands.includes(m.brand.trim()));
 			return matchesSearch && matchesType && matchesBrand;
 		});
-	}, [search, selectedBrands, selectedTypes, machineFilters]);
+	}, [search, selectedBrands, selectedTypes, allMachines]);
 
 	const beanCountryOptions = useMemo(
 		() =>
@@ -154,14 +144,14 @@ export default function Library() {
 		[originCounts, selectedCountries],
 	);
 
-	const beanProcessOptions = useMemo(
+	const beanBrandOptions = useMemo(
 		() =>
-			processCounts.map(([label, count]) => ({
+			brandCounts.map(([label, count]) => ({
 				label,
 				count,
-				active: selectedProcesses.includes(label),
+				active: selectedBrand.includes(label),
 			})),
-		[processCounts, selectedProcesses],
+		[brandCounts, selectedBrand],
 	);
 
 	const machineTypeOptions = useMemo(
@@ -176,12 +166,12 @@ export default function Library() {
 
 	const machineBrandOptions = useMemo(
 		() =>
-			brandCounts.map(([label, count]) => ({
+			brandsCounts.map(([label, count]) => ({
 				label,
 				count,
 				active: selectedBrands.includes(label),
 			})),
-		[brandCounts, selectedBrands],
+		[brandsCounts, selectedBrands],
 	);
 
 	return (
@@ -236,10 +226,10 @@ export default function Library() {
 										}
 									/>
 									<FilterCard
-										title="Process"
-										options={beanProcessOptions}
+										title="Brand"
+										options={beanBrandOptions}
 										onToggle={(value) =>
-											toggleSelection(value, setSelectedProcesses)
+											toggleSelection(value, setSelectedBrand)
 										}
 									/>
 								</>
@@ -307,7 +297,7 @@ export default function Library() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-									{allBeans.map((bean) => (
+									{filteredBeans.map((bean) => (
 										<BeanCard
 											key={bean.id ?? `${bean.name}-${bean.brand}`}
 											bean={bean}
@@ -341,7 +331,7 @@ export default function Library() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-									{allMachines.map((machine) => (
+									{filteredMachines.map((machine) => (
 										<MachineCard
 											key={machine.id ?? `${machine.name}-${machine.model}`}
 											machine={machine}

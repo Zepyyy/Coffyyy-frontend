@@ -29,7 +29,7 @@ export async function getBeanFilters(): Promise<Array<BeanFilters>> {
 			origin: b.origin,
 			dominantNote: b.dominantNote,
 			roastLevel: b.roastLevel,
-			process: b.process,
+			brand: b.brand,
 		};
 	});
 }

@@ -59,6 +59,6 @@ export type BeanSuggestions = {
 export type BeanFilters = {
 	origin: string[];
 	dominantNote: Beans["dominantNote"] | "";
-	process: string[];
+	brand: string;
 	roastLevel: number | null;
 };

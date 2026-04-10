@@ -134,7 +134,7 @@ export default function BeanCard({
 						</div>
 					))}
 				</article>
-				<div className="squiggly-line mt-4 w-full scale-x-125 scale-y-75 opacity-20" />
+				<div className="squiggly-line mt-4 w-full scale-x-125 scale-y-50 opacity-20" />
 				<article className="mt-4 text-wrap">
 					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 						Flavors
