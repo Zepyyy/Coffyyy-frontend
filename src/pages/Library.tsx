@@ -16,6 +16,7 @@ import {
 	useMachineCount,
 	useMachineFilters,
 } from "@/hooks/api/useMachines";
+import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { cn } from "@/lib/utils";
 import type { BeanFilters } from "@/types/BeanTypes";
 
@@ -35,6 +36,15 @@ export default function Library() {
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
+	const beanDialInStates = useBeanDialInStates(
+		allBeans
+			.map((bean) => bean.id)
+			.filter((beanId): beanId is number => typeof beanId === "number"),
+	);
+	const beanDialInStateMap = new Map(
+		beanDialInStates.map((state) => [state.beanId, state]),
+	);
+	console.log(beanDialInStateMap);
 
 	const originCounts = useMemo(() => {
 		const counts = new Map<string, number>();
@@ -301,6 +311,9 @@ export default function Library() {
 										<BeanCard
 											key={bean.id ?? `${bean.name}-${bean.brand}`}
 											bean={bean}
+											dialInState={
+												bean.id ? beanDialInStateMap.get(bean.id) : undefined
+											}
 										/>
 									))}
 								</div>

@@ -29,3 +29,7 @@ export const useBrewSuggestions = () => {
 		}
 	);
 };
+
+export const useLatestUnratedBrew = () => {
+	return useLiveQuery(() => brewStatsApi.getLatestUnratedBrew(), []) ?? null;
+};

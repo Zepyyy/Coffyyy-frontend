@@ -52,6 +52,18 @@ export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 	return brews;
 }
 
+export async function getLatestUnratedBrew(): Promise<Brews | null> {
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
+	return (
+		brews.find(
+			(b) =>
+				b.tasteScore == null ||
+				b.strengthScore == null ||
+				b.overallRating == null,
+		) ?? null
+	);
+}
+
 export async function getBrewsForHistoryView(
 	sort: HistorySortMode,
 	search: string,

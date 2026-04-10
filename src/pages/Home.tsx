@@ -5,17 +5,18 @@ import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import BrewRow from "@/components/home/BrewRow";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
+import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
 import { useAllBeans } from "@/hooks/api/useBeans";
-import { useRecentBrews } from "@/hooks/api/useBrews";
+import { useLatestUnratedBrew, useRecentBrews } from "@/hooks/api/useBrews";
 import {
-	useBestBrewForBean,
+	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
 import type { Beans } from "@/types/BeanTypes";
 
 function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
 	const [selectedBeanId, setSelectedBeanId] = useState<number | undefined>();
-	const bestBrew = useBestBrewForBean(selectedBeanId);
+	const beanInsights = useBeanBrewInsights(selectedBeanId);
 	const brewCount = useBrewCountForBeanId(selectedBeanId);
 	const selectedBean = allBeans.find((b) => b.id === selectedBeanId);
 
@@ -27,7 +28,7 @@ function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
 						Quick Settings
 					</h2>
 					<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground mt-0.5">
-						Best brew per bean
+						Dial-in guidance per bean
 					</p>
 				</div>
 				<Link
@@ -53,9 +54,9 @@ function QuickSettingsSection({ allBeans }: { allBeans: Beans[] }) {
 				))}
 			</div>
 
-			{selectedBean && bestBrew && (
+			{selectedBean && beanInsights && (
 				<BestBrewPanel
-					brew={bestBrew}
+					insights={beanInsights}
 					brewCount={brewCount}
 					bean={selectedBean}
 				/>
@@ -69,8 +70,13 @@ export default function Home() {
 	const recentBrews = useRecentBrews(5);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
+	const unratedBrew = useLatestUnratedBrew();
+	const [dismissedBrewId, setDismissedBrewId] = useState<number | null>(null);
 
 	const isEmpty = recentBrews.length === 0 && allBeans.length === 0;
+
+	const pendingRating =
+		unratedBrew && unratedBrew.id !== dismissedBrewId ? unratedBrew : null;
 
 	return (
 		<div className="w-full mx-auto max-w-5xl px-6 space-y-10">
@@ -78,7 +84,7 @@ export default function Home() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<Link
 					to="/log/brew"
-					className="group relative overflow-hidden border border-primary/20 bg-primary-700/10 px-6 py-8 transition-all hover:bg-primary-700/15 hover:border-primary/30"
+					className="group relative overflow-hidden border border-primary/20 bg-primary-700/10 px-6 py-8 transition-all hover:bg-primary-700/15 hover:border-primary/30 backdrop-blur-sm"
 				>
 					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 						Quick add
@@ -101,6 +107,19 @@ export default function Home() {
 					<BookOpen className="absolute right-6 bottom-6 size-8 text-muted-foreground/20 group-hover:text-muted-foreground/30 transition-colors" />
 				</Link>
 			</div>
+
+			{/* Taste rating prompt for latest unrated brew */}
+			{pendingRating && (
+				<TasteRatingPrompt
+					brew={pendingRating}
+					beanName={
+						pendingRating.beanId
+							? (beanMap.get(pendingRating.beanId)?.name ?? "Unknown bean")
+							: "Unknown bean"
+					}
+					onDismiss={() => setDismissedBrewId(pendingRating.id)}
+				/>
+			)}
 
 			{/* Quick Settings per Bean */}
 			{allBeans.length > 0 && <QuickSettingsSection allBeans={allBeans} />}

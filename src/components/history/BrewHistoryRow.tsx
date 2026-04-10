@@ -24,7 +24,7 @@ function RatingStars({ value }: { value: number }) {
 			role="img"
 			aria-label={`Rating ${n} out of 5`}
 		>
-			{Array.from({ length: 5 }, (_, i) => (
+			{[1, 2, 3, 4, 5].map((i) => (
 				<Star
 					key={i}
 					className={cn(

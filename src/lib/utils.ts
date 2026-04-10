@@ -103,3 +103,70 @@ export function SelectMultiple<T>(arr: T[], count: number): T[] {
 	}
 	return result;
 }
+
+export function parseWeight({
+	value,
+	default_weight,
+	min,
+	max,
+}: {
+	value: number;
+	default_weight: number;
+	min: number;
+	max: number;
+}): number {
+	if (Number.isNaN(value)) return default_weight;
+	return Math.min(max, Math.max(min, value));
+}
+export function clampWeight({
+	value,
+	min,
+	max,
+}: {
+	value: number;
+	min: number;
+	max: number;
+}) {
+	return Math.min(max, Math.max(min, value));
+}
+
+type Step = {
+	step: number;
+	title: string;
+	information: string[];
+	description: string;
+};
+
+export const STEPS: Step[] = [
+	{
+		step: 1,
+		title: "Bean",
+		information: ["Bean"],
+		description: "Which bean are you brewing?",
+	},
+	{
+		step: 2,
+		title: "Parameters",
+		information: [
+			"GrindSize",
+			"BeanWeight",
+			"EspressoWeight",
+			"ExtractionTime",
+			"Flow",
+		],
+		description:
+			"Grind size; bean weight; espresso weight; extraction time; flow.",
+	},
+	{
+		step: 3,
+		title: "Setup",
+		information: ["Machine"],
+		description: "Which machine did you use?",
+	},
+	{
+		step: 4,
+		title: "Summary",
+		information: [],
+		description: "Review and save.",
+	},
+];

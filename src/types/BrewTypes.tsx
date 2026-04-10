@@ -7,7 +7,9 @@ export type Brews = {
 	espressoWeight: number;
 	extractionTime: string | undefined;
 	flow: string | undefined;
-	overallRating: number;
+	overallRating?: number;
+	tasteScore?: number; // -5 (sour/under-extracted) to +5 (bitter/over-extracted), 0 = balanced
+	strengthScore?: number; // -5 (weak) to +5 (strong), 0 = balanced
 	grindSize: string;
 	date: Date;
 	beanId: number | undefined;
@@ -21,7 +23,6 @@ export type BrewForm = {
 	espressoWeight: number;
 	extractionTime: string;
 	flow: string;
-	overallRating: "Excellent" | "Good" | "Mid" | "Horrible" | "Burnt" | "";
 	grindSize: string;
 	date: Date;
 };
@@ -29,4 +30,37 @@ export type BrewForm = {
 export type BrewSuggestions = {
 	bean: Array<BeanCardProps>;
 	machine: Array<MachineCardProps>;
+};
+
+export type BrewAdjustment = {
+	title: string;
+	detail: string;
+};
+
+export type BeanDialInState = {
+	beanId: number;
+	isDialedIn: boolean;
+	totalBrews: number;
+	topRatedBrews: number;
+	lastRating: number | null;
+	stableGrind: boolean;
+};
+
+export type BeanBrewInsights = {
+	beanId: number;
+	target: {
+		grindSize: string;
+		beanWeight: number | null;
+		espressoWeight: number | null;
+		extractionTime: string | null;
+		flow: string | null;
+		ratio: number | null;
+		tasteScore: number | null;
+		strengthScore: number | null;
+		basedOnCount: number;
+		usesTopRatedBrews: boolean;
+	};
+	lastBrew: Brews | null;
+	adjustments: BrewAdjustment[];
+	dialIn: BeanDialInState;
 };

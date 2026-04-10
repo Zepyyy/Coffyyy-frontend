@@ -33,12 +33,29 @@ export default function BrewRow({
 					</p>
 				</div>
 			</div>
-			{brew.overallRating != null && (
-				<div className="flex items-center gap-1 shrink-0 ml-4">
-					<span className="font-News text-xl text-primary-700 dark:text-primary-200">
-						{brew.overallRating}
+			{brew.tasteScore != null ? (
+				<div className="flex items-center shrink-0 ml-4">
+					<span
+						className={`font-News text-base ${
+							brew.tasteScore < 0
+								? "text-tag-teal-100"
+								: brew.tasteScore > 0
+									? "text-tag-orange-500"
+									: "text-primary-700 dark:text-primary-200"
+						}`}
+					>
+						{brew.tasteScore === 0
+							? "Balanced"
+							: brew.tasteScore < 0
+								? `Sour ${brew.tasteScore}`
+								: `Bitter +${brew.tasteScore}`}
 					</span>
-					<span className="font-Mono text-[9px] text-muted-foreground">/5</span>
+				</div>
+			) : (
+				<div className="shrink-0 ml-4">
+					<span className="font-Mono text-[9px] uppercase tracking-widest text-muted-foreground/50">
+						unrated
+					</span>
 				</div>
 			)}
 		</div>
