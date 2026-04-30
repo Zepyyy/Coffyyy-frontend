@@ -5,6 +5,7 @@ import {
 	Cookie,
 	FileQuestion,
 	FireExtinguisher,
+	Flame,
 	Flower,
 	Leaf,
 	type LucideIcon,
@@ -23,6 +24,22 @@ const noteIcon: Partial<Record<Beans["dominantNote"], LucideIcon>> = {
 	Spices: Salad,
 	Sweet: Cake,
 };
+
+function RoastDots({ level }: { level: number | undefined }) {
+	const levelToShow = level ?? 0;
+	return (
+		<div className="flex gap-0.5 items-center">
+			<Flame size={12} className="mr-1 mb-0.5 text-current" strokeWidth={3} />
+			{Array.from({ length: 10 }).map((_, i) => (
+				<span
+					// biome-ignore lint/suspicious/noArrayIndexKey: static list
+					key={i}
+					className={`h-1.5 w-1.5 rounded-full ${i < levelToShow ? "bg-current opacity-70" : "bg-current opacity-15"}`}
+				/>
+			))}
+		</div>
+	);
+}
 
 export default function BeanSelectorCard({
 	bean,
@@ -47,7 +64,7 @@ export default function BeanSelectorCard({
 			}`}
 		>
 			<div className={`h-1 w-full ${swatch.stripe}`} />
-			<div className="p-4 space-y-3">
+			<div className="p-3 space-y-2">
 				<div className="flex items-start justify-between gap-2">
 					<p
 						className={`font-Lora text-lg font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
@@ -62,16 +79,13 @@ export default function BeanSelectorCard({
 				<p
 					className={`font-Mono text-[9px] uppercase tracking-widest ${selected ? swatch.secondaryText : "text-muted-foreground"}`}
 				>
-					{bean.origin.slice(0, 2).join(", ")}
+					{bean.variety?.join(", ")}
 				</p>
 				{/* Roast level bar */}
 				<div
-					className={`h-1 w-full ${selected ? "bg-current/15" : "bg-foreground/8"}`}
+					className={`${selected ? swatch.text : "text-muted-foreground/50"}`}
 				>
-					<div
-						className={`h-full transition-all ${selected ? "bg-current/50" : "bg-foreground/25"}`}
-						style={{ width: `${((bean.roastLevel ?? 0) / 10) * 100}%` }}
-					/>
+					<RoastDots level={bean.roastLevel} />
 				</div>
 			</div>
 		</button>

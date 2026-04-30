@@ -1,9 +1,8 @@
-import { BookOpen, Coffee } from "lucide-react";
+import { Coffee } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
-import BrewRow from "@/components/home/BrewRow";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
 import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
 import { Button } from "@/components/ui/button";
@@ -93,7 +92,7 @@ export default function Home() {
 
 			<Button
 				variant="add"
-				onClick={() => addRandomBrewsInsights(12, 1)}
+				onClick={() => addRandomBrewsInsights(36)}
 				className={`${import.meta.env.PROD && "hidden"}`}
 			>
 				Add insights
@@ -114,35 +113,6 @@ export default function Home() {
 
 			{/* Bean selection + panel */}
 			{allBeans.length > 0 && <BeanSection allBeans={allBeans} />}
-
-			{/* Recent brews */}
-			{recentBrews.length > 0 && (
-				<section className="space-y-4">
-					<div className="flex items-center justify-between">
-						<h2 className="font-News text-2xl text-foreground/90">
-							Recent Brews
-						</h2>
-						<Link
-							to="/history"
-							className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-						>
-							<BookOpen className="size-3" /> History →
-						</Link>
-					</div>
-					<div className="space-y-1.5">
-						{recentBrews.map((brew) => {
-							const bean = brew.beanId ? beanMap.get(brew.beanId) : undefined;
-							return (
-								<BrewRow
-									key={brew.id}
-									brew={brew}
-									beanName={bean?.name ?? "Unknown bean"}
-								/>
-							);
-						})}
-					</div>
-				</section>
-			)}
 
 			{/* Empty state */}
 			{isEmpty && (
