@@ -1,4 +1,3 @@
-import { Coffee } from "lucide-react";
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Link } from "react-router";
 import BeanCard from "@/components/library/BeanCard";
