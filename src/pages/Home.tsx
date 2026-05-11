@@ -116,16 +116,16 @@ export default function Home() {
 
 			{/* Empty state */}
 			{isEmpty && (
-				<div className="border border-dashed border-border p-12 text-center space-y-3">
-					<p className="font-News text-2xl text-foreground/60">No brews yet</p>
+				<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
+					<p className="font-News text-2xl text-foreground/60">No beans</p>
 					<p className="font-Recursive text-sm text-muted-foreground">
-						Log your first brew to start seeing insights here.
+						Add your first bean to get started.
 					</p>
 					<Link
-						to="/log/brew"
+						to="/log/bean"
 						className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
 					>
-						Log a Brew
+						Log a Bean
 					</Link>
 				</div>
 			)}

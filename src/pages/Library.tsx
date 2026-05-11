@@ -268,25 +268,20 @@ export default function Library() {
 					{tab === "beans" && (
 						<div>
 							{filteredBeans.length === 0 ? (
-								<div className="rounded-xl border border-dashed border-border p-2 text-center">
+								<>
 									{allBeans.length === 0 ? (
-										<div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-											<div className="flex size-12 items-center justify-center rounded-full bg-muted">
-												<Coffee className="size-6 text-muted-foreground" />
-											</div>
-											<div>
-												<p className="font-News text-lg text-primary-800 dark:text-primary-100">
-													No beans yet
-												</p>
-												<p className="mt-0.5 font-Recursive text-sm text-muted-foreground">
-													Add your first bean to get started.
-												</p>
-											</div>
+										<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
+											<p className="font-News text-2xl text-foreground/60">
+												No beans
+											</p>
+											<p className="font-Recursive text-sm text-muted-foreground">
+												Add your first bean to get started.
+											</p>
 											<Link
 												to="/log/bean"
-												className="h-9 px-4 py-2 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium outline-none border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
+												className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
 											>
-												Add a bean
+												Log a Bean
 											</Link>
 										</div>
 									) : (
@@ -294,7 +289,7 @@ export default function Library() {
 											No beans match your search.
 										</p>
 									)}
-								</div>
+								</>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 									{filteredBeans.map((bean) => (

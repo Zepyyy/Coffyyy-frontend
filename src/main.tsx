@@ -9,7 +9,6 @@ import Home from "./pages/Home.tsx";
 import Library from "./pages/Library.tsx";
 import BeansLog from "./pages/log/Beans.tsx";
 import BrewLog from "./pages/log/Brew.tsx";
-import Log from "./pages/log/Log.tsx";
 import MachinesLog from "./pages/log/Machines.tsx";
 import Providers from "./providers/Providers.tsx";
 
@@ -24,7 +23,7 @@ createRoot(document.getElementById("root")!).render(
 						<Route path="history" element={<History />} />
 						<Route path="library" element={<Library />} />
 						<Route path="log">
-							<Route index element={<Log />} />
+							<Route index element={<BeansLog />} />
 							<Route path="brew" element={<BrewLog />} />
 							<Route path="bean" element={<BeansLog />} />
 							<Route path="machine" element={<MachinesLog />} />

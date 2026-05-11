@@ -1,4 +1,5 @@
 import { type ChangeEvent, useState } from "react";
+import { Link } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
 import FieldLabel from "@/components/log/FieldLabel";
@@ -112,6 +113,8 @@ export default function BrewLog() {
 	);
 
 	const [show, setShow] = useState(false);
+	const isEmpty = suggestions.bean.length === 0;
+
 	return (
 		<div className="mx-auto w-full">
 			<div className="grid lg:grid-cols-[16rem_minmax(0,1fr)] mx-6">
@@ -158,6 +161,22 @@ export default function BrewLog() {
 									<div className="space-y-12">
 										<div className="space-y-12">
 											<FieldLabel required>The bean</FieldLabel>
+											{isEmpty && (
+												<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
+													<p className="font-News text-2xl text-foreground/60">
+														No beans
+													</p>
+													<p className="font-Recursive text-sm text-muted-foreground">
+														Add your first bean to get started.
+													</p>
+													<Link
+														to="/log/bean"
+														className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
+													>
+														Log a Bean
+													</Link>
+												</div>
+											)}
 											<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
 												{suggestions.bean.map((beanInfo) => (
 													<BeanSelectorCard
