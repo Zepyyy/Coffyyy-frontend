@@ -8,8 +8,6 @@ import type {
 const TOP_RATED_THRESHOLD = 4;
 const MIN_BREWS_FOR_DIALED_IN = 3;
 const MAX_GRIND_SPREAD = 1;
-const EXTRACTION_DELTA_SECONDS = 2;
-const DEFAULT_TARGET_EXTRACTION = 30;
 
 function sortByNewest(a: Brews, b: Brews) {
 	return +new Date(b.date) - +new Date(a.date);
@@ -115,7 +113,7 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 	);
 	const recentTopRatedBrews = topRatedBrews.slice(0, 3);
 	const numericGrinds = recentTopRatedBrews
-		.map((brew) => toNumericValue(brew.grindSize))
+		.map((brew) => brew.grindSize)
 		.filter((value): value is number => value != null);
 
 	const stableNumericGrind =
@@ -127,10 +125,6 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 		new Set(recentTopRatedBrews.map((brew) => brew.grindSize)).size === 1;
 	const stableGrind = stableNumericGrind || stableTextGrind;
 	const lastRating = brews[0]?.overallRating ?? null;
-
-	console.log(numericGrinds);
-	console.log(stableTextGrind);
-	console.log(stableGrind);
 
 	return {
 		beanId,
@@ -144,75 +138,6 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 		lastRating,
 		stableGrind,
 	};
-}
-
-function buildAdjustments(
-	lastBrew: Brews | null,
-	targetExtractionSeconds: number | null,
-): Array<{ title: string; detail: string }> {
-	if (!lastBrew) {
-		return [];
-	}
-
-	const adjustments: Array<{ title: string; detail: string }> = [];
-	const lastExtractionSeconds = toNumericValue(lastBrew.extractionTime);
-	const extractionBaseline =
-		targetExtractionSeconds ?? DEFAULT_TARGET_EXTRACTION;
-
-	if (lastBrew.tasteScore != null) {
-		if (
-			lastBrew.tasteScore < 0 &&
-			(lastExtractionSeconds == null ||
-				lastExtractionSeconds <= extractionBaseline - EXTRACTION_DELTA_SECONDS)
-		) {
-			adjustments.push({
-				title: "Grind finer",
-				detail:
-					lastExtractionSeconds != null
-						? `Last brew ran sour and short at ${Math.round(lastExtractionSeconds)}s.`
-						: "Last brew leaned sour.",
-			});
-		} else if (
-			lastBrew.tasteScore > 0 &&
-			(lastExtractionSeconds == null ||
-				lastExtractionSeconds >= extractionBaseline + EXTRACTION_DELTA_SECONDS)
-		) {
-			adjustments.push({
-				title: "Grind coarser",
-				detail:
-					lastExtractionSeconds != null
-						? `Last brew ran bitter and long at ${Math.round(lastExtractionSeconds)}s.`
-						: "Last brew leaned bitter.",
-			});
-		}
-	}
-
-	if (lastBrew.strengthScore != null) {
-		if (lastBrew.strengthScore < 0) {
-			adjustments.push({
-				title: "Increase dose or decrease yield",
-				detail: "Last brew read weak on the new strength axis.",
-			});
-		} else if (lastBrew.strengthScore > 0) {
-			adjustments.push({
-				title: "Decrease dose or increase yield",
-				detail: "Last brew read strong on the new strength axis.",
-			});
-		}
-	}
-
-	if (
-		adjustments.length === 0 &&
-		lastBrew.tasteScore === 0 &&
-		lastBrew.strengthScore === 0
-	) {
-		adjustments.push({
-			title: "Hold steady",
-			detail: "Last brew landed balanced on taste and strength.",
-		});
-	}
-
-	return adjustments.slice(0, 2);
 }
 
 export async function getBrewCountForBean(bean: string): Promise<number> {
@@ -258,23 +183,30 @@ export async function getBeanBrewInsights(
 		sourceBrews.map((brew) => brew.strengthScore ?? null),
 	);
 	const averageGrindNumeric = average(
-		sourceBrews.map((brew) => toNumericValue(brew.grindSize)),
+		sourceBrews.map((brew) => brew.grindSize ?? null),
 	);
 	const averageRatio =
 		averageBeanWeight && averageEspressoWeight
 			? averageEspressoWeight / averageBeanWeight
 			: null;
 
-	const dialIn = buildDialInState(beanId, brews);
-	const lastBrew = brews[0] ?? null;
-	const adjustments = buildAdjustments(lastBrew, averageExtractionSeconds);
+	const _dialIn = buildDialInState(beanId, brews);
+	const _lastBrew = brews[0] ?? null;
+
+	const recentBrewScores = brews.reverse().map((brew) => ({
+		taste: brew.tasteScore ?? null,
+		strength: brew.strengthScore ?? null,
+		rating: brew.overallRating ?? null,
+		grindSize: brew.grindSize ?? null,
+		date: brew.date,
+	}));
 
 	return {
 		beanId,
 		target: {
 			grindSize:
 				formatAverage(averageGrindNumeric, { decimals: 1 }) ??
-				mostCommon(sourceBrews.map((brew) => brew.grindSize)) ??
+				mostCommon(sourceBrews.map((brew) => brew.grindSize.toString())) ??
 				"—",
 			beanWeight: averageBeanWeight,
 			espressoWeight: averageEspressoWeight,
@@ -282,16 +214,16 @@ export async function getBeanBrewInsights(
 				suffix: "s",
 				decimals: 0,
 			}),
-			flow: mostCommon(sourceBrews.map((brew) => brew.flow)) ?? "—",
+			_flow: mostCommon(sourceBrews.map((brew) => brew.flow)) ?? "—",
 			ratio: averageRatio,
-			tasteScore: averageTasteScore,
-			strengthScore: averageStrengthScore,
-			basedOnCount: sourceBrews.length,
+			_tasteScore: averageTasteScore,
+			_strengthScore: averageStrengthScore,
+			_basedOnCount: sourceBrews.length,
 			usesTopRatedBrews: topRatedBrews.length > 0,
 		},
-		lastBrew,
-		adjustments,
-		dialIn,
+		_lastBrew,
+		_dialIn,
+		recentBrewScores,
 	};
 }
 

@@ -23,7 +23,7 @@ const INITIAL: BrewForm = {
 	beanId: undefined,
 	machineId: undefined,
 	date: new Date(),
-	grindSize: "",
+	grindSize: 12,
 	beanWeight: 18,
 	espressoWeight: 36,
 	flow: "",
@@ -209,7 +209,7 @@ export default function BrewLog() {
 													placeholder="e.g. 18"
 													value={form.grindSize}
 													onChange={(e) =>
-														setField("grindSize", e.target.value)
+														setField("grindSize", Number(e.target.value))
 													}
 												/>
 											)}
@@ -221,14 +221,12 @@ export default function BrewLog() {
 														onClick={() =>
 															setField(
 																"grindSize",
-																form.grindSize === lvl.toString()
-																	? ""
-																	: lvl.toString(),
+																form.grindSize === lvl ? 12 : lvl,
 															)
 														}
 														className={cn(
 															"flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
-															form.grindSize === lvl.toString()
+															form.grindSize === lvl
 																? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
 																: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
 														)}

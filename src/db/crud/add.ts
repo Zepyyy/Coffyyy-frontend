@@ -110,7 +110,7 @@ async function addBrew(brew: Omit<Brews, "id">) {
 	}
 }
 
-async function addRandomBrew() {
+async function addRandomBrew(bean?: Beans["id"]) {
 	if ((await getRandomBeanId()) === undefined) {
 		console.log("No bean found");
 		return;
@@ -122,11 +122,11 @@ async function addRandomBrew() {
 	try {
 		return await db.Brews.bulkAdd([
 			{
-				beanId: await getRandomBeanId(),
+				beanId: bean ?? (await getRandomBeanId()),
 				machineId: await getRandomMachineId(),
 				date: new Date(),
 				overallRating: SelectRandom([1, 2, 3, 4, 5]),
-				grindSize: SelectRandom(["fine", "medium", "coarse"]),
+				grindSize: SelectRandom([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]),
 				beanWeight: SelectRandom([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]),
 				espressoWeight: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
 				flow: SelectRandom(["even", "uneven"]),
@@ -144,6 +144,12 @@ async function addRandomBrew() {
 		]);
 	} catch (error) {
 		return error;
+	}
+}
+
+export default function addRandomBrewsInsights(n: number, bean?: Beans["id"]) {
+	for (let i = 0; i < n; i++) {
+		addRandomBrew(bean);
 	}
 }
 

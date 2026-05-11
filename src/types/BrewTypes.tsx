@@ -10,7 +10,7 @@ export type Brews = {
 	overallRating?: number;
 	tasteScore?: number; // -5 (sour/under-extracted) to +5 (bitter/over-extracted), 0 = balanced
 	strengthScore?: number; // -5 (weak) to +5 (strong), 0 = balanced
-	grindSize: string;
+	grindSize: number;
 	date: Date;
 	beanId: number | undefined;
 	machineId: number | undefined;
@@ -23,18 +23,13 @@ export type BrewForm = {
 	espressoWeight: number;
 	extractionTime: string;
 	flow: string;
-	grindSize: string;
+	grindSize: number;
 	date: Date;
 };
 
 export type BrewSuggestions = {
 	bean: Array<BeanCardProps>;
 	machine: Array<MachineCardProps>;
-};
-
-export type BrewAdjustment = {
-	title: string;
-	detail: string;
 };
 
 export type BeanDialInState = {
@@ -53,14 +48,20 @@ export type BeanBrewInsights = {
 		beanWeight: number | null;
 		espressoWeight: number | null;
 		extractionTime: string | null;
-		flow: string | null;
+		_flow: string | null;
 		ratio: number | null;
-		tasteScore: number | null;
-		strengthScore: number | null;
-		basedOnCount: number;
+		_tasteScore: number | null;
+		_strengthScore: number | null;
+		_basedOnCount: number;
 		usesTopRatedBrews: boolean;
 	};
-	lastBrew: Brews | null;
-	adjustments: BrewAdjustment[];
-	dialIn: BeanDialInState;
+	_lastBrew: Brews | null;
+	_dialIn: BeanDialInState;
+	recentBrewScores: Array<{
+		taste: number | null;
+		strength: number | null;
+		rating: number | null;
+		grindSize: number | null;
+		date: Date;
+	}>;
 };

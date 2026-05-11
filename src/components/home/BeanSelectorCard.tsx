@@ -5,6 +5,7 @@ import {
 	Cookie,
 	FileQuestion,
 	FireExtinguisher,
+	Flame,
 	Flower,
 	Leaf,
 	type LucideIcon,
@@ -27,7 +28,8 @@ const noteIcon: Partial<Record<Beans["dominantNote"], LucideIcon>> = {
 function RoastDots({ level }: { level: number | undefined }) {
 	const levelToShow = level ?? 0;
 	return (
-		<div className="flex gap-0.5">
+		<div className="flex gap-0.5 items-center">
+			<Flame size={12} className="mr-1 mb-0.5 text-current" strokeWidth={3} />
 			{Array.from({ length: 10 }).map((_, i) => (
 				<span
 					// biome-ignore lint/suspicious/noArrayIndexKey: static list
@@ -38,6 +40,7 @@ function RoastDots({ level }: { level: number | undefined }) {
 		</div>
 	);
 }
+
 export default function BeanSelectorCard({
 	bean,
 	selected,
@@ -64,20 +67,21 @@ export default function BeanSelectorCard({
 			<div className="p-3 space-y-2">
 				<div className="flex items-start justify-between gap-2">
 					<p
-						className={`font-Lora text-base font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
+						className={`font-Lora text-lg font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
 					>
 						{bean.name}
 					</p>
 					<NoteIcon
-						className={`size-4 shrink-0 mt-0.5 ${selected ? swatch.text : "text-muted-foreground/40"}`}
+						className={`size-5 shrink-0 mt-0.5 ${selected ? swatch.text : "text-muted-foreground/40"}`}
 						strokeWidth={1.5}
 					/>
 				</div>
 				<p
 					className={`font-Mono text-[9px] uppercase tracking-widest ${selected ? swatch.secondaryText : "text-muted-foreground"}`}
 				>
-					{bean.origin.slice(0, 2).join(", ")}
+					{bean.variety?.join(", ")}
 				</p>
+				{/* Roast level bar */}
 				<div
 					className={`${selected ? swatch.text : "text-muted-foreground/50"}`}
 				>

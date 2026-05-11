@@ -18,7 +18,8 @@
         "rules": {
             "recommended": true,
             "a11y": { "useKeyWithClickEvents": "off" }
-        }
+        },
+        "includes": ["!**/*.css", "!src/components/ui/**"]
     },
     "javascript": {
         "formatter": {

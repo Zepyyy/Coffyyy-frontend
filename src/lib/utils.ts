@@ -15,6 +15,8 @@ type Swatch = {
 	text: string;
 	secondaryText: string;
 	border: string;
+	var: string;
+	secondaryVar: string;
 };
 
 export const colorSwatch: Record<Note, Swatch> = {
@@ -25,6 +27,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-teal-100",
 		secondaryText: "text-tag-teal-100/75",
 		border: "border border-tag-teal-500",
+		var: "var(--color-tag-teal-500)",
+		secondaryVar: "var(--color-tag-teal-900)",
 	},
 	Nutty: {
 		bg: "bg-tag-red-900",
@@ -33,6 +37,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-red-100",
 		secondaryText: "text-tag-red-100/75",
 		border: "border border-tag-red-500",
+		var: "var(--color-tag-red-500)",
+		secondaryVar: "var(--color-tag-red-900)",
 	},
 	Floral: {
 		bg: "bg-tag-blue-900",
@@ -41,6 +47,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-blue-100",
 		secondaryText: "text-tag-blue-100/75",
 		border: "border border-tag-blue-500",
+		var: "var(--color-tag-blue-500)",
+		secondaryVar: "var(--color-tag-blue-900)",
 	},
 	Green: {
 		bg: "bg-tag-green-900",
@@ -49,6 +57,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-green-100",
 		secondaryText: "text-tag-green-100/75",
 		border: "border border-tag-green-500",
+		var: "var(--color-tag-green-500)",
+		secondaryVar: "var(--color-tag-green-900)",
 	},
 	Roasted: {
 		bg: "bg-tag-yellow-900",
@@ -57,6 +67,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-yellow-100",
 		secondaryText: "text-tag-yellow-100/75",
 		border: "border border-tag-yellow-500",
+		var: "var(--color-tag-yellow-500)",
+		secondaryVar: "var(--color-tag-yellow-900)",
 	},
 	Sour: {
 		bg: "bg-tag-orange-900",
@@ -65,6 +77,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-orange-100",
 		secondaryText: "text-tag-orange-100/75",
 		border: "border border-tag-orange-500",
+		var: "var(--color-tag-orange-500)",
+		secondaryVar: "var(--color-tag-orange-900)",
 	},
 	Spices: {
 		bg: "bg-tag-purple-900",
@@ -73,6 +87,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-purple-100",
 		secondaryText: "text-tag-purple-100/75",
 		border: "border border-tag-purple-500",
+		var: "var(--color-tag-purple-500)",
+		secondaryVar: "var(--color-tag-purple-900)",
 	},
 	Sweet: {
 		bg: "bg-tag-yellow-900",
@@ -81,6 +97,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-yellow-100",
 		secondaryText: "text-tag-yellow-100/75",
 		border: "border border-tag-yellow-500",
+		var: "var(--color-tag-yellow-500)",
+		secondaryVar: "var(--color-tag-yellow-900)",
 	},
 	default: {
 		bg: "bg-tag-gray-900",
@@ -89,6 +107,8 @@ export const colorSwatch: Record<Note, Swatch> = {
 		text: "text-tag-gray-100",
 		secondaryText: "text-tag-gray-100/75",
 		border: "border border-tag-gray-500",
+		var: "var(--color-tag-gray-500)",
+		secondaryVar: "var(--color-tag-gray-900)",
 	},
 };
 
