@@ -5,7 +5,6 @@ import {
 	Cookie,
 	FileQuestion,
 	FireExtinguisher,
-	Flame,
 	Flower,
 	Leaf,
 	type LucideIcon,
