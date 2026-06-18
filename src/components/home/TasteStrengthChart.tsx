@@ -1,4 +1,4 @@
-type ScorePoint = {
+type ChartData = {
 	taste: number | null;
 	strength: number | null;
 	rating?: number | null;
@@ -19,11 +19,11 @@ function toY(strength: number) {
 }
 
 export default function TasteStrengthChart({
-	points,
+	ChartData,
 }: {
-	points: ScorePoint[];
+	ChartData: ChartData[];
 }) {
-	const validPoints = points.filter(
+	const validPoints = ChartData.filter(
 		(p) => p.taste != null && p.strength != null,
 	);
 

@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
 import { Link } from "react-router";
+import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
@@ -253,10 +254,18 @@ export default function Library() {
 						</div>
 
 						<div className="grid grid-cols-1 gap-2 pt-1">
-							<Button variant="add" onClick={() => addRandomBean()}>
+							<Button
+								variant="add"
+								onClick={() => addRandomBean()}
+								className={`${import.meta.env.PROD && "hidden"}`}
+							>
 								Add Random Bean
 							</Button>
-							<Button variant="add" onClick={() => addRandomMachine()}>
+							<Button
+								variant="add"
+								onClick={() => addRandomMachine()}
+								className={`${import.meta.env.PROD && "hidden"}`}
+							>
 								Add Random Machine
 							</Button>
 						</div>
@@ -269,19 +278,18 @@ export default function Library() {
 							{filteredBeans.length === 0 ? (
 								<>
 									{allBeans.length === 0 ? (
-										<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
+										<div className="border border-dashed border-border p-12 text-center space-y-3 w-full h-full">
 											<p className="font-News text-2xl text-foreground/60">
 												No beans
 											</p>
 											<p className="font-Recursive text-sm text-muted-foreground">
 												Add your first bean to get started.
 											</p>
-											<Link
+											<AddCard
 												to="/log/bean"
-												className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
-											>
-												Log a Bean
-											</Link>
+												label="Add bean"
+												className="min-h-24"
+											/>
 										</div>
 									) : (
 										<p className="text-sm text-muted-foreground">
@@ -300,6 +308,11 @@ export default function Library() {
 											}
 										/>
 									))}
+									<AddCard
+										to="/log/bean"
+										label="Add bean"
+										className="min-h-24"
+									/>
 								</div>
 							)}
 						</div>
@@ -331,6 +344,7 @@ export default function Library() {
 											machine={machine}
 										/>
 									))}
+									<AddCard to="/log/machine" label="Add machine" />
 								</div>
 							)}
 						</div>

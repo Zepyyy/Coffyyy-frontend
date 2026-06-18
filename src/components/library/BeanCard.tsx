@@ -15,6 +15,7 @@ import { deleteBeanById } from "@/db/crud/delete";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
+import RoastDots from "../home/RoastDots";
 import { Separator } from "../ui/separator";
 
 const noteBadge: Partial<
@@ -77,11 +78,9 @@ export default function BeanCard({
 
 	const parameters: Parameter[] = [
 		{ label: "Variety", values: bean.variety },
-		{ label: "Note", singleValue: bean.dominantNote },
+		{ label: "Flavors", values: bean.flavors },
 		{ label: "Process", values: bean.process },
 	];
-
-	console.log(dialInState);
 
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
@@ -96,7 +95,7 @@ export default function BeanCard({
 				</div>
 
 				<div
-					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium dark:text-tag-primary-200 ${colorSwatch[bean.dominantNote]?.secondaryText}`}
+					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${colorSwatch[bean.dominantNote]?.secondaryText}`}
 				>
 					{bean.origin.join(", ")} · {bean.brand}
 				</div>
@@ -119,66 +118,68 @@ export default function BeanCard({
 					className={`size-6 absolute top-5 right-5 ${colorSwatch[bean.dominantNote]?.text}`}
 				/>
 			</article>
-
 			<Separator />
-			<div className="flex flex-1 flex-col p-4">
-				<article className="flex flex-wrap justify-between">
-					{parameters.map(({ label, singleValue, values }) => (
-						<div key={label}>
-							<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
-								{label}
+
+			<article className="flex flex-1 flex-col gap-6 py-4 px-4">
+				{parameters.map(
+					(param) =>
+						(param.values?.length ?? 0) > 0 && (
+							<div key={param.label} className="flex flex-col gap-2">
+								<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
+									{param.label}
+								</span>
+								<div className="flex flex-wrap gap-1.5">
+									{param.values?.map((value) => (
+										<span
+											key={value}
+											className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em] border border-primary/15 bg-primary/5 px-2 py-0.5"
+										>
+											{value}
+										</span>
+									))}
+								</div>
 							</div>
-							<div className="text-foreground font-medium font-Recursive text-sm">
-								{singleValue ?? values?.join(", ")}
-							</div>
-						</div>
-					))}
-				</article>
-				<div className="squiggly-line mt-4 w-full scale-x-125 scale-y-50 opacity-20" />
-				<article className="mt-4 text-wrap">
-					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
-						Flavors
-					</div>
-					<span
-						className="block text-sm font-medium font-Recursive text-foreground overflow-hidden"
-						style={{
-							display: "-webkit-box",
-							WebkitBoxOrient: "vertical",
-							WebkitLineClamp: 3,
-						}}
-					>
-						{bean.flavors.join(", ")}
+						),
+				)}
+				<div className="flex flex-col gap-2">
+					<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
+						Roast Level
 					</span>
-				</article>
-				<div className="mt-auto flex justify-end pt-4">
-					{confirmDelete ? (
-						<div className="flex items-center gap-2 text-sm">
-							<span className="text-xs text-muted-foreground">Sure?</span>
-							<button
-								type="button"
-								onClick={() => setConfirmDelete(false)}
-								className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								type="button"
-								onClick={() => deleteBeanById(bean.id)}
-								className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-							>
-								Delete
-							</button>
-						</div>
-					) : (
+					<div className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em]">
+						{bean.roastLevel !== undefined && (
+							<RoastDots level={bean.roastLevel} />
+						)}
+					</div>
+				</div>
+			</article>
+			<div className="mt-auto flex justify-end pt-4">
+				{confirmDelete ? (
+					<div className="flex items-center gap-2 text-sm">
+						<span className="text-xs text-muted-foreground">Sure?</span>
 						<button
 							type="button"
-							onClick={() => setConfirmDelete(true)}
-							className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
+							onClick={() => setConfirmDelete(false)}
+							className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							type="button"
+							onClick={() => deleteBeanById(bean.id)}
+							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
 						>
 							Delete
 						</button>
-					)}
-				</div>
+					</div>
+				) : (
+					<button
+						type="button"
+						onClick={() => setConfirmDelete(true)}
+						className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
+					>
+						Delete
+					</button>
+				)}
 			</div>
 		</div>
 	);

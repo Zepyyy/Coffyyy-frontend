@@ -5,6 +5,7 @@ import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
 import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
+import AddCard from "@/components/library/AddCard";
 import { Button } from "@/components/ui/button";
 import addRandomBrewsInsights from "@/db/crud/add";
 import { useAllBeans } from "@/hooks/api/useBeans";
@@ -46,6 +47,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 						}
 					/>
 				))}
+				<AddCard label="Add Bean" to="/log/bean" />
 			</div>
 
 			{selectedBean && beanInsights && (
@@ -53,6 +55,9 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 					insights={beanInsights}
 					brewCount={brewCount}
 					bean={selectedBean}
+					withBarChart
+					withHeader
+					withGraph
 				/>
 			)}
 			{selectedBean && brewCount === 0 && <NoBrewsPanel bean={selectedBean} />}

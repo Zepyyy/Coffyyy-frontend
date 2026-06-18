@@ -41,12 +41,12 @@ export default function FilterCard({
 								}
 							}}
 						>
-							<span className="font-mono text-sm uppercase">
+							<span className="font-Mono text-sm uppercase">
 								{option.label}
 							</span>
 							<span
 								className={cn(
-									"text-[10px] font-mono px-2 py-0.5 rounded-full",
+									"text-[10px] font-Mono px-2 py-0.5 rounded-full",
 									option.active
 										? "bg-primary text-primary-foreground"
 										: "bg-primary/10",
