@@ -1,6 +1,6 @@
 import { Coffee } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
@@ -15,12 +15,31 @@ import {
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
 import type { Beans } from "@/types/BeanTypes";
+import { api } from "@/lib/axios";
 
 function BeanSection({ allBeans }: { allBeans: Beans[] }) {
-	const [selectedBeanId, setSelectedBeanId] = useState<number | undefined>();
+	const [searchParams, setSearchParams] = useSearchParams();
+	const selectedBeanId = searchParams.get("bean")
+		? Number(searchParams.get("bean"))
+		: undefined;
+
 	const beanInsights = useBeanBrewInsights(selectedBeanId);
 	const brewCount = useBrewCountForBeanId(selectedBeanId);
 	const selectedBean = allBeans.find((b) => b.id === selectedBeanId);
+
+	function selectBean(id: number) {
+		setSearchParams(
+			(prev) => {
+				if (id === selectedBeanId) {
+					prev.delete("bean");
+				} else {
+					prev.set("bean", String(id));
+				}
+				return prev;
+			},
+			{ replace: true },
+		);
+	}
 
 	return (
 		<section className="space-y-4 w-full">
@@ -40,11 +59,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 						key={bean.id}
 						bean={bean}
 						selected={bean.id === selectedBeanId}
-						onClick={() =>
-							setSelectedBeanId(
-								bean.id === selectedBeanId ? undefined : bean.id,
-							)
-						}
+						onClick={() => selectBean(bean.id)}
 					/>
 				))}
 				<AddCard label="Add Bean" to="/log/bean" />

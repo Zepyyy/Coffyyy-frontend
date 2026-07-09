@@ -164,7 +164,7 @@ export default function BeansLog() {
 
 	return (
 		<div className="mx-auto w-full max-w-4/5">
-			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
+			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8 bg-background/80 backdrop-blur-md rounded-xl p-6 lg:p-8">
 				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
