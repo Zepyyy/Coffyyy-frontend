@@ -15,7 +15,6 @@ import {
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
 import type { Beans } from "@/types/BeanTypes";
-import { api } from "@/lib/axios";
 
 function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 	const [searchParams, setSearchParams] = useSearchParams();

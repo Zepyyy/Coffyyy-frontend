@@ -2,6 +2,14 @@ import { db } from "@/db/db";
 import type { BeanFilters, BeanSuggestions, Beans } from "@/types/BeanTypes";
 import { uniqueSorted } from "./utils";
 
+export async function getBean(
+	beanId: number | undefined,
+): Promise<Beans | undefined> {
+	if (!beanId) return undefined;
+	const bean = await db.Beans.get(beanId);
+	return bean;
+}
+
 export async function getAllBeans(): Promise<Array<Beans>> {
 	return db.Beans.toArray();
 }

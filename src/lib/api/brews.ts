@@ -129,6 +129,14 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 	};
 }
 
+export async function getBrewsForBeanId(
+	beanId: number | undefined,
+): Promise<Brews[]> {
+	if (!beanId) return [];
+	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
+}
+
 export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 	const beans = await db.Beans.toArray().then((b) =>
 		b.map((b) => ({
