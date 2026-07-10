@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { api, AUTH_TOKEN_KEY, API_ENV_KEY, BACKENDS, type BackendEnv } from "@/lib/axios";
+import {
+	api,
+	AUTH_TOKEN_KEY,
+	API_ENV_KEY,
+	BACKENDS,
+	type BackendEnv,
+} from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 
 type RequestState = {
@@ -99,6 +105,8 @@ export default function Dev() {
 	const [env, setEnvState] = useState<BackendEnv>(readEnv);
 	const [token, setTokenState] = useState<string | null>(readToken);
 	const [authLoading, setAuthLoading] = useState(false);
+	const [username, setUsername] = useState("qsd");
+	const [password, setPassword] = useState("qsd");
 
 	function switchEnv(next: BackendEnv) {
 		localStorage.setItem(API_ENV_KEY, next);
@@ -109,8 +117,8 @@ export default function Dev() {
 		setAuthLoading(true);
 		try {
 			const res = await api.post("/auth/login", {
-				username: "qsd",
-				password: "qsd",
+				username,
+				password,
 			});
 			const jwt: string = res.data?.token ?? res.data?.access_token ?? res.data;
 			localStorage.setItem(AUTH_TOKEN_KEY, jwt);
@@ -195,19 +203,33 @@ export default function Dev() {
 							</button>
 						</>
 					) : (
-						<>
+						<div className="flex flex-col gap-2">
 							<span className="font-Mono text-[10px] text-muted-foreground">
 								not authenticated
 							</span>
+							<input
+								type="text"
+								placeholder="Username"
+								value={username}
+								onChange={(e) => setUsername(e.target.value)}
+								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary"
+							/>
+							<input
+								type="password"
+								placeholder="Password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary"
+							/>
 							<button
 								type="button"
 								onClick={login}
 								disabled={authLoading}
 								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 hover:bg-muted/40 transition-colors disabled:opacity-50"
 							>
-								{authLoading ? "logging in…" : "Login (qsd)"}
+								{authLoading ? "logging in…" : "Login"}
 							</button>
-						</>
+						</div>
 					)}
 				</div>
 			</div>
@@ -260,7 +282,9 @@ export default function Dev() {
 						</span>
 					)}
 					{result.status === "success" && (
-						<span className="font-Mono text-[10px] text-emerald-400">200 OK</span>
+						<span className="font-Mono text-[10px] text-emerald-400">
+							200 OK
+						</span>
 					)}
 					{result.status === "error" && (
 						<span className="font-Mono text-[10px] text-red-400">error</span>
