@@ -12,6 +12,7 @@ import BrewLog from "./pages/log/Brew.tsx";
 import MachinesLog from "./pages/log/Machines.tsx";
 import Providers from "./providers/Providers.tsx";
 import Bean from "./pages/Bean.tsx";
+import Dev from "./pages/Dev.tsx";
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
@@ -32,6 +33,7 @@ createRoot(document.getElementById("root")!).render(
 						{/* Legacy redirects */}
 						<Route path="brew" element={<Navigate to="/log/brew" replace />} />
 						<Route path="beans/:BeanId" element={<Bean />} />
+						<Route path="dev" element={<Dev />} />
 						{/*<Route path="beans" element={<Navigate to="/log/bean" replace />} />*/}
 						<Route
 							path="machines"

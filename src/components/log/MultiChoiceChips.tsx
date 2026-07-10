@@ -25,7 +25,9 @@ export default function MultiChips({
 		...selected.filter((s) => !suggestions.includes(s)),
 	];
 	const allChips =
-		pending && !baseChips.includes(pending) ? [...baseChips, pending] : baseChips;
+		pending && !baseChips.includes(pending)
+			? [...baseChips, pending]
+			: baseChips;
 
 	return (
 		<div

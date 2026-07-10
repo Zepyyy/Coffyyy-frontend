@@ -5,7 +5,10 @@ import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useBean } from "@/hooks/api/useBeans";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
-import { useBeanBrewInsights, useBrewCountForBeanId } from "@/hooks/api/useStats";
+import {
+	useBeanBrewInsights,
+	useBrewCountForBeanId,
+} from "@/hooks/api/useStats";
 import { colorSwatch } from "@/lib/utils";
 
 export default function Bean() {
@@ -190,7 +193,9 @@ export default function Bean() {
 
 				{brews?.length === 0 && (
 					<div className="space-y-3 border border-dashed border-border p-10 text-center">
-						<p className="font-News text-2xl text-foreground/60">No brews yet</p>
+						<p className="font-News text-2xl text-foreground/60">
+							No brews yet
+						</p>
 						<p className="font-Recursive text-sm text-muted-foreground">
 							Log your first brew with this bean.
 						</p>

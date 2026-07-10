@@ -109,13 +109,19 @@ export default function Home() {
 				<Coffee className="size-8 text-primary/20 group-hover:text-primary/30 transition-colors" />
 			</Link>
 
-			<Button
-				variant="add"
-				onClick={() => addRandomBrewsInsights(36)}
-				className={`${import.meta.env.PROD && "hidden"}`}
-			>
-				Add insights
-			</Button>
+			{!import.meta.env.PROD && (
+				<div className="flex gap-2">
+					<Button variant="add" onClick={() => addRandomBrewsInsights(36)}>
+						Add insights
+					</Button>
+					<Link
+						to="/dev"
+						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+					>
+						API Playground →
+					</Link>
+				</div>
+			)}
 
 			{/* Taste rating prompt for latest unrated brew */}
 			{pendingRating && (
