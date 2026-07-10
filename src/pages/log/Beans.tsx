@@ -164,7 +164,7 @@ export default function BeansLog() {
 
 	return (
 		<div className="mx-auto w-full max-w-4/5">
-			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
+			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8 bg-background/80 backdrop-blur-md rounded-xl p-6 lg:p-8">
 				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
@@ -175,19 +175,21 @@ export default function BeansLog() {
 								Catalog a new bean in your library.
 							</p>
 						</div>
-						<div className="bg-background p-2 border border-primary/20">
-							<p className="text-sm text-foreground py-1">Status: {status}</p>
-							{Object.entries(form).map(([key, value]) => (
-								<div key={key}>
-									<p className="text-sm text-muted-foreground space-x-4">
-										<span>{key}: </span>
-										<span className="font-mono text-foreground">
-											{Array.isArray(value) ? value.join(", ") : value}
-										</span>
-									</p>
-								</div>
-							))}
-						</div>
+						{import.meta.env.DEV && (
+							<div className="bg-background p-2 border border-primary/20">
+								<p className="text-sm text-foreground py-1">Status: {status}</p>
+								{Object.entries(form).map(([key, value]) => (
+									<div key={key}>
+										<p className="text-sm text-muted-foreground space-x-4">
+											<span>{key}: </span>
+											<span className="font-mono text-foreground">
+												{Array.isArray(value) ? value.join(", ") : value}
+											</span>
+										</p>
+									</div>
+								))}
+							</div>
+						)}
 						<div>
 							{fieldErrors &&
 								Object.entries(fieldErrors).map(([key, value]) => (

@@ -64,16 +64,14 @@ export default function SingleChoiceChips({
 							onCustomAdd();
 						}
 					}}
+					onBlur={() => {
+						const val = customInput.trim();
+						if (val) {
+							onChange(val);
+							onCustomChange("");
+						}
+					}}
 				/>
-				{customInput.trim() && (
-					<button
-						type="button"
-						onClick={onCustomAdd}
-						className="border border-border bg-background px-3 font-Mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
-					>
-						Add
-					</button>
-				)}
 			</div>
 			{requiredField && (
 				<p className="text-xs text-destructive">{requiredField}</p>

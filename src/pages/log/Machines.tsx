@@ -108,19 +108,21 @@ export default function MachinesLog() {
 								Register a new machine.
 							</p>
 						</div>
-						<div className="bg-background p-2 border border-primary/20">
-							<p className="text-sm text-foreground py-1">Status: {status}</p>
-							{Object.entries(form).map(([key, value]) => (
-								<div key={key}>
-									<p className="text-sm text-muted-foreground space-x-4">
-										<span>{key}: </span>
-										<span className="font-mono text-foreground">
-											{Array.isArray(value) ? value.join(", ") : value}
-										</span>
-									</p>
-								</div>
-							))}
-						</div>
+						{import.meta.env.DEV && (
+							<div className="bg-background p-2 border border-primary/20">
+								<p className="text-sm text-foreground py-1">Status: {status}</p>
+								{Object.entries(form).map(([key, value]) => (
+									<div key={key}>
+										<p className="text-sm text-muted-foreground space-x-4">
+											<span>{key}: </span>
+											<span className="font-mono text-foreground">
+												{Array.isArray(value) ? value.join(", ") : value}
+											</span>
+										</p>
+									</div>
+								))}
+							</div>
+						)}
 						<div>
 							{fieldErrors &&
 								Object.entries(fieldErrors).map(([key, value]) => (

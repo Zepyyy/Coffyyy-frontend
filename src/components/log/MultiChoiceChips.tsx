@@ -19,10 +19,13 @@ export default function MultiChips({
 	placeholder: string;
 	requiredField?: string;
 }) {
-	const allChips = [
+	const pending = customInput.trim();
+	const baseChips = [
 		...suggestions,
 		...selected.filter((s) => !suggestions.includes(s)),
 	];
+	const allChips =
+		pending && !baseChips.includes(pending) ? [...baseChips, pending] : baseChips;
 
 	return (
 		<div
@@ -33,28 +36,33 @@ export default function MultiChips({
 		>
 			{allChips.length > 0 && (
 				<div className="flex flex-wrap gap-1.5">
-					{allChips.map((s) => (
-						<button
-							key={s}
-							type="button"
-							onClick={() => onToggle(s)}
-							className={cn(
-								"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors",
-								selected.includes(s)
-									? "border-primary/30 bg-primary/5 text-primary-800 dark:text-primary-200"
-									: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-							)}
-						>
-							{s}
-							{selected.includes(s) ? (
-								<span className="opacity-50 hover:opacity-100 leading-none text-sm">
-									×
-								</span>
-							) : (
-								<span>+</span>
-							)}
-						</button>
-					))}
+					{allChips.map((s) => {
+						const isPending = s === pending && !selected.includes(s);
+						return (
+							<button
+								key={s}
+								type="button"
+								onClick={() => (isPending ? onCustomAdd() : onToggle(s))}
+								className={cn(
+									"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors",
+									selected.includes(s)
+										? "border-primary/30 bg-primary/5 text-primary-800 dark:text-primary-200"
+										: isPending
+											? "border-primary/50 border-dashed text-foreground hover:border-primary"
+											: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+								)}
+							>
+								{s}
+								{selected.includes(s) ? (
+									<span className="opacity-50 hover:opacity-100 leading-none text-sm">
+										×
+									</span>
+								) : (
+									<span>+</span>
+								)}
+							</button>
+						);
+					})}
 				</div>
 			)}
 			<div className="flex gap-2">
@@ -69,16 +77,10 @@ export default function MultiChips({
 							onCustomAdd();
 						}
 					}}
+					onBlur={() => {
+						if (customInput.trim()) onCustomAdd();
+					}}
 				/>
-				{customInput.trim() && (
-					<button
-						type="button"
-						onClick={onCustomAdd}
-						className="border border-border bg-background px-3 font-Mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
-					>
-						Add
-					</button>
-				)}
 			</div>
 			{requiredField && (
 				<p className="text-xs text-destructive">{requiredField}</p>
