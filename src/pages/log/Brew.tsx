@@ -128,21 +128,23 @@ export default function BrewLog() {
 								Log parameters, rate later.
 							</p>
 						</div>
-						<div className="bg-background p-2 border border-primary/20">
-							<p className="text-sm text-foreground py-1">Status: {status}</p>
-							{Object.entries(form).map(([key, value]) => (
-								<div key={key}>
-									<p className="text-sm text-muted-foreground space-x-4">
-										<span>{key}: </span>
-										<span className="font-mono text-foreground">
-											{Array.isArray(value)
-												? value.join(", ")
-												: value?.toLocaleString()}
-										</span>
-									</p>
-								</div>
-							))}
-						</div>
+						{import.meta.env.DEV && (
+							<div className="bg-background p-2 border border-primary/20">
+								<p className="text-sm text-foreground py-1">Status: {status}</p>
+								{Object.entries(form).map(([key, value]) => (
+									<div key={key}>
+										<p className="text-sm text-muted-foreground space-x-4">
+											<span>{key}: </span>
+											<span className="font-mono text-foreground">
+												{Array.isArray(value)
+													? value.join(", ")
+													: value?.toLocaleString()}
+											</span>
+										</p>
+									</div>
+								))}
+							</div>
+						)}
 						{error && <p className="text-sm text-foreground py-1">{error}</p>}
 					</div>
 				</aside>
