@@ -16,10 +16,17 @@ type RequestState = {
 
 const IDLE: RequestState = { status: "idle", data: null, label: "" };
 
+type ModalState = {
+	isOpen: boolean;
+	type: "bean" | "brew" | "machine";
+	mode: "POST" | "PATCH" | "DELETE";
+	id?: string;
+};
+
 type Endpoint = {
 	label: string;
 	method: "GET" | "POST" | "PATCH" | "DELETE";
-	run: () => Promise<unknown>;
+	run: (body?: unknown, id?: string) => Promise<unknown>;
 };
 
 const ENDPOINTS: { section: string; items: Endpoint[] }[] = [
@@ -32,34 +39,21 @@ const ENDPOINTS: { section: string; items: Endpoint[] }[] = [
 				run: () => api.get("/bean").then((r) => r.data),
 			},
 			{
-				label: "POST /bean (sample)",
+				label: "POST /bean",
 				method: "POST",
-				run: () =>
-					api
-						.post("/bean", {
-							name: "Dev Test Bean",
-							flavors: ["Apricot"],
-							rating: 1,
-							roastLevel: 4,
-							countries: ["Colombia"],
-							cities: ["Bogotà"],
-							botanic: "ARABICA",
-							varieties: ["Castillo"],
-							brands: ["TANAT"],
-							status: "EXCELLENT",
-							dominantNote: "FRUITY",
-							designation: "PURE_ORIGIN",
-							finished: false,
-						})
-						.then((r) => r.data),
+				run: (body?: unknown) => api.post("/bean", body).then((r) => r.data),
 			},
 			{
-				label: "PATCH /bean/1",
+				label: "PATCH /bean/:id",
 				method: "PATCH",
-				run: () =>
-					api
-						.patch("/bean/1", { name: "Test Bean from frontend" })
-						.then((r) => r.data),
+				run: (body?: unknown, id?: string) =>
+					api.patch(`/bean/${id}`, body).then((r) => r.data),
+			},
+			{
+				label: "DELETE /bean/:id",
+				method: "DELETE",
+				run: (_?: unknown, id?: string) =>
+					api.delete(`/bean/${id}`).then((r) => r.data),
 			},
 		],
 	},
@@ -71,6 +65,23 @@ const ENDPOINTS: { section: string; items: Endpoint[] }[] = [
 				method: "GET",
 				run: () => api.get("/brew").then((r) => r.data),
 			},
+			{
+				label: "POST /brew",
+				method: "POST",
+				run: (body?: unknown) => api.post("/brew", body).then((r) => r.data),
+			},
+			{
+				label: "PATCH /brew/:id",
+				method: "PATCH",
+				run: (body?: unknown, id?: string) =>
+					api.patch(`/brew/${id}`, body).then((r) => r.data),
+			},
+			{
+				label: "DELETE /brew/:id",
+				method: "DELETE",
+				run: (_?: unknown, id?: string) =>
+					api.delete(`/brew/${id}`).then((r) => r.data),
+			},
 		],
 	},
 	{
@@ -80,6 +91,23 @@ const ENDPOINTS: { section: string; items: Endpoint[] }[] = [
 				label: "GET /machine",
 				method: "GET",
 				run: () => api.get("/machine").then((r) => r.data),
+			},
+			{
+				label: "POST /machine",
+				method: "POST",
+				run: (body?: unknown) => api.post("/machine", body).then((r) => r.data),
+			},
+			{
+				label: "PATCH /machine/:id",
+				method: "PATCH",
+				run: (body?: unknown, id?: string) =>
+					api.patch(`/machine/${id}`, body).then((r) => r.data),
+			},
+			{
+				label: "DELETE /machine/:id",
+				method: "DELETE",
+				run: (_?: unknown, id?: string) =>
+					api.delete(`/machine/${id}`).then((r) => r.data),
 			},
 		],
 	},
@@ -107,10 +135,43 @@ export default function Dev() {
 	const [authLoading, setAuthLoading] = useState(false);
 	const [username, setUsername] = useState("qsd");
 	const [password, setPassword] = useState("qsd");
+	const [modal, setModal] = useState<ModalState>({
+		isOpen: false,
+		type: "bean",
+		mode: "POST",
+	});
+	const [selectedId, setSelectedId] = useState<string>("");
+	const [jsonBody, setJsonBody] = useState<string>("");
 
 	function switchEnv(next: BackendEnv) {
 		localStorage.setItem(API_ENV_KEY, next);
 		setEnvState(next);
+	}
+
+	function openModal(
+		type: ModalState["type"],
+		mode: ModalState["mode"],
+		id?: string,
+	) {
+		setModal({ isOpen: true, type, mode, id });
+		if (id) setSelectedId(id);
+		if (mode === "POST") {
+			setJsonBody("");
+		}
+	}
+
+	function closeModal() {
+		setModal({ isOpen: false, type: "bean", mode: "POST" });
+		setSelectedId("");
+		setJsonBody("");
+	}
+
+	function getDataForType() {
+		try {
+			return jsonBody ? JSON.parse(jsonBody) : {};
+		} catch {
+			return {};
+		}
 	}
 
 	async function login() {
@@ -137,18 +198,131 @@ export default function Dev() {
 	}
 
 	async function run(endpoint: Endpoint) {
+		if (endpoint.method !== "GET" && !modal.isOpen) {
+			const type = endpoint.label.includes("brew")
+				? "brew"
+				: endpoint.label.includes("machine")
+					? "machine"
+					: "bean";
+			const mode = endpoint.method as ModalState["mode"];
+			openModal(type, mode);
+			return;
+		}
+
 		setResult({ status: "loading", data: null, label: endpoint.label });
+		closeModal();
 		try {
-			const data = await endpoint.run();
+			const body = getDataForType();
+			const id =
+				endpoint.method === "GET" ? undefined : selectedId || undefined;
+			const data = await endpoint.run(body, id);
 			setResult({ status: "success", data, label: endpoint.label });
+			setSelectedId("");
 		} catch (err: unknown) {
 			const message = err instanceof Error ? err.message : "Unknown error";
 			setResult({ status: "error", data: message, label: endpoint.label });
 		}
 	}
 
+	function renderModal() {
+		if (!modal.isOpen) return null;
+
+		const isDelete = modal.mode === "DELETE";
+		const typeLabel = modal.type.charAt(0).toUpperCase() + modal.type.slice(1);
+
+		return (
+			<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+				<div className="bg-background border border-border max-w-2xl w-full rounded-lg shadow-lg">
+					<div className="p-4 border-b border-border flex items-center justify-between">
+						<h3 className="font-News text-lg">
+							{modal.mode} {typeLabel}
+							{modal.mode !== "POST" && modal.id && ` #${modal.id}`}
+						</h3>
+						<p className="font-Mono text-[10px] text-muted-foreground">
+							{isDelete
+								? `Are you sure you want to delete this ${modal.type}?`
+								: `Enter the details for the ${modal.type} ${modal.mode.toLowerCase()}`}
+						</p>
+						<button
+							onClick={closeModal}
+							className="text-muted-foreground hover:text-foreground text-xl"
+						>
+							×
+						</button>
+					</div>
+
+					<div className="p-4 space-y-4">
+						{modal.mode !== "DELETE" && (
+							<div className="space-y-2">
+								<label
+									htmlFor="json-body"
+									className="font-Mono text-[10px] uppercase tracking-[0.12em] block"
+								>
+									Request Body (JSON)
+								</label>
+								<textarea
+									id="json-body"
+									value={jsonBody}
+									onChange={(e) => setJsonBody(e.target.value)}
+									className="w-full font-Mono text-xs p-3 bg-muted/20 border border-border rounded-md min-h-32"
+									placeholder="{}"
+								/>
+							</div>
+						)}
+
+						<div className="space-y-2">
+							<label
+								htmlFor="id"
+								className="font-Mono text-[10px] uppercase tracking-[0.12em] block"
+							>
+								{modal.mode === "POST"
+									? "ID (leave empty for auto-generate)"
+									: "ID"}
+							</label>
+							<input
+								id="id"
+								value={selectedId}
+								disabled={modal.mode === "POST"}
+								onChange={(e) => setSelectedId(e.target.value)}
+								className="w-full font-Mono text-xs p-2 bg-muted/20 border border-border rounded-md disabled:opacity-50"
+							/>
+						</div>
+					</div>
+
+					<div className="p-4 border-t border-border flex justify-end gap-3">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={closeModal}
+							className="font-Mono text-[10px]"
+						>
+							Cancel
+						</Button>
+						<Button
+							size="sm"
+							className="font-Mono text-[10px]"
+							disabled={isDelete && !selectedId}
+							onClick={() => {
+								const endpoint = ENDPOINTS.flatMap((s) => s.items).find(
+									(e) =>
+										e.method === modal.mode && e.label.includes(modal.type),
+								);
+								if (endpoint) {
+									void run(endpoint);
+								}
+							}}
+						>
+							{modal.mode}
+						</Button>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="w-full mx-auto max-w-4xl px-6 py-8 space-y-8">
+			{renderModal()}
 			{/* Header */}
 			<div>
 				<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -258,6 +432,11 @@ export default function Dev() {
 									<span className="font-Mono text-xs text-foreground/80">
 										{ep.label.replace(/^(GET|POST|PATCH|DELETE) /, "")}
 									</span>
+									{ep.method !== "GET" && (
+										<span className="ml-auto text-muted-foreground/50">
+											...
+										</span>
+									)}
 								</button>
 							))}
 						</div>
