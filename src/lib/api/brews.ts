@@ -47,6 +47,18 @@ function sortBrews(list: Brews[], sort: HistorySortMode): Brews[] {
 	return sorted;
 }
 
+async function getBrewNameMaps() {
+	const [beans, machines] = await Promise.all([
+		db.Beans.toArray(),
+		db.Machines.toArray(),
+	]);
+
+	return {
+		beans: new Map(beans.map((bean) => [bean.id, bean.name])),
+		machines: new Map(machines.map((machine) => [machine.id, machine.name])),
+	};
+}
+
 export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 	const brews = await db.Brews.orderBy("date").reverse().limit(limit).toArray();
 	return brews;
@@ -70,16 +82,35 @@ export async function getBrewsForHistoryView(
 	minRating: number | null,
 ): Promise<Brews[]> {
 	let list = await db.Brews.toArray();
+	const names = await getBrewNameMaps();
 	const q = search.trim().toLowerCase();
 	if (q) {
-		list = list.filter(
-			(b) =>
-				Boolean(b.beanId?.toString().toLowerCase().includes(q)) ||
-				Boolean(b.machineId?.toString().toLowerCase().includes(q)),
-		);
+		list = list.filter((brew) => {
+			const beanName =
+				brew.beanId != null ? names.beans.get(brew.beanId)?.toLowerCase() : "";
+			const machineName =
+				brew.machineId != null
+					? names.machines.get(brew.machineId)?.toLowerCase()
+					: "";
+			return (
+				Boolean(beanName?.includes(q)) ||
+				Boolean(machineName?.includes(q)) ||
+				Boolean(brew.beanId?.toString().includes(q)) ||
+				Boolean(brew.machineId?.toString().includes(q))
+			);
+		});
 	}
 	if (minRating !== null) {
 		list = list.filter((b) => (b.overallRating ?? 0) >= minRating);
+	}
+	if (sort === "bean-asc" || sort === "bean-desc") {
+		return [...list].sort((a, b) => {
+			const aName = a.beanId != null ? (names.beans.get(a.beanId) ?? "") : "";
+			const bName = b.beanId != null ? (names.beans.get(b.beanId) ?? "") : "";
+			return sort === "bean-asc"
+				? aName.localeCompare(bName)
+				: bName.localeCompare(aName);
+		});
 	}
 	return sortBrews(list, sort);
 }
@@ -98,8 +129,12 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 	const beans = new Set(
 		brews.map((b) => b.beanId).filter((n): n is number => Boolean(n)),
 	);
-	const sum = brews.reduce((s, b) => s + (Number(b.overallRating) || 0), 0);
-	const avg = sum / brews.length;
+	const ratedBrews = brews.filter((b) => b.overallRating != null);
+	const sum = ratedBrews.reduce(
+		(s, b) => s + (Number(b.overallRating) || 0),
+		0,
+	);
+	const avg = ratedBrews.length > 0 ? sum / ratedBrews.length : null;
 	const now = Date.now();
 	const weekMs = 7 * 24 * 60 * 60 * 1000;
 	const last7Days = brews.filter(

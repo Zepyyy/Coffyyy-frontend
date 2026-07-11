@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { Coffee, Search, SlidersHorizontal } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import { Button } from "@/components/ui/button";
 import { addRandomBrew } from "@/db/crud/add";
-import { useHistoryBrews, useHistoryStats } from "@/hooks/api/useBrews";
+import {
+	useBrewSuggestions,
+	useHistoryBrews,
+	useHistoryStats,
+} from "@/hooks/api/useBrews";
 import type { HistorySortMode } from "@/lib/api/brews";
 import { cn } from "@/lib/utils";
 
@@ -27,11 +32,11 @@ const RATING_FILTER_OPTIONS: Array<{ value: "all" | number; label: string }> = [
 
 function HistoryListSkeleton() {
 	return (
-		<div className="space-y-2">
+		<div className="space-y-3">
 			{[1, 2, 3, 4, 5].map((i) => (
 				<div
 					key={i}
-					className="h-17 animate-pulse rounded border border-border bg-muted/40"
+					className="h-36 animate-pulse border border-border bg-muted/40"
 				/>
 			))}
 		</div>
@@ -46,8 +51,24 @@ export default function History() {
 	const minRating = ratingFilter === "all" ? null : ratingFilter;
 	const brews = useHistoryBrews(sortMode, search, minRating);
 	const stats = useHistoryStats();
+	const suggestions = useBrewSuggestions();
+
+	const beanNameMap = useMemo(
+		() => new Map(suggestions.bean.map((bean) => [bean.id, bean.name])),
+		[suggestions.bean],
+	);
+	const machineNameMap = useMemo(
+		() =>
+			new Map(suggestions.machine.map((machine) => [machine.id, machine.name])),
+		[suggestions.machine],
+	);
 
 	const hasActiveFilters = search.trim().length > 0 || ratingFilter !== "all";
+	const shownCount = brews?.length ?? 0;
+	const topMachineName =
+		stats?.topMachine != null
+			? (machineNameMap.get(stats.topMachine) ?? `Machine #${stats.topMachine}`)
+			: "—";
 
 	function clearFilters() {
 		setSearch("");
@@ -55,8 +76,8 @@ export default function History() {
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-7xl">
-			<div className="flex flex-col gap-6 lg:grid lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
+		<div className="mx-auto w-full max-w-5xl px-2 sm:px-6">
+			<div className="grid gap-6 lg:grid-cols-[19rem_minmax(0,1fr)] lg:gap-8">
 				<aside className="max-w-full space-y-5 lg:sticky lg:top-20 lg:max-w-fit lg:self-start">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
@@ -64,21 +85,35 @@ export default function History() {
 								History
 							</h1>
 							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Past brews and their details
+								Brews, ratings, and dial-in notes
 							</p>
 						</div>
-						<div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+						<Link
+							to="/log/brew"
+							className="group relative flex items-center justify-between overflow-hidden border border-primary/20 bg-primary-700/10 px-4 py-4 transition-all hover:border-primary/30 hover:bg-primary-700/15"
+						>
+							<div>
+								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+									Next shot
+								</p>
+								<p className="mt-0.5 font-News text-2xl tracking-tight text-foreground/90">
+									Log a Brew
+								</p>
+							</div>
+							<Coffee className="size-7 text-primary/20 transition-colors group-hover:text-primary/30" />
+						</Link>
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-1">
 							{[
 								{
-									label: "Total brews",
+									label: "Brews",
 									value: stats != null ? String(stats.total) : "…",
 								},
 								{
-									label: "Unique beans",
+									label: "Beans used",
 									value: stats != null ? String(stats.uniqueBeans) : "…",
 								},
 								{
-									label: "Avg rating",
+									label: "Average",
 									value:
 										stats != null && stats.avgRating != null
 											? stats.avgRating.toFixed(1)
@@ -87,19 +122,19 @@ export default function History() {
 												: "…",
 								},
 								{
-									label: "Last 7 days",
+									label: "This week",
 									value: stats != null ? String(stats.last7Days) : "…",
 								},
 								{
 									label: "Top machine",
-									value: stats != null ? (stats.topMachine ?? "—") : "…",
-									className: "col-span-2 lg:col-span-1",
+									value: stats != null ? topMachineName : "…",
+									className: "col-span-2 sm:col-span-4 lg:col-span-1",
 								},
 							].map(({ label, value, className }) => (
 								<div
 									key={label}
 									className={cn(
-										"relative border border-border bg-background hover:border-primary/30 p-3 space-y-1 font-Lora",
+										"relative space-y-1 border border-border bg-background p-3 font-Lora transition-colors hover:border-primary/30",
 										className,
 									)}
 								>
@@ -124,53 +159,78 @@ export default function History() {
 				</aside>
 
 				<section className="min-w-0 space-y-4">
-					<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-						<input
-							className="h-10 min-w-0 flex-1 rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-							placeholder="Search bean or machine…"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							aria-label="Search brews by bean or machine"
-						/>
-						<select
-							className="h-10 rounded-lg border border-border/70 bg-background px-3 text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-							value={ratingFilter === "all" ? "all" : String(ratingFilter)}
-							onChange={(e) => {
-								const v = e.target.value;
-								setRatingFilter(v === "all" ? "all" : Number(v));
-							}}
-							aria-label="Minimum rating filter"
-						>
-							{RATING_FILTER_OPTIONS.map((o) => (
-								<option
-									key={o.label}
-									value={o.value === "all" ? "all" : String(o.value)}
+					<div className="border border-border bg-background">
+						<div className="flex flex-col gap-3 border-b border-border/70 px-4 py-4 sm:flex-row sm:items-end sm:justify-between">
+							<div>
+								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+									Timeline
+								</p>
+								<h2 className="mt-0.5 font-News text-2xl text-foreground/90">
+									{brews === undefined
+										? "Loading brews"
+										: `${shownCount} brew${shownCount === 1 ? "" : "s"}`}
+								</h2>
+							</div>
+							{hasActiveFilters && (
+								<button
+									type="button"
+									onClick={clearFilters}
+									className="w-fit border border-border bg-muted/50 px-3 py-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 								>
-									{o.label}
-								</option>
-							))}
-						</select>
-						<select
-							className="h-10 rounded-lg border border-border/70 bg-background px-3 text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-							value={sortMode}
-							onChange={(e) => setSortMode(e.target.value as HistorySortMode)}
-							aria-label="Sort brews"
-						>
-							{SORT_OPTIONS.map((o) => (
-								<option key={o.value} value={o.value}>
-									{o.label}
-								</option>
-							))}
-						</select>
-						{hasActiveFilters && (
-							<button
-								type="button"
-								onClick={clearFilters}
-								className="h-10 rounded-lg bg-muted px-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-							>
-								Clear
-							</button>
-						)}
+									Clear filters
+								</button>
+							)}
+						</div>
+						<div className="grid gap-2 p-3 md:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+							<label className="relative block">
+								<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+								<input
+									className="h-10 w-full min-w-0 rounded-sm border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+									placeholder="Search beans or machines"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									aria-label="Search brews by bean or machine"
+								/>
+							</label>
+							<label className="relative block">
+								<SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+								<select
+									className="h-10 w-full appearance-none rounded-sm border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+									value={ratingFilter === "all" ? "all" : String(ratingFilter)}
+									onChange={(e) => {
+										const v = e.target.value;
+										setRatingFilter(v === "all" ? "all" : Number(v));
+									}}
+									aria-label="Minimum rating filter"
+								>
+									{RATING_FILTER_OPTIONS.map((o) => (
+										<option
+											key={o.label}
+											value={o.value === "all" ? "all" : String(o.value)}
+										>
+											{o.label}
+										</option>
+									))}
+								</select>
+							</label>
+							<label className="relative block">
+								<SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+								<select
+									className="h-10 w-full appearance-none rounded-sm border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+									value={sortMode}
+									onChange={(e) =>
+										setSortMode(e.target.value as HistorySortMode)
+									}
+									aria-label="Sort brews"
+								>
+									{SORT_OPTIONS.map((o) => (
+										<option key={o.value} value={o.value}>
+											{o.label}
+										</option>
+									))}
+								</select>
+							</label>
+						</div>
 					</div>
 
 					{brews === undefined && <HistoryListSkeleton />}
@@ -207,12 +267,22 @@ export default function History() {
 					)}
 
 					{brews !== undefined && brews.length > 0 && (
-						<div className="space-y-2">
+						<div className="space-y-3">
 							{brews.map((brew) => (
 								<BrewHistoryRow
 									key={brew.id}
 									brew={brew}
-									dotBgClass={"bg-muted"}
+									beanName={
+										brew.beanId != null
+											? (beanNameMap.get(brew.beanId) ?? `Bean #${brew.beanId}`)
+											: "Unknown bean"
+									}
+									machineName={
+										brew.machineId != null
+											? (machineNameMap.get(brew.machineId) ??
+												`Machine #${brew.machineId}`)
+											: "No machine saved"
+									}
 								/>
 							))}
 						</div>
