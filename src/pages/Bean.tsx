@@ -10,6 +10,45 @@ import {
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
 import { colorSwatch } from "@/lib/utils";
+import type { BeanBrewParameterSummary } from "@/types/BrewTypes";
+
+function formatWeight(value: number | null) {
+	return value == null ? "—" : `${value.toFixed(1)} g`;
+}
+
+function formatRatio(value: number | null) {
+	return value == null ? "—" : `1:${value.toFixed(1)}`;
+}
+
+function formatRating(value: number | null) {
+	return value == null ? "—" : `${value.toFixed(1)}/5`;
+}
+
+function buildStatRows(
+	average: BeanBrewParameterSummary,
+	best: BeanBrewParameterSummary | null,
+) {
+	return [
+		["Grind", average.grindSize, best?.grindSize ?? "—"],
+		[
+			"Dose",
+			formatWeight(average.beanWeight),
+			formatWeight(best?.beanWeight ?? null),
+		],
+		[
+			"Espresso",
+			formatWeight(average.espressoWeight),
+			formatWeight(best?.espressoWeight ?? null),
+		],
+		["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
+		["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],
+		[
+			"Rating",
+			formatRating(average._rating),
+			formatRating(best?._rating ?? null),
+		],
+	] as Array<[string, string, string]>;
+}
 
 export default function Bean() {
 	const { BeanId } = useParams();
@@ -43,6 +82,9 @@ export default function Bean() {
 		bean.designation,
 		...(bean.variety ?? []),
 	].filter(Boolean);
+	const statRows = insights
+		? buildStatRows(insights.average, insights.best)
+		: [];
 
 	return (
 		<div className="mx-auto w-full max-w-3xl space-y-6">
@@ -55,7 +97,9 @@ export default function Bean() {
 			</Link>
 
 			{/* Bean header */}
-			<div className={`${swatch.bg} border border-border`}>
+			<div
+				className={`${swatch.bg} border border-foreground/15 shadow-sm shadow-foreground/5 ring-1 ring-inset ring-background/50 dark:border-border dark:shadow-none dark:ring-0`}
+			>
 				<div className="px-6 py-5">
 					<p className={`font-Lora text-3xl font-semibold ${swatch.text}`}>
 						{bean.name}
@@ -79,7 +123,7 @@ export default function Bean() {
 
 				{detailChips.length > 0 && (
 					<div
-						className={`${swatch.secondaryBg} flex flex-wrap gap-x-4 gap-y-1 border-t border-border/20 px-6 py-3`}
+						className={`${swatch.secondaryBg} flex flex-wrap gap-x-4 gap-y-1 border-t border-foreground/15 px-6 py-3 dark:border-border/20`}
 					>
 						{detailChips.map((chip) => (
 							<span
@@ -93,7 +137,7 @@ export default function Bean() {
 				)}
 
 				{bean.flavors?.length > 0 && (
-					<div className="flex flex-wrap gap-2 border-t border-border/20 px-6 py-3">
+					<div className="flex flex-wrap gap-2 border-t border-foreground/15 bg-background/20 px-6 py-3 backdrop-blur-sm dark:border-border/20 dark:bg-transparent dark:backdrop-blur-none">
 						{bean.flavors.map((f) => (
 							<span
 								key={f}
@@ -120,13 +164,23 @@ export default function Bean() {
 
 			{/* Target parameters */}
 			{insights && (
-				<div className="space-y-4 border border-border p-5">
+				<div className="space-y-4 border border-border bg-background/80 p-5 backdrop-blur-md">
 					<div className="flex items-center justify-between gap-4">
-						<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-							{insights.target.usesTopRatedBrews
-								? "Target — based on top brews"
-								: "Average parameters"}
-						</p>
+						<div>
+							<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+								Brew settings
+							</p>
+							<p className="mt-1 font-Recursive text-xs text-muted-foreground">
+								Average vs best from{" "}
+								{insights.best
+									? `${insights.best._basedOnCount} ${
+											insights.best.usesTopRatedBrews
+												? "top-rated"
+												: "highest-rated"
+										} brew${insights.best._basedOnCount !== 1 ? "s" : ""}`
+									: "rated brews"}
+							</p>
+						</div>
 						{insights._dialIn.isDialedIn && (
 							<span className="inline-flex items-center gap-1.5 font-Mono text-[10px] uppercase tracking-widest text-primary">
 								<CheckCircle size={12} />
@@ -134,42 +188,40 @@ export default function Bean() {
 							</span>
 						)}
 					</div>
-					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-						{(
-							[
-								["Grind", insights.target.grindSize],
-								[
-									"Dose",
-									insights.target.beanWeight != null
-										? `${insights.target.beanWeight.toFixed(1)} g`
-										: null,
-								],
-								[
-									"Espresso",
-									insights.target.espressoWeight != null
-										? `${insights.target.espressoWeight.toFixed(1)} g`
-										: null,
-								],
-								[
-									"Ratio",
-									insights.target.ratio != null
-										? `1:${insights.target.ratio.toFixed(1)}`
-										: null,
-								],
-								["Extraction", insights.target.extractionTime],
-							] as Array<[string, string | null | undefined]>
-						)
-							.filter(([, v]) => v != null && v !== "—")
-							.map(([label, value]) => (
-								<div key={label}>
-									<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
-										{label}
-									</p>
-									<p className="mt-0.5 font-Recursive text-sm font-medium">
-										{value}
-									</p>
+					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+						{statRows.map(([label, averageValue, bestValue]) => (
+							<div
+								key={label}
+								className="border border-border bg-background/70 p-3 backdrop-blur-sm"
+							>
+								<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+									{label}
+								</p>
+								<div className="mt-2 grid grid-cols-2 gap-2">
+									<div className="min-w-0 border border-border/70 bg-muted/20 px-2 py-1.5">
+										<p className="font-Mono text-[9px] uppercase tracking-widest text-muted-foreground">
+											Avg
+										</p>
+										<p className="truncate font-Recursive text-sm font-medium">
+											{averageValue}
+										</p>
+									</div>
+									<div className="min-w-0 border border-border/70 bg-background/80 px-2 py-1.5">
+										<div className="flex items-center gap-1.5">
+											<span
+												className={`h-1.5 w-1.5 shrink-0 rounded-full ${swatch.stripe}`}
+											/>
+											<p className="font-Mono text-[9px] uppercase tracking-widest text-muted-foreground">
+												Best
+											</p>
+										</div>
+										<p className="truncate font-Recursive text-sm font-semibold">
+											{bestValue}
+										</p>
+									</div>
 								</div>
-							))}
+							</div>
+						))}
 					</div>
 				</div>
 			)}

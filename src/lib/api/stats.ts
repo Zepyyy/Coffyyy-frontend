@@ -1,5 +1,6 @@
 import { db } from "@/db/db";
 import type {
+	BeanBrewParameterSummary,
 	BeanBrewInsights,
 	BeanDialInState,
 	Brews,
@@ -91,20 +92,55 @@ function mostCommon(values: Array<string | undefined | null>): string | null {
 	return winner;
 }
 
-function formatTasteLabel(score: number | null): string {
-	if (score == null) return "—";
-	if (Math.abs(score) < 0.5) return "Balanced";
-	return score < 0
-		? `Sour ${Number(score.toFixed(1))}`
-		: `Bitter +${Number(score.toFixed(1))}`;
-}
+function buildParameterSummary(
+	brews: Brews[],
+	usesTopRatedBrews: boolean,
+): BeanBrewParameterSummary {
+	const averageBeanWeight = average(
+		brews.map((brew) => brew.beanWeight ?? null),
+	);
+	const averageEspressoWeight = average(
+		brews.map((brew) => brew.espressoWeight ?? null),
+	);
+	const averageExtractionSeconds = average(
+		brews.map((brew) => toNumericValue(brew.extractionTime)),
+	);
+	const averageTasteScore = average(
+		brews.map((brew) => brew.tasteScore ?? null),
+	);
+	const averageStrengthScore = average(
+		brews.map((brew) => brew.strengthScore ?? null),
+	);
+	const averageRating = average(
+		brews.map((brew) => brew.overallRating ?? null),
+	);
+	const averageGrindNumeric = average(
+		brews.map((brew) => brew.grindSize ?? null),
+	);
+	const averageRatio =
+		averageBeanWeight && averageEspressoWeight
+			? averageEspressoWeight / averageBeanWeight
+			: null;
 
-function formatStrengthLabel(score: number | null): string {
-	if (score == null) return "—";
-	if (Math.abs(score) < 0.5) return "Balanced";
-	return score < 0
-		? `Weak ${Number(score.toFixed(1))}`
-		: `Strong +${Number(score.toFixed(1))}`;
+	return {
+		grindSize:
+			formatAverage(averageGrindNumeric, { decimals: 1 }) ??
+			mostCommon(brews.map((brew) => brew.grindSize.toString())) ??
+			"—",
+		beanWeight: averageBeanWeight,
+		espressoWeight: averageEspressoWeight,
+		extractionTime: formatAverage(averageExtractionSeconds, {
+			suffix: "s",
+			decimals: 0,
+		}),
+		_flow: mostCommon(brews.map((brew) => brew.flow)) ?? "—",
+		ratio: averageRatio,
+		_tasteScore: averageTasteScore,
+		_strengthScore: averageStrengthScore,
+		_rating: averageRating,
+		_basedOnCount: brews.length,
+		usesTopRatedBrews,
+	};
 }
 
 function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
@@ -166,34 +202,27 @@ export async function getBeanBrewInsights(
 	const topRatedBrews = brews.filter(
 		(brew) => (brew.overallRating ?? 0) >= TOP_RATED_THRESHOLD,
 	);
-	const sourceBrews = topRatedBrews.length > 0 ? topRatedBrews : brews;
-	const averageBeanWeight = average(
-		sourceBrews.map((brew) => brew.beanWeight ?? null),
-	);
-	const averageEspressoWeight = average(
-		sourceBrews.map((brew) => brew.espressoWeight ?? null),
-	);
-	const averageExtractionSeconds = average(
-		sourceBrews.map((brew) => toNumericValue(brew.extractionTime)),
-	);
-	const averageTasteScore = average(
-		sourceBrews.map((brew) => brew.tasteScore ?? null),
-	);
-	const averageStrengthScore = average(
-		sourceBrews.map((brew) => brew.strengthScore ?? null),
-	);
-	const averageGrindNumeric = average(
-		sourceBrews.map((brew) => brew.grindSize ?? null),
-	);
-	const averageRatio =
-		averageBeanWeight && averageEspressoWeight
-			? averageEspressoWeight / averageBeanWeight
+	const ratedBrews = brews.filter((brew) => brew.overallRating != null);
+	const highestRating =
+		ratedBrews.length > 0
+			? Math.max(...ratedBrews.map((brew) => brew.overallRating ?? 0))
+			: null;
+	const highestRatedBrews =
+		highestRating == null
+			? []
+			: ratedBrews.filter((brew) => brew.overallRating === highestRating);
+	const bestSourceBrews =
+		topRatedBrews.length > 0 ? topRatedBrews : highestRatedBrews;
+	const averageTarget = buildParameterSummary(brews, false);
+	const bestTarget =
+		bestSourceBrews.length > 0
+			? buildParameterSummary(bestSourceBrews, topRatedBrews.length > 0)
 			: null;
 
 	const _dialIn = buildDialInState(beanId, brews);
 	const _lastBrew = brews[0] ?? null;
 
-	const recentBrewScores = brews.reverse().map((brew) => ({
+	const recentBrewScores = [...brews].reverse().map((brew) => ({
 		taste: brew.tasteScore ?? null,
 		strength: brew.strengthScore ?? null,
 		rating: brew.overallRating ?? null,
@@ -203,24 +232,9 @@ export async function getBeanBrewInsights(
 
 	return {
 		beanId,
-		target: {
-			grindSize:
-				formatAverage(averageGrindNumeric, { decimals: 1 }) ??
-				mostCommon(sourceBrews.map((brew) => brew.grindSize.toString())) ??
-				"—",
-			beanWeight: averageBeanWeight,
-			espressoWeight: averageEspressoWeight,
-			extractionTime: formatAverage(averageExtractionSeconds, {
-				suffix: "s",
-				decimals: 0,
-			}),
-			_flow: mostCommon(sourceBrews.map((brew) => brew.flow)) ?? "—",
-			ratio: averageRatio,
-			_tasteScore: averageTasteScore,
-			_strengthScore: averageStrengthScore,
-			_basedOnCount: sourceBrews.length,
-			usesTopRatedBrews: topRatedBrews.length > 0,
-		},
+		target: bestTarget ?? averageTarget,
+		average: averageTarget,
+		best: bestTarget,
 		_lastBrew,
 		_dialIn,
 		recentBrewScores,
@@ -259,5 +273,3 @@ export async function getBeanDialInStates(
 		)
 		.sort((a, b) => a.beanId - b.beanId);
 }
-
-export { formatStrengthLabel, formatTasteLabel };
