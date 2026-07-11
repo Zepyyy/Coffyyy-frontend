@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
+import { useAllMachines } from "@/hooks/api/useMachines";
 import { useBean } from "@/hooks/api/useBeans";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
 import {
@@ -54,10 +55,13 @@ export default function Bean() {
 	const { BeanId } = useParams();
 	const beanId = Number(BeanId);
 
+	const allMachines = useAllMachines();
 	const bean = useBean(beanId);
 	const brewCount = useBrewCountForBeanId(beanId);
 	const insights = useBeanBrewInsights(beanId);
 	const brews = useBrewsForBeanId(beanId);
+
+	const machineNameById = new Map(allMachines.map((m) => [m.id, m.name]));
 
 	if (!bean) {
 		return (
@@ -266,7 +270,12 @@ export default function Bean() {
 							<BrewHistoryRow
 								key={brew.id}
 								brew={brew}
-								dotBgClass={swatch.stripe}
+								beanName={bean.name}
+								machineName={
+									brew.machineId
+										? machineNameById.get(brew.machineId)
+										: undefined
+								}
 							/>
 						))}
 					</div>

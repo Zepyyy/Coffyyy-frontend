@@ -109,7 +109,7 @@ export function BrewHistoryRow({
 }: {
 	brew: Brews;
 	beanName: string;
-	machineName: string;
+	machineName: string | undefined;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
