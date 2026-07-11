@@ -41,20 +41,25 @@ export type BeanDialInState = {
 	stableGrind: boolean;
 };
 
+export type BeanBrewParameterSummary = {
+	grindSize: string;
+	beanWeight: number | null;
+	espressoWeight: number | null;
+	extractionTime: string | null;
+	_flow: string | null;
+	ratio: number | null;
+	_tasteScore: number | null;
+	_strengthScore: number | null;
+	_rating: number | null;
+	_basedOnCount: number;
+	usesTopRatedBrews: boolean;
+};
+
 export type BeanBrewInsights = {
 	beanId: number;
-	target: {
-		grindSize: string;
-		beanWeight: number | null;
-		espressoWeight: number | null;
-		extractionTime: string | null;
-		_flow: string | null;
-		ratio: number | null;
-		_tasteScore: number | null;
-		_strengthScore: number | null;
-		_basedOnCount: number;
-		usesTopRatedBrews: boolean;
-	};
+	target: BeanBrewParameterSummary;
+	average: BeanBrewParameterSummary;
+	best: BeanBrewParameterSummary | null;
 	_lastBrew: Brews | null;
 	_dialIn: BeanDialInState;
 	recentBrewScores: Array<{
