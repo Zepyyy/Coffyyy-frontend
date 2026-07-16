@@ -33,6 +33,23 @@ const INITIAL: BrewForm = {
 
 const GRIND_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
+function SummaryRow({
+	label,
+	value,
+}: {
+	label: string;
+	value: string | number;
+}) {
+	return (
+		<div className="flex items-center justify-between px-4 py-2.5">
+			<span className="font-Mono text-xs uppercase tracking-widest text-muted-foreground">
+				{label}
+			</span>
+			<span className="font-Recursive text-sm text-foreground">{value}</span>
+		</div>
+	);
+}
+
 export default function BrewLog() {
 	const [form, setForm] = useState<BrewForm>(INITIAL);
 	const [status, setStatus] = useState("");
@@ -114,6 +131,11 @@ export default function BrewLog() {
 
 	const [show, setShow] = useState(false);
 	const isEmpty = suggestions.bean.length === 0;
+
+	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
+	const selectedMachine = suggestions.machine.find(
+		(m) => m.id === form.machineId,
+	);
 
 	return (
 		<div className="mx-auto w-full">
@@ -360,43 +382,52 @@ export default function BrewLog() {
 							className={`transition-opacity duration-200 space-y-4 ${step === 4 ? "opacity-100" : "opacity-0"}`}
 						>
 							{step === 4 && (
-								<>
+								<section className="space-y-4">
 									<SectionTitle>Summary</SectionTitle>
-									<div className="flex justify-center">
-										<div className="grid grid-cols-3 gap-4 max-w-1/2">
-											{Object.entries(form).map(([key, value]) => (
-												<div
-													className={
-														"flex bg-primary-200/15 rounded min-w-fit p-4 items-center justify-center text-2xl aspect-square hover:bg-primary-200/30 relative"
-													}
-													key={key}
-												>
-													<span className="absolute top-2 left-5 text-xl text-primary font-bold font-Alan underline decoration-2 decoration-dotted mb-1">
-														{key}
-													</span>
-													<span className="font-mono text-foreground">
-														{Array.isArray(value)
-															? value.join(", ")
-															: value?.toLocaleString()}
-													</span>
-												</div>
-											))}
-										</div>
+									<div className="divide-y divide-border border border-border">
+										<SummaryRow
+											label="Bean"
+											value={selectedBean?.name ?? "—"}
+										/>
+										<SummaryRow
+											label="Machine"
+											value={selectedMachine?.name ?? "—"}
+										/>
+										<SummaryRow
+											label="Grind Size"
+											value={form.grindSize}
+										/>
+										<SummaryRow
+											label="Bean Weight"
+											value={`${form.beanWeight} g`}
+										/>
+										<SummaryRow
+											label="Espresso Weight"
+											value={`${form.espressoWeight} g`}
+										/>
+										{espressoRatio && (
+											<SummaryRow label="Ratio" value={`1:${espressoRatio}`} />
+										)}
+										<SummaryRow
+											label="Extraction Time"
+											value={form.extractionTime ? `${form.extractionTime}s` : "—"}
+										/>
+										<SummaryRow label="Flow" value={form.flow || "—"} />
 									</div>
 
-									<div className="border-t border-border pt-4">
+									<div className="border-t border-border pt-4 space-y-2">
 										{status && (
 											<p className="text-sm text-muted-foreground">{status}</p>
 										)}
 										<button
 											type="submit"
 											disabled={!form.beanId || isSaving}
-											className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
+											className="w-full border border-border bg-primary-200/15 py-2.5 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
 										>
 											{isSaving ? "Saving…" : "Save Brew"}
 										</button>
 									</div>
-								</>
+								</section>
 							)}
 						</div>
 					</form>
