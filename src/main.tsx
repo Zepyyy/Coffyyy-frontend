@@ -3,7 +3,9 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./App.tsx";
+import Bean from "./pages/Bean.tsx";
 import { CatchAll } from "./pages/CatchAll.tsx";
+import Dev from "./pages/Dev.tsx";
 import History from "./pages/History.tsx";
 import Home from "./pages/Home.tsx";
 import Library from "./pages/Library.tsx";
@@ -11,8 +13,6 @@ import BeansLog from "./pages/log/Beans.tsx";
 import BrewLog from "./pages/log/Brew.tsx";
 import MachinesLog from "./pages/log/Machines.tsx";
 import Providers from "./providers/Providers.tsx";
-import Bean from "./pages/Bean.tsx";
-import Dev from "./pages/Dev.tsx";
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>

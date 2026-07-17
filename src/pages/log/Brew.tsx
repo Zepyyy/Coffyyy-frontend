@@ -393,10 +393,7 @@ export default function BrewLog() {
 											label="Machine"
 											value={selectedMachine?.name ?? "—"}
 										/>
-										<SummaryRow
-											label="Grind Size"
-											value={form.grindSize}
-										/>
+										<SummaryRow label="Grind Size" value={form.grindSize} />
 										<SummaryRow
 											label="Bean Weight"
 											value={`${form.beanWeight} g`}
@@ -410,7 +407,9 @@ export default function BrewLog() {
 										)}
 										<SummaryRow
 											label="Extraction Time"
-											value={form.extractionTime ? `${form.extractionTime}s` : "—"}
+											value={
+												form.extractionTime ? `${form.extractionTime}s` : "—"
+											}
 										/>
 										<SummaryRow label="Flow" value={form.flow || "—"} />
 									</div>

@@ -1,9 +1,7 @@
-import { SelectMultiple, SelectRandom } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
 import { db } from "../db";
-import { getRandomBeanId, getRandomMachineId } from "./get";
 
 async function addBean(bean: Omit<Beans, "id">) {
 	try {
@@ -19,137 +17,11 @@ async function addBean(bean: Omit<Beans, "id">) {
 	}
 }
 
-async function addRandomBean() {
-	try {
-		return await addBean({
-			botanic: "Arabica",
-			name: SelectRandom([
-				"Okay",
-				"Randomly",
-				"This one",
-				" placeholder",
-				"Just doing it",
-				"Need more",
-				"Easy tpo add",
-				"and last qslidjfgb oqs",
-			]),
-			brand: SelectRandom(["Lugat", "The Barn", "Another Brand", "Last one"]),
-			designation: "Pure Origin",
-			dominantNote: SelectRandom([
-				"Fruity",
-				"Nutty",
-				"Floral",
-				"Sweet",
-				"Sour",
-				"Spices",
-				"Roasted",
-				"Green",
-			]),
-			finished: false,
-			flavors: ["mango", "Banan", "Lime"],
-			origin: [
-				SelectRandom([
-					"Colombia",
-					"France",
-					"Venezuela",
-					"Brazil",
-					"Argentina",
-				]),
-			],
-			process: [SelectRandom(["Natural", "Honey", "Washed", "Semi-Processed"])],
-			rating: SelectRandom([1, 2, 3, 4, 5]),
-			roastLevel: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-			status: SelectRandom(["Excellent", "Good", "Fair", "Poor"]),
-			tastingNotes: SelectMultiple(
-				[
-					"Mango",
-					"Banan",
-					"Lime",
-					"Apple",
-					"Orange",
-					"Nut",
-					"Chocolate",
-					"Almonds",
-					"Cherry",
-					"Berries",
-				],
-				4,
-			),
-			variety: [SelectRandom(["Castillo", "Geisha"])],
-		} as Omit<Beans, "id">);
-	} catch (error) {
-		return error;
-	}
-}
-async function addRandomMachine() {
-	try {
-		return await addMachine({
-			name: SelectRandom([
-				"This random machine",
-				"Another oen",
-				"And to finish",
-			]),
-			brand: SelectRandom(["Sage", "Hario", "V60"]),
-			capacity: "capacity 2",
-			grindRange: SelectRandom(["fine", "medium", "coarse"]),
-			purchaseDate: "01-01-2025",
-			induction: SelectRandom([true, false]),
-			model: "MODEL",
-			type: SelectRandom(["Espresso", "Moka Pot"]),
-		} as Omit<Machines, "id">);
-	} catch (error) {
-		return error;
-	}
-}
-
 async function addBrew(brew: Omit<Brews, "id">) {
 	try {
 		return await db.Brews.bulkAdd([brew]);
 	} catch (error) {
 		return error;
-	}
-}
-
-async function addRandomBrew(bean?: Beans["id"]) {
-	if ((await getRandomBeanId()) === undefined) {
-		console.log("No bean found");
-		return;
-	}
-	if ((await getRandomMachineId()) === undefined) {
-		console.log("No machine found");
-		return;
-	}
-	try {
-		return await db.Brews.bulkAdd([
-			{
-				beanId: bean ?? (await getRandomBeanId()),
-				machineId: await getRandomMachineId(),
-				date: new Date(),
-				overallRating: SelectRandom([1, 2, 3, 4, 5]),
-				grindSize: SelectRandom([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]),
-				beanWeight: SelectRandom([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]),
-				espressoWeight: SelectRandom([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
-				flow: SelectRandom(["even", "uneven"]),
-				extractionTime: SelectRandom([
-					"30s",
-					"40s",
-					"50s",
-					"60s",
-					"70s",
-					"80s",
-					"90s",
-					"100s",
-				]),
-			} as Omit<Brews, "id">,
-		]);
-	} catch (error) {
-		return error;
-	}
-}
-
-export default function addRandomBrewsInsights(n: number, bean?: Beans["id"]) {
-	for (let i = 0; i < n; i++) {
-		addRandomBrew(bean);
 	}
 }
 
@@ -169,11 +41,4 @@ async function addMachine(machine: Omit<Machines, "id">) {
 	}
 }
 
-export {
-	addBean,
-	addBrew,
-	addMachine,
-	addRandomBean,
-	addRandomBrew,
-	addRandomMachine,
-};
+export { addBean, addBrew, addMachine };

@@ -2,8 +2,6 @@ import { Coffee, Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
-import { Button } from "@/components/ui/button";
-import { addRandomBrew } from "@/db/crud/add";
 import {
 	useBrewSuggestions,
 	useHistoryBrews,
@@ -146,16 +144,6 @@ export default function History() {
 							))}
 						</div>
 					</div>
-					{import.meta.env.DEV && (
-						<Button
-							variant="add"
-							className="mt-2 w-full lg:w-auto"
-							type="button"
-							onClick={() => addRandomBrew()}
-						>
-							Add a random brew
-						</Button>
-					)}
 				</aside>
 
 				<section className="min-w-0 space-y-4">

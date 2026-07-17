@@ -7,6 +7,7 @@ import {
 	type BackendEnv,
 } from "@/lib/axios";
 import { Button } from "@/components/ui/button";
+import DatabaseWorkbench from "@/components/dev/DatabaseWorkbench";
 
 type RequestState = {
 	status: "idle" | "loading" | "success" | "error";
@@ -323,6 +324,8 @@ export default function Dev() {
 	return (
 		<div className="w-full mx-auto max-w-4xl px-6 py-8 space-y-8">
 			{renderModal()}
+			<DatabaseWorkbench />
+
 			{/* Header */}
 			<div>
 				<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">

@@ -4,8 +4,6 @@ import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
-import { Button } from "@/components/ui/button";
-import { addRandomBean, addRandomMachine } from "@/db/crud/add";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
@@ -251,23 +249,6 @@ export default function Library() {
 									/>
 								</>
 							)}
-						</div>
-
-						<div className="grid grid-cols-1 gap-2 pt-1">
-							<Button
-								variant="add"
-								onClick={() => addRandomBean()}
-								className={`${import.meta.env.PROD && "hidden"}`}
-							>
-								Add Random Bean
-							</Button>
-							<Button
-								variant="add"
-								onClick={() => addRandomMachine()}
-								className={`${import.meta.env.PROD && "hidden"}`}
-							>
-								Add Random Machine
-							</Button>
 						</div>
 					</div>
 				</aside>
