@@ -37,9 +37,9 @@ Stack:
 
 ### Backend
 
-This project didn't have a backend for the initial release and I used the browser's IndexedDB to store data locally, using Dexie's IndexedDB wrapper, and its custom React hooks.
-I'm actively building the backend, porting the database to the cloud, hosted on [Railway](https://railway.app/), using [Supabase](https://supabase.com/) as the database provider.
-(-> [Backend](https://github.com/Zepyyy/Coffyyy-backend/))
+The initial release was local-only: the browser's IndexedDB stored application data through [Dexie](https://dexie.org/) and custom React hooks. The cloud architecture is now being introduced incrementally through the [Coffyyy backend](https://github.com/Zepyyy/Coffyyy-backend/).
+
+The frontend communicates only with the NestJS API hosted on [Railway](https://railway.app/). NestJS uses Prisma to access the PostgreSQL database hosted on [Supabase](https://supabase.com/), which remains private behind the backend. Frontend code must not use `supabase-js`, Supabase service keys, or the Supabase Data API directly.
 
 Stack:
 - NestJS
@@ -48,7 +48,10 @@ Stack:
 - PostgreSQL (hosted on [Supabase](https://supabase.com/))
 
 ## Current State
-The backend is in active development and will be connected soon. For the moment, IndexedDB powers the app, so clearing browser storage will remove local data.
+The app remains local-first and can be used without an account or password. IndexedDB currently powers the app, so clearing browser storage will remove local data until sync is enabled.
+
+Issue #10 Phase 1 is complete in the backend: authenticated ownership, cloud schema and indexes, idempotent local-data import, and the security model for anonymous workspaces and server-managed sessions are in place. Frontend session bootstrapping, optional sync, API integration, and migration of the local data layer remain in progress.
+
 Suggestions in the log forms are generated from previously saved beans and machines.
 - No automated test runner is configured yet.
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
@@ -58,9 +61,23 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Fully local IndexedDB implementation
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
-- [ ] Full backend API integration with cloud-based database
+- [ ] Issue #10 Phase 2: frontend session and optional sync foundation
+- [ ] Issue #10 Phase 3: replace direct Dexie data access with the Railway API data layer
+- [ ] Issue #10 Phase 4: back up/import local data and support cross-device pairing
+- [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
+- [ ] Issue #10 Phase 5: verification, Railway deployment, rollout, and cleanup
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
-- [ ] Syncing feature to sync data between devices, without an auth. (Code-based?) <- To be decided
+
+The migration remains a work in progress. See [Issue #10](https://github.com/Zepyyy/Coffyyy-frontend/issues/10) for the detailed plan, implementation status, branch workflow, and acceptance criteria.
+
+## Cloud sync model
+
+Cloud sync is optional; local-only use remains the default. A user does not need a traditional account or password to use Coffyyy.
+
+- **Enable sync:** create a cloud workspace, download a full JSON backup, preview and import the existing local data, establish the current session, and display a generated one-time sync code for the user to copy.
+- **Connect existing data:** enter a sync code once on another browser or device, establish a session, download the workspace, and hydrate that browser's local cache.
+- **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
+- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains the local cache and offline outbox for local-only use and synced workspaces.
 
 ## App Routes
 
@@ -82,15 +99,17 @@ Suggestions in the log forms are generated from previously saved beans and machi
 src/
   components/     Feature-grouped UI: home/, library/, log/, history/, ui/ (+ Header nav)
   contexts/       Theme context
-  db/             Dexie database (db.ts) and CRUD helpers (crud/)
-  hooks/          Shared hook types plus api/ live-query hooks backed by Dexie
-  lib/api/        Read/query helpers for beans, brews, machines, stats
+  db/             Dexie database (db.ts) and local-cache CRUD helpers (crud/)
+  hooks/          Shared hook types plus current live-query hooks and future API query hooks
+  lib/api/        Data-layer adapters for beans, brews, machines, and stats
   pages/          Route components (incl. log/ subroutes)
   providers/      App-level providers (theme, etc.)
   types/          Shared TypeScript models (Bean, Brew, Machine)
 ```
 
 `@/` is aliased to `src/`.
+
+During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache and offline-sync infrastructure; the cloud cutover is not complete.
 
 ## Getting Started
 
