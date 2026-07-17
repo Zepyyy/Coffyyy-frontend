@@ -6,8 +6,6 @@ import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
 import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
 import AddCard from "@/components/library/AddCard";
-import { Button } from "@/components/ui/button";
-import addRandomBrewsInsights from "@/db/crud/add";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import { useLatestUnratedBrew, useRecentBrews } from "@/hooks/api/useBrews";
 import {
@@ -110,15 +108,12 @@ export default function Home() {
 			</Link>
 
 			{!import.meta.env.PROD && (
-				<div className="flex gap-2">
-					<Button variant="add" onClick={() => addRandomBrewsInsights(36)}>
-						Add insights
-					</Button>
+				<div>
 					<Link
 						to="/dev"
 						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
 					>
-						API Playground →
+						Dev tools →
 					</Link>
 				</div>
 			)}
