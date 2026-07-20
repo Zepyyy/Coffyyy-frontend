@@ -49,4 +49,25 @@ db.version(5).stores({
 		"++id, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
 });
 
+db.version(6).stores({
+	Beans:
+		"++id, name, flavors, roastLevel, countries, cities, botanic, varieties, brands, finished, dominantNote",
+	Machines: "++id, name",
+	Brews:
+		"++id, beanId, overallRating, tasteScore, strengthScore, grindSize, date, machineId, beanWeight, espressoWeight, flow, extractionTime",
+}).upgrade((transaction) =>
+	transaction.table("Beans").toCollection().modify((bean) => {
+		const legacy = bean as typeof bean & {
+			origin?: string[];
+			city?: string;
+			variety?: string[];
+			brand?: string;
+		};
+		legacy.countries ??= legacy.origin ?? [];
+		legacy.cities ??= legacy.city ? [legacy.city] : [];
+		legacy.varieties ??= legacy.variety ?? [];
+		legacy.brands ??= legacy.brand ? [legacy.brand] : [];
+	}),
+);
+
 export { db };

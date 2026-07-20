@@ -2,8 +2,7 @@ import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addMachine } from "@/db/crud/add";
-import { useMachineSuggestions } from "@/hooks/api/useMachines";
+import { useCreateMachine, useMachineSuggestions } from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
 import type { MachineForm } from "@/types/MachineTypes";
 
@@ -40,6 +39,7 @@ export default function MachinesLog() {
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
+	const createMachine = useCreateMachine();
 	const suggestions = useMachineSuggestions();
 
 	const [customBrand, setCustomBrand] = useState("");
@@ -74,7 +74,7 @@ export default function MachinesLog() {
 
 		setIsSaving(true);
 		try {
-			const result = await addMachine({
+			await createMachine.mutateAsync({
 				name: normalizeOptional(form.name) ?? "",
 				brand: normalizeOptional(form.brand) ?? "",
 				model: normalizeOptional(form.model) ?? "",
@@ -83,13 +83,13 @@ export default function MachinesLog() {
 				capacity: normalizeOptional(form.capacity) ?? "",
 				purchaseDate: normalizeOptional(form.purchaseDate) ?? "",
 			});
-			setError(result instanceof Error ? result.message : String(result));
+			setError("");
 			setForm(INITIAL);
 			setStatus(
 				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
 			);
-		} catch {
-			setStatus("Save failed.");
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : "Save failed.");
 		} finally {
 			setIsSaving(false);
 		}

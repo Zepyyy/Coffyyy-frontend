@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { deleteMachineById } from "@/db/crud/delete";
+import { useDeleteMachine } from "@/hooks/api/useMachines";
 import type { Machines } from "@/types/MachineTypes";
 import { Separator } from "../ui/separator";
 import Tag from "../ui/tag";
 
 export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const deleteMachine = useDeleteMachine();
 
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
@@ -61,7 +62,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 							type="button"
 							onClick={() => {
 								if (typeof machine.id === "number")
-									deleteMachineById(machine.id);
+									void deleteMachine.mutateAsync(machine.id);
 							}}
 							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
 						>

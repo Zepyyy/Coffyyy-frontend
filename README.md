@@ -48,11 +48,11 @@ Stack:
 - PostgreSQL (hosted on [Supabase](https://supabase.com/))
 
 ## Current State
-The app remains local-first and can be used without an account or password. IndexedDB currently powers the app, so clearing browser storage will remove local data until sync is enabled.
+The app remains local-first and can be used without an account or password. Local mode uses IndexedDB; synced mode reads and writes through the Railway API. Importing existing local data and offline reconciliation remain WIP.
 
 Issue #10 Phase 1 is complete in the backend: authenticated ownership, cloud schema and indexes, idempotent local-data import, and the security model for anonymous workspaces and server-managed sessions are in place. Frontend session bootstrapping, optional sync, API integration, and migration of the local data layer remain in progress.
 
-The Phase 2 frontend foundation is now in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, and a local-first sync panel for enabling or pairing a workspace. Backup/import, remote hydration, and data-layer cutover remain planned work.
+The Phase 2 frontend foundation is WIP: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, and a local-first sync panel are present. Backup/import and remote hydration remain planned Phase 4 work. Phase 3 now provides REST-backed data adapters, React Query reads/mutations, and backend-aligned Bean fields; final offline/cache reconciliation remains planned.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
 - No automated test runner is configured yet.
@@ -64,7 +64,7 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
 - [ ] Issue #10 Phase 2: frontend session and optional sync foundation (WIP)
-- [ ] Issue #10 Phase 3: replace direct Dexie data access with the Railway API data layer
+- [ ] Issue #10 Phase 3: replace direct Dexie data access with the Railway API data layer (WIP)
 - [ ] Issue #10 Phase 4: back up/import local data and support cross-device pairing
 - [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
 - [ ] Issue #10 Phase 5: verification, Railway deployment, rollout, and cleanup
@@ -79,7 +79,7 @@ Cloud sync is optional; local-only use remains the default. A user does not need
 - **Enable sync:** the current foundation creates a cloud workspace, establishes the current session, and displays a generated one-time sync code. Backup, preview, and local-data import remain planned for Phase 4.
 - **Connect existing data:** the current foundation accepts a sync code once on another browser or device and establishes a session. Workspace download and local-cache hydration remain planned for Phase 4.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
-- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains the local cache and offline outbox for local-only use and synced workspaces.
+- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains local cache storage; offline outbox and reconciliation remain Phase 4 work.
 
 ## App Routes
 
@@ -102,8 +102,9 @@ src/
   components/     Feature-grouped UI: home/, library/, log/, history/, ui/ (+ Header nav)
   contexts/       Theme and sync-session contexts
   db/             Dexie database (db.ts) and local-cache CRUD helpers (crud/)
-  hooks/          Shared hook types plus current live-query hooks and future API query hooks
-  lib/api/        Data-layer adapters for beans, brews, machines, and stats
+  hooks/          Shared types plus React Query resource and mutation hooks
+  lib/api/        Railway REST services and pure cached-data derivations
+  lib/data.ts     Local/REST data-mode adapter
   pages/          Route components (incl. log/ subroutes)
   providers/      App-level providers (theme, query, sync session)
   types/          Shared TypeScript models (Bean, Brew, Machine)
@@ -136,6 +137,6 @@ Note: `npm run biome` uses `bunx`, so Bun must be installed even if you use npm 
 
 The app stores three main records:
 
-- `Beans`: catalog metadata such as brand, origin, process, roast level, and flavor profile
+- `Beans`: catalog metadata such as brands, countries, cities, varieties, roast level, and flavor profile
 - `Machines`: equipment metadata such as brand, model, type, grind range, and capacity
 - `Brews`: shot-level logs including bean, machine, weights, grind size, time, flow, date, and rating

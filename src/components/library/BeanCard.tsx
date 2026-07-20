@@ -11,7 +11,7 @@ import {
 	Salad,
 } from "lucide-react";
 import { useState } from "react";
-import { deleteBeanById } from "@/db/crud/delete";
+import { useDeleteBean } from "@/hooks/api/useBeans";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
@@ -74,12 +74,13 @@ export default function BeanCard({
 	dialInState?: BeanDialInState;
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const deleteBean = useDeleteBean();
 	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
 
 	const parameters: Parameter[] = [
-		{ label: "Variety", values: bean.variety },
+		{ label: "Variety", values: bean.varieties },
 		{ label: "Flavors", values: bean.flavors },
-		{ label: "Process", values: bean.process },
+		{ label: "Cities", values: bean.cities },
 	];
 
 	return (
@@ -97,7 +98,7 @@ export default function BeanCard({
 				<div
 					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${colorSwatch[bean.dominantNote]?.secondaryText}`}
 				>
-					{bean.origin.join(", ")} · {bean.brand}
+					{bean.countries.join(", ")} · {bean.brands.join(", ")}
 				</div>
 				{dialInState?.isDialedIn && (
 					<div
@@ -165,7 +166,7 @@ export default function BeanCard({
 						</button>
 						<button
 							type="button"
-							onClick={() => deleteBeanById(bean.id)}
+							onClick={() => void deleteBean.mutateAsync(bean.id)}
 							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
 						>
 							Delete

@@ -1,4 +1,3 @@
-import { db } from "@/db/db";
 import type {
 	BeanBrewParameterSummary,
 	BeanBrewInsights,
@@ -176,33 +175,31 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 	};
 }
 
-export async function getBrewCountForBean(bean: string): Promise<number> {
+export function getBrewCountForBean(brews: Brews[], bean: string): number {
 	if (!bean) return 0;
-	return db.Brews.where("bean").equals(bean).count();
+	return brews.filter((brew) => String(brew.beanId) === bean).length;
 }
 
-export async function getUniqueBeansBrewedCount(): Promise<number> {
-	const beans = await db.Brews.orderBy("bean").uniqueKeys();
-	return beans.filter(Boolean).length;
+export function getUniqueBeansBrewedCount(brews: Brews[]): number {
+	return new Set(brews.map((brew) => brew.beanId).filter(Boolean)).size;
 }
 
-export async function getBeanBrewInsights(
+export function getBeanBrewInsights(
+	brews: Brews[],
 	beanId: number | undefined,
-): Promise<BeanBrewInsights | null> {
+): BeanBrewInsights | null {
 	if (!beanId) return null;
 
-	const brews = (
-		await db.Brews.filter((brew) => brew.beanId === beanId).toArray()
-	).sort(sortByNewest);
+	const beanBrews = brews.filter((brew) => brew.beanId === beanId).sort(sortByNewest);
 
-	if (brews.length === 0) {
+	if (beanBrews.length === 0) {
 		return null;
 	}
 
-	const topRatedBrews = brews.filter(
+	const topRatedBrews = beanBrews.filter(
 		(brew) => (brew.overallRating ?? 0) >= TOP_RATED_THRESHOLD,
 	);
-	const ratedBrews = brews.filter((brew) => brew.overallRating != null);
+	const ratedBrews = beanBrews.filter((brew) => brew.overallRating != null);
 	const highestRating =
 		ratedBrews.length > 0
 			? Math.max(...ratedBrews.map((brew) => brew.overallRating ?? 0))
@@ -213,16 +210,16 @@ export async function getBeanBrewInsights(
 			: ratedBrews.filter((brew) => brew.overallRating === highestRating);
 	const bestSourceBrews =
 		topRatedBrews.length > 0 ? topRatedBrews : highestRatedBrews;
-	const averageTarget = buildParameterSummary(brews, false);
+	const averageTarget = buildParameterSummary(beanBrews, false);
 	const bestTarget =
 		bestSourceBrews.length > 0
 			? buildParameterSummary(bestSourceBrews, topRatedBrews.length > 0)
 			: null;
 
-	const _dialIn = buildDialInState(beanId, brews);
-	const _lastBrew = brews[0] ?? null;
+	const _dialIn = buildDialInState(beanId, beanBrews);
+	const _lastBrew = beanBrews[0] ?? null;
 
-	const recentBrewScores = [...brews].reverse().map((brew) => ({
+	const recentBrewScores = [...beanBrews].reverse().map((brew) => ({
 		taste: brew.tasteScore ?? null,
 		strength: brew.strengthScore ?? null,
 		rating: brew.overallRating ?? null,
@@ -241,17 +238,19 @@ export async function getBeanBrewInsights(
 	};
 }
 
-export async function getBrewCountForBeanId(
+
+export function getBrewCountForBeanId(
+	brews: Brews[],
 	beanId: number | undefined,
-): Promise<number> {
+): number {
 	if (!beanId) return 0;
-	return db.Brews.filter((b) => b.beanId === beanId).count();
+	return brews.filter((brew) => brew.beanId === beanId).length;
 }
 
-export async function getBeanDialInStates(
+export function getBeanDialInStates(
+	brews: Brews[],
 	beanIds?: number[],
-): Promise<BeanDialInState[]> {
-	const brews = await db.Brews.toArray();
+): BeanDialInState[] {
 	const relevantIds = new Set(
 		beanIds?.filter((beanId): beanId is number => typeof beanId === "number") ??
 			[],

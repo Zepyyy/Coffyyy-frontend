@@ -4,8 +4,7 @@ import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addBean } from "@/db/crud/add";
-import { useBeanSuggestions } from "@/hooks/api/useBeans";
+import { useBeanSuggestions, useCreateBean } from "@/hooks/api/useBeans";
 import {
 	DEFAULT_BOTANICS,
 	DEFAULT_DESIGNATIONS,
@@ -19,11 +18,11 @@ const INITIAL: BeanForm = {
 	name: "",
 	brand: "",
 	roastLevel: "",
-	process: [],
 	botanic: "",
 	designation: "",
-	origin: [],
-	variety: [],
+	countries: [],
+	cities: [],
+	varieties: [],
 	dominantNote: "",
 	flavors: [],
 };
@@ -42,8 +41,7 @@ const ROAST_LEVELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const REQUIRED_FIELDS: Partial<Record<keyof BeanForm, string>> = {
 	name: "Bean name is required.",
 	flavors: "Pick one flavor.",
-	process: "Pick at least one process.",
-	origin: "Origin is required.",
+	countries: "Origin is required.",
 };
 
 export default function BeansLog() {
@@ -51,7 +49,6 @@ export default function BeansLog() {
 	const [customOrigin, setCustomOrigin] = useState("");
 	const [customVariety, setCustomVariety] = useState("");
 	const [customFlavor, setCustomFlavor] = useState("");
-	const [customProcess, setCustomProcess] = useState("");
 	const [customBrand, setCustomBrand] = useState("");
 	const [error, setError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<
@@ -60,6 +57,7 @@ export default function BeansLog() {
 
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const createBean = useCreateBean();
 
 	const suggestions = useBeanSuggestions();
 
@@ -78,7 +76,7 @@ export default function BeansLog() {
 	}
 
 	function toggleItem(
-		field: "process" | "origin" | "variety" | "flavors",
+		field: "countries" | "cities" | "varieties" | "flavors",
 		value: string,
 	) {
 		setForm((f) => {
@@ -98,7 +96,7 @@ export default function BeansLog() {
 	}
 
 	function addCustom(
-		field: "process" | "origin" | "variety" | "flavors",
+		field: "countries" | "cities" | "varieties" | "flavors",
 		value: string,
 		clearFn: () => void,
 	) {
@@ -126,16 +124,16 @@ export default function BeansLog() {
 		setIsSaving(true);
 		try {
 			const roast = Number(form.roastLevel);
-			const result = await addBean({
+			await createBean.mutateAsync({
 				name: form.name,
-				brand: form.brand,
+				brands: form.brand ? [form.brand] : [],
 				rating: 0,
 				status: "New",
-				process: form.process,
 				botanic: (form.botanic as "Arabica" | "Robusta" | "") || "",
 				designation: (form.designation || "?") as "Pure Origin" | "Blend" | "",
-				origin: form.origin,
-				variety: form.variety,
+				countries: form.countries,
+				cities: form.cities,
+				varieties: form.varieties,
 				roastLevel: Number.isFinite(roast) && roast > 0 ? roast : -1,
 				dominantNote: (form.dominantNote || "?") as
 					| "Fruity"
@@ -149,14 +147,14 @@ export default function BeansLog() {
 				flavors: form.flavors,
 				finished: false,
 			});
-			setError(result instanceof Error ? result.message : String(result));
+			setError("");
 			setForm(INITIAL);
 			setFieldErrors({});
 			setStatus(
 				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
 			);
-		} catch {
-			setStatus("Save failed.");
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : "Save failed.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -247,16 +245,16 @@ export default function BeansLog() {
 							<div className="space-y-1.5">
 								<FieldLabel required>Origin</FieldLabel>
 								<MultiChips
-									suggestions={suggestions.origins}
-									selected={form.origin}
-									onToggle={(v) => toggleItem("origin", v)}
+									suggestions={suggestions.countries}
+									selected={form.countries}
+									onToggle={(v) => toggleItem("countries", v)}
 									customInput={customOrigin}
 									onCustomChange={setCustomOrigin}
 									onCustomAdd={() =>
-										addCustom("origin", customOrigin, () => setCustomOrigin(""))
+									addCustom("countries", customOrigin, () => setCustomOrigin(""))
 									}
 									placeholder="Type a country or region…"
-									requiredField={fieldErrors.origin}
+									requiredField={fieldErrors.countries}
 								/>
 							</div>
 
@@ -301,24 +299,6 @@ export default function BeansLog() {
 								</div>
 							</div>
 
-							<div className="space-y-1.5">
-								<FieldLabel required>Process</FieldLabel>
-								<MultiChips
-									suggestions={suggestions.processes}
-									selected={form.process}
-									onToggle={(v) => toggleItem("process", v)}
-									customInput={customProcess}
-									onCustomChange={setCustomProcess}
-									onCustomAdd={() =>
-										addCustom("process", customProcess, () =>
-											setCustomProcess(""),
-										)
-									}
-									placeholder="e.g. Honey, Washed…"
-									requiredField={fieldErrors.process}
-								/>
-							</div>
-
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 								<div className="space-y-1.5">
 									<FieldLabel>Botanic</FieldLabel>
@@ -344,12 +324,12 @@ export default function BeansLog() {
 								<FieldLabel>Variety</FieldLabel>
 								<MultiChips
 									suggestions={suggestions.varieties}
-									selected={form.variety}
-									onToggle={(v) => toggleItem("variety", v)}
+									selected={form.varieties}
+									onToggle={(v) => toggleItem("varieties", v)}
 									customInput={customVariety}
 									onCustomChange={setCustomVariety}
 									onCustomAdd={() =>
-										addCustom("variety", customVariety, () =>
+										addCustom("varieties", customVariety, () =>
 											setCustomVariety(""),
 										)
 									}

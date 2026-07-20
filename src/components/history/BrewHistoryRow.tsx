@@ -11,7 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import { useState } from "react";
-import { deleteBrewById } from "@/db/crud/delete";
+import { useDeleteBrew } from "@/hooks/api/useBrews";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
 
@@ -113,6 +113,7 @@ export function BrewHistoryRow({
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const deleteBrew = useDeleteBrew();
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const ratio =
@@ -137,7 +138,7 @@ export function BrewHistoryRow({
 		if (typeof brew.id !== "number") return;
 		setIsDeleting(true);
 		try {
-			await deleteBrewById(brew.id);
+			await deleteBrew.mutateAsync(brew.id);
 		} finally {
 			setIsDeleting(false);
 			setConfirmDelete(false);

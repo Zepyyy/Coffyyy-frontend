@@ -102,17 +102,18 @@ function createBean(index: number): Omit<Beans, "id"> {
 	return {
 		botanic: "Arabica",
 		name: `${origin.country} ${origin.region} ${index + 1}`,
-		brand: roaster,
+		brands: [roaster],
 		designation: index % 4 === 0 ? "Blend" : "Pure Origin",
 		dominantNote: note,
 		finished: Math.random() < 0.2,
 		flavors: pickMany(TASTING_NOTES, 3, 5),
-		origin: [origin.country, origin.region],
+		countries: [origin.country],
+		cities: [origin.region],
 		process: [origin.process],
 		rating: randomInt(3, 5),
 		roastLevel: randomInt(2, 6),
 		status: pick(["Excellent", "Good", "Mid", "New"]),
-		variety: [origin.variety],
+		varieties: [origin.variety],
 	};
 }
 

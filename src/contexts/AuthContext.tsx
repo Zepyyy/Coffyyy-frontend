@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/lib/api/auth";
+import { setDataMode } from "@/lib/data";
 import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
 import {
 	AuthContext,
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [lastError, setLastError] = useState<string | null>(null);
 
 	const setLocal = useCallback(() => {
+		setDataMode("local");
 		setStatus("local");
 		setSession(null);
 		setSyncCode(null);
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			.then((nextSession) => {
 				if (!active) return;
 				setSession(nextSession);
+				setDataMode("synced");
 				setStatus("synced");
 			})
 			.catch((error: unknown) => {
@@ -67,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const result = await authApi.enableSync();
 			const nextSession = await authApi.getSession();
 			setSession(nextSession);
+			setDataMode("synced");
 			setStatus("synced");
 			setSyncCode(result.syncCode);
 			setSyncCodeExpiresAt(result.syncCodeExpiresAt);
@@ -88,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				const result = await authApi.pairSyncCode(code.trim());
 				const nextSession = await authApi.getSession();
 				setSession(nextSession);
+				setDataMode("synced");
 				setStatus("synced");
 				setSyncCode(null);
 				setSyncCodeExpiresAt(null);

@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Moon, Sun } from "lucide-react";
 import { NavLink, Outlet } from "react-router";
 import SyncPanel from "./components/SyncPanel";
+import DataStatus from "./components/DataStatus";
 import { useTheme } from "./contexts/ThemeContext";
 import { cn } from "./lib/utils";
 
@@ -71,6 +72,7 @@ export default function App() {
 					</div>
 				</div>
 			</header>
+			<DataStatus />
 
 			<main className="flex-1 mx-auto w-full px-4 py-6 relative">
 				<Outlet />

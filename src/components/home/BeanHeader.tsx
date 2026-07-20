@@ -23,7 +23,7 @@ export default function BeanHeader({
 				<p
 					className={`font-Mono text-xs uppercase tracking-[0.16em] ${swatch.secondaryText} mt-0.5`}
 				>
-					{[bean.origin.join(", "), bean.dominantNote, bean.process?.join(", ")]
+					{[bean.countries.join(", "), bean.dominantNote, bean.cities.join(", ")]
 						.filter(Boolean)
 						.join(" · ")}
 				</p>

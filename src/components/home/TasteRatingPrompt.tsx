@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
-import { updateBrewById } from "@/db/crud/update";
+import { useUpdateBrew } from "@/hooks/api/useBrews";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
 
@@ -92,6 +92,7 @@ export default function TasteRatingPrompt({
 	const [strengthScore, setStrengthScore] = useState(brew.strengthScore ?? 0);
 	const [overallRating, setOverallRating] = useState(brew.overallRating ?? 0);
 	const [saving, setSaving] = useState(false);
+	const updateBrew = useUpdateBrew();
 
 	const date = new Date(brew.date).toLocaleDateString(undefined, {
 		month: "short",
@@ -112,14 +113,11 @@ export default function TasteRatingPrompt({
 		if (overallRating < 1) return;
 
 		setSaving(true);
-		await updateBrewById(
-			{
+		await updateBrew.mutateAsync({ id: brew.id, brew: {
 				overallRating,
 				tasteScore,
 				strengthScore,
-			},
-			brew.id,
-		);
+		} });
 		setSaving(false);
 		onDismiss();
 	}

@@ -1,4 +1,4 @@
-import { db } from "@/db/db";
+import { api } from "@/lib/axios";
 import type {
 	MachineFilters,
 	MachineSuggestions,
@@ -6,45 +6,51 @@ import type {
 } from "@/types/MachineTypes";
 import { uniqueSorted } from "./utils";
 
-export async function getAllMachines(): Promise<Array<Machines>> {
-	return db.Machines.toArray();
+export type MachineWrite = Omit<Machines, "id">;
+
+export async function listMachines() {
+	const response = await api.get<Machines[]>("/machine");
+	return response.data.map((machine) => ({
+		...machine,
+		purchaseDate: machine.purchaseDate ?? "",
+	}));
 }
 
-export async function getMachineCount(): Promise<number> {
-	return db.Machines.count();
+export async function getMachine(id: number) {
+	const response = await api.get<Machines>(`/machine/${id}`);
+	return { ...response.data, purchaseDate: response.data.purchaseDate ?? "" };
 }
 
-export async function getMachineNameById(
-	id: number,
-): Promise<string | undefined> {
-	const machine = await db.Machines.get(id);
-	return machine?.name;
+export async function createMachine(machine: MachineWrite) {
+	const response = await api.post<Machines>("/machine", machine);
+	return { ...response.data, purchaseDate: response.data.purchaseDate ?? "" };
 }
 
-export async function getAllMachineNames(): Promise<Array<Machines["name"]>> {
-	return db.Machines.toArray().then((machines) => machines.map((m) => m.name));
+export async function updateMachine(id: number, machine: Partial<Machines>) {
+	const response = await api.patch<Machines>(`/machine/${id}`, machine);
+	return { ...response.data, purchaseDate: response.data.purchaseDate ?? "" };
 }
 
-export async function getMachineFilters(): Promise<Array<MachineFilters>> {
-	const machines = await db.Machines.toArray();
-	return machines.map((b) => {
-		return {
-			name: b.name,
-			brand: b.brand,
-			model: b.model,
-			type: b.type,
-			grindRange: b.grindRange,
-			capacity: b.capacity,
-		};
-	});
+export async function deleteMachine(id: number) {
+	await api.delete(`/machine/${id}`);
 }
 
-export async function getMachineSuggestions(): Promise<MachineSuggestions> {
-	const machines = await db.Machines.toArray();
+export function getMachineFilters(machines: Machines[]): MachineFilters[] {
+	return machines.map((machine) => ({
+		name: machine.name,
+		brand: machine.brand,
+		model: machine.model,
+		type: machine.type,
+		grindRange: machine.grindRange,
+		capacity: machine.capacity,
+	}));
+}
+
+export function getMachineSuggestions(machines: Machines[]): MachineSuggestions {
 	const extract = (field: keyof Machines) =>
 		machines
-			.map((m) => m[field])
-			.filter((v): v is string => typeof v === "string");
+			.map((machine) => machine[field])
+			.filter((value): value is string => typeof value === "string");
 
 	return {
 		brands: uniqueSorted(extract("brand")),

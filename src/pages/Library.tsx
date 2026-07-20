@@ -40,7 +40,7 @@ export default function Library() {
 	const originCounts = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const bean of allBeans) {
-			for (const origin of bean.origin ?? []) {
+			for (const origin of bean.countries ?? []) {
 				const trimmed = origin.trim();
 				if (!trimmed) continue;
 				counts.set(trimmed, (counts.get(trimmed) ?? 0) + 1);
@@ -52,7 +52,7 @@ export default function Library() {
 	const brandCounts = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const bean of allBeans) {
-			const brand = bean.brand?.trim();
+			const brand = bean.brands?.[0]?.trim();
 			if (!brand || brand === "?") continue;
 			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
@@ -95,19 +95,19 @@ export default function Library() {
 		return allBeans.filter((b) => {
 			const matchesSearch =
 				!q ||
-				[...(b.origin ?? []), b.dominantNote, b.brand]
+				[...(b.countries ?? []), b.dominantNote, ...(b.brands ?? [])]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
 					.includes(q);
 			const matchesCountry =
 				selectedCountries.length === 0 ||
-				(b.origin ?? []).some((origin) =>
+				(b.countries ?? []).some((origin) =>
 					selectedCountries.includes(origin.trim()),
 				);
 			const matchesBrand =
 				selectedBrand.length === 0 ||
-				(b.brand != null && selectedBrand.includes(b.brand.trim()));
+				(b.brands ?? []).some((brand) => selectedBrand.includes(brand.trim()));
 			return matchesSearch && matchesCountry && matchesBrand;
 		});
 	}, [search, selectedCountries, selectedBrand, allBeans]);
@@ -282,7 +282,7 @@ export default function Library() {
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 									{filteredBeans.map((bean) => (
 										<BeanCard
-											key={bean.id ?? `${bean.name}-${bean.brand}`}
+											key={bean.id ?? `${bean.name}-${bean.brands?.[0] ?? ""}`}
 											bean={bean}
 											dialInState={
 												bean.id ? beanDialInStateMap.get(bean.id) : undefined

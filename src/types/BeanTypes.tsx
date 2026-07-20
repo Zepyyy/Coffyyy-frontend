@@ -13,10 +13,12 @@ export type Beans = {
 		| "Roasted"
 		| "Green";
 	roastLevel: number;
-	origin: string[];
-	process: string[];
-	variety: string[];
-	brand: string;
+	countries: string[];
+	cities: string[];
+	varieties: string[];
+	brands: string[];
+	/** Local-only legacy value. Never sent to cloud API. */
+	process?: string[];
 	botanic: "Arabica" | "Robusta" | "";
 	designation: "Pure Origin" | "Blend" | "";
 	flavors: string[];
@@ -25,11 +27,10 @@ export type Beans = {
 export type BeanCardProps = {
 	id: number;
 	name: string;
-	origin: string[];
+	countries: string[];
 	dominantNote: Beans["dominantNote"];
-	process?: string[];
 	roastLevel?: number;
-	variety?: string[];
+	varieties?: string[];
 };
 
 export type MultiTagInputProps = {
@@ -40,26 +41,26 @@ export type BeanForm = {
 	name: string;
 	brand: string;
 	roastLevel: string;
-	process: string[];
 	botanic: string;
 	designation: string;
-	origin: string[];
-	variety: string[];
+	countries: string[];
+	cities: string[];
+	varieties: string[];
 	dominantNote: string;
 	flavors: string[];
 };
 
 export type BeanSuggestions = {
-	processes: Array<string>;
 	brands: Array<string>;
-	origins: Array<string>;
+	countries: Array<string>;
+	cities: Array<string>;
 	varieties: Array<string>;
 	flavors: Array<string>;
 };
 
 export type BeanFilters = {
-	origin: string[];
+	countries: string[];
 	dominantNote: Beans["dominantNote"] | "";
-	brand: string;
+	brands: string[];
 	roastLevel: number | null;
 };

@@ -25,7 +25,7 @@ export default function QuickBeanCard({
 					{bean.name}
 				</p>
 				<p className="mt-0.5 font-Mono text-xs uppercase tracking-widest text-muted-foreground">
-					{bean.origin.join(", ")}
+					{bean.countries.join(", ")}
 				</p>
 			</div>
 			{selected && (

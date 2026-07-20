@@ -1,27 +1,9 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import * as statsApi from "@/lib/api/stats";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import * as data from "@/lib/data";
 
-export const useBrewCountForBean = (bean: string | undefined) => {
-	return (
-		useLiveQuery(() => statsApi.getBrewCountForBean(bean ?? ""), [bean]) ?? 0
-	);
-};
-
-export const useBeanBrewInsights = (beanId: number | undefined) => {
-	return useLiveQuery(() => statsApi.getBeanBrewInsights(beanId), [beanId]);
-};
-
-export const useBrewCountForBeanId = (beanId: number | undefined) => {
-	return (
-		useLiveQuery(() => statsApi.getBrewCountForBeanId(beanId), [beanId]) ?? 0
-	);
-};
-
-export const useBeanDialInStates = (beanIds: number[]) => {
-	return (
-		useLiveQuery(
-			() => statsApi.getBeanDialInStates(beanIds),
-			[beanIds.join(",")],
-		) ?? []
-	);
-};
+function useMode() { return useAuth().status === "synced" ? "synced" : "local"; }
+export const useBrewCountForBean = (bean: string | undefined) => { const mode = useMode(); const query = useQuery({ queryKey: ["brew-count", mode, bean], queryFn: () => data.getBrewCountForBean(bean) }); return query.data ?? 0; };
+export const useBeanBrewInsights = (id: number | undefined) => { const mode = useMode(); const query = useQuery({ queryKey: ["bean-insights", mode, id], queryFn: () => data.getBeanBrewInsights(id), enabled: id != null }); return query.data; };
+export const useBrewCountForBeanId = (id: number | undefined) => { const mode = useMode(); const query = useQuery({ queryKey: ["brew-count-id", mode, id], queryFn: () => data.getBrewCountForBeanId(id), enabled: id != null }); return query.data ?? 0; };
+export const useBeanDialInStates = (ids: number[]) => { const mode = useMode(); const query = useQuery({ queryKey: ["dial-in", mode, ids.join(",")], queryFn: () => data.getBeanDialInStates(ids) }); return query.data ?? []; };

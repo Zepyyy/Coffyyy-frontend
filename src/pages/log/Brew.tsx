@@ -6,8 +6,7 @@ import FieldLabel from "@/components/log/FieldLabel";
 import OptionChips from "@/components/log/OptionChips";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SectionTitle from "@/components/log/SectionTitle";
-import { addBrew } from "@/db/crud/add";
-import { useBrewSuggestions } from "@/hooks/api/useBrews";
+import { useBrewSuggestions, useCreateBrew } from "@/hooks/api/useBrews";
 import {
 	DEFAULT_FLOW,
 	DIAL_DEFAULT_BEAN_WEIGHT,
@@ -55,6 +54,7 @@ export default function BrewLog() {
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
+	const createBrew = useCreateBrew();
 
 	const [step, setStep] = useState(1);
 
@@ -71,7 +71,7 @@ export default function BrewLog() {
 
 		setIsSaving(true);
 		try {
-			const result = await addBrew({
+			await createBrew.mutateAsync({
 				beanId: form.beanId,
 				machineId: form.machineId,
 				date: form.date,
@@ -81,11 +81,11 @@ export default function BrewLog() {
 				flow: form.flow,
 				extractionTime: form.extractionTime,
 			});
-			setError(result instanceof Error ? result.message : String(result));
+			setError("");
 			setForm(INITIAL);
 			setStatus("Done.");
-		} catch {
-			setStatus("Save failed.");
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : "Save failed.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -208,9 +208,8 @@ export default function BrewLog() {
 														bean={{
 															id: beanInfo.id,
 															name: beanInfo.name,
-															origin: beanInfo.origin,
+									countries: beanInfo.countries,
 															dominantNote: beanInfo.dominantNote,
-															process: beanInfo.process,
 															roastLevel: beanInfo.roastLevel,
 														}}
 														selected={selectedBeanId === beanInfo.id}

@@ -74,9 +74,9 @@ export default function Bean() {
 	const swatch = colorSwatch[bean.dominantNote] ?? colorSwatch.default;
 
 	const beanMeta = [
-		bean.origin?.join(", "),
+		bean.countries?.join(", "),
 		bean.dominantNote,
-		bean.process?.join(", "),
+		bean.cities?.join(", "),
 	]
 		.filter(Boolean)
 		.join(" · ");
@@ -84,7 +84,7 @@ export default function Bean() {
 	const detailChips = [
 		bean.botanic,
 		bean.designation,
-		...(bean.variety ?? []),
+		...(bean.varieties ?? []),
 	].filter(Boolean);
 	const statRows = insights
 		? buildStatRows(insights.average, insights.best)
@@ -108,11 +108,11 @@ export default function Bean() {
 					<p className={`font-Lora text-3xl font-semibold ${swatch.text}`}>
 						{bean.name}
 					</p>
-					{bean.brand && (
+					{bean.brands?.length > 0 && (
 						<p
 							className={`mt-0.5 font-Mono text-xs uppercase tracking-[0.16em] ${swatch.secondaryText}`}
 						>
-							{bean.brand}
+							{bean.brands.join(", ")}
 						</p>
 					)}
 					<p

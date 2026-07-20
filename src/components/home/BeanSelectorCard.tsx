@@ -63,7 +63,7 @@ export default function BeanSelectorCard({
 				<p
 					className={`font-Mono text-[9px] uppercase tracking-widest ${selected ? swatch.secondaryText : "text-muted-foreground"}`}
 				>
-					{bean.variety?.join(", ")}
+					{bean.varieties?.join(", ")}
 				</p>
 				{/* Roast level bar */}
 				<div
