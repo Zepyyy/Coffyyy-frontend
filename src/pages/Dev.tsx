@@ -1,13 +1,8 @@
 import { useState } from "react";
-import {
-	api,
-	AUTH_TOKEN_KEY,
-	API_ENV_KEY,
-	BACKENDS,
-	type BackendEnv,
-} from "@/lib/axios";
-import { Button } from "@/components/ui/button";
 import DatabaseWorkbench from "@/components/dev/DatabaseWorkbench";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { API_ENV_KEY, api, BACKENDS, type BackendEnv } from "@/lib/axios";
 
 type RequestState = {
 	status: "idle" | "loading" | "success" | "error";
@@ -125,17 +120,10 @@ function readEnv(): BackendEnv {
 	return (localStorage.getItem(API_ENV_KEY) ?? "staging") as BackendEnv;
 }
 
-function readToken(): string | null {
-	return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
 export default function Dev() {
+	const { status: authStatus, logout } = useAuth();
 	const [result, setResult] = useState<RequestState>(IDLE);
 	const [env, setEnvState] = useState<BackendEnv>(readEnv);
-	const [token, setTokenState] = useState<string | null>(readToken);
-	const [authLoading, setAuthLoading] = useState(false);
-	const [username, setUsername] = useState("qsd");
-	const [password, setPassword] = useState("qsd");
 	const [modal, setModal] = useState<ModalState>({
 		isOpen: false,
 		type: "bean",
@@ -173,29 +161,6 @@ export default function Dev() {
 		} catch {
 			return {};
 		}
-	}
-
-	async function login() {
-		setAuthLoading(true);
-		try {
-			const res = await api.post("/auth/login", {
-				username,
-				password,
-			});
-			const jwt: string = res.data?.token ?? res.data?.access_token ?? res.data;
-			localStorage.setItem(AUTH_TOKEN_KEY, jwt);
-			setTokenState(jwt);
-		} catch (err: unknown) {
-			const msg = err instanceof Error ? err.message : "Login failed";
-			setResult({ status: "error", data: msg, label: "POST /auth/login" });
-		} finally {
-			setAuthLoading(false);
-		}
-	}
-
-	function logout() {
-		localStorage.removeItem(AUTH_TOKEN_KEY);
-		setTokenState(null);
 	}
 
 	async function run(endpoint: Endpoint) {
@@ -366,14 +331,14 @@ export default function Dev() {
 
 				{/* Auth */}
 				<div className="flex items-center gap-3 ml-auto">
-					{token ? (
+					{authStatus === "synced" ? (
 						<>
 							<span className="font-Mono text-[10px] text-emerald-400">
-								authenticated
+								cookie session
 							</span>
 							<button
 								type="button"
-								onClick={logout}
+								onClick={() => void logout()}
 								className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors"
 							>
 								Logout
@@ -382,30 +347,8 @@ export default function Dev() {
 					) : (
 						<div className="flex flex-col gap-2">
 							<span className="font-Mono text-[10px] text-muted-foreground">
-								not authenticated
+								local-only
 							</span>
-							<input
-								type="text"
-								placeholder="Username"
-								value={username}
-								onChange={(e) => setUsername(e.target.value)}
-								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary"
-							/>
-							<input
-								type="password"
-								placeholder="Password"
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary"
-							/>
-							<button
-								type="button"
-								onClick={login}
-								disabled={authLoading}
-								className="font-Mono text-[10px] uppercase tracking-[0.12em] border border-border px-3 py-1 hover:bg-muted/40 transition-colors disabled:opacity-50"
-							>
-								{authLoading ? "logging in…" : "Login"}
-							</button>
 						</div>
 					)}
 				</div>

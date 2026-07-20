@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Moon, Sun } from "lucide-react";
 import { NavLink, Outlet } from "react-router";
+import SyncPanel from "./components/SyncPanel";
 import { useTheme } from "./contexts/ThemeContext";
 import { cn } from "./lib/utils";
 
@@ -58,6 +59,7 @@ export default function App() {
 						</nav>
 					</div>
 					<div className="flex">
+						<SyncPanel />
 						<button
 							type="button"
 							onClick={toggleTheme}
