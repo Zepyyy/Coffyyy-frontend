@@ -50,9 +50,9 @@ Stack:
 ## Current State
 The app remains local-first and can be used without an account or password. IndexedDB currently powers the app, so clearing browser storage will remove local data until sync is enabled.
 
-Issue #10 Phase 1 is complete in the backend: authenticated ownership, cloud schema and indexes, idempotent local-data import, and the security model for anonymous workspaces and server-managed sessions are in place. Frontend session bootstrapping, optional sync, API integration, and migration of the local data layer remain in progress.
+Issue #10 Phase 1 is complete on the backend `dev` integration branch: server-session workspace ownership, cloud schema and indexes, idempotent import, and anonymous-workspace security are in place. Backend `master` and Railway staging do not yet contain or verify these changes.
 
-The Phase 2 frontend foundation is now in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, and a local-first sync panel for enabling or pairing a workspace. Backup/import, remote hydration, and data-layer cutover remain planned work.
+The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, and a local-first sync panel. End-to-end import, remote hydration, data-layer completion, and offline reconciliation remain WIP.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
 - No automated test runner is configured yet.
@@ -63,9 +63,10 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Fully local IndexedDB implementation
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
-- [ ] Issue #10 Phase 2: frontend session and optional sync foundation (WIP)
-- [ ] Issue #10 Phase 3: replace direct Dexie data access with the Railway API data layer
-- [ ] Issue #10 Phase 4: back up/import local data and support cross-device pairing
+- [x] Issue #10 Phase 1: backend contract and security on backend `dev`
+- [ ] Issue #10 Phase 1.5: Railway staging deployment and verification
+- [ ] Issue #10 Phase 2: frontend enable-sync and connect-existing-data flows
+- [ ] Issue #10 Phase 3: complete the frontend data-layer boundary (PR #14 is partial groundwork)
 - [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
 - [ ] Issue #10 Phase 5: verification, Railway deployment, rollout, and cleanup
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
@@ -76,10 +77,10 @@ The migration remains a work in progress. See [Issue #10](https://github.com/Zep
 
 Cloud sync is optional; local-only use remains the default. A user does not need a traditional account or password to use Coffyyy.
 
-- **Enable sync:** the current foundation creates a cloud workspace, establishes the current session, and displays a generated one-time sync code. Backup, preview, and local-data import remain planned for Phase 4.
-- **Connect existing data:** the current foundation accepts a sync code once on another browser or device and establishes a session. Workspace download and local-cache hydration remain planned for Phase 4.
+- **Enable sync:** the planned flow backs up and previews local data, imports it through the backend, verifies canonical records, then hydrates Dexie before switching modes. The current foundation does not complete this flow.
+- **Connect existing data:** the planned flow pairs through a sync code, confirms replacement of non-empty local data, downloads the workspace, and hydrates Dexie transactionally. The current foundation does not complete this flow.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
-- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains the local cache and offline outbox for local-only use and synced workspaces.
+- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains local storage for local-only use; the synced-workspace cache/outbox and reconciliation contract remain Phase 4 work.
 
 ## App Routes
 
@@ -111,7 +112,7 @@ src/
 
 `@/` is aliased to `src/`.
 
-During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache and offline-sync infrastructure; the cloud cutover is not complete.
+During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache infrastructure; the synced-workspace cache, outbox, and reconciliation engine are not complete.
 
 ## Getting Started
 
