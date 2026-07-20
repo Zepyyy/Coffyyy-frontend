@@ -52,6 +52,8 @@ The app remains local-first and can be used without an account or password. Inde
 
 Issue #10 Phase 1 is complete in the backend: authenticated ownership, cloud schema and indexes, idempotent local-data import, and the security model for anonymous workspaces and server-managed sessions are in place. Frontend session bootstrapping, optional sync, API integration, and migration of the local data layer remain in progress.
 
+The Phase 2 frontend foundation is now in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, and a local-first sync panel for enabling or pairing a workspace. Backup/import, remote hydration, and data-layer cutover remain planned work.
+
 Suggestions in the log forms are generated from previously saved beans and machines.
 - No automated test runner is configured yet.
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
@@ -61,7 +63,7 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Fully local IndexedDB implementation
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
-- [ ] Issue #10 Phase 2: frontend session and optional sync foundation
+- [ ] Issue #10 Phase 2: frontend session and optional sync foundation (WIP)
 - [ ] Issue #10 Phase 3: replace direct Dexie data access with the Railway API data layer
 - [ ] Issue #10 Phase 4: back up/import local data and support cross-device pairing
 - [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
@@ -74,8 +76,8 @@ The migration remains a work in progress. See [Issue #10](https://github.com/Zep
 
 Cloud sync is optional; local-only use remains the default. A user does not need a traditional account or password to use Coffyyy.
 
-- **Enable sync:** create a cloud workspace, download a full JSON backup, preview and import the existing local data, establish the current session, and display a generated one-time sync code for the user to copy.
-- **Connect existing data:** enter a sync code once on another browser or device, establish a session, download the workspace, and hydrate that browser's local cache.
+- **Enable sync:** the current foundation creates a cloud workspace, establishes the current session, and displays a generated one-time sync code. Backup, preview, and local-data import remain planned for Phase 4.
+- **Connect existing data:** the current foundation accepts a sync code once on another browser or device and establishes a session. Workspace download and local-cache hydration remain planned for Phase 4.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
 - **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains the local cache and offline outbox for local-only use and synced workspaces.
 
@@ -98,12 +100,12 @@ Cloud sync is optional; local-only use remains the default. A user does not need
 ```text
 src/
   components/     Feature-grouped UI: home/, library/, log/, history/, ui/ (+ Header nav)
-  contexts/       Theme context
+  contexts/       Theme and sync-session contexts
   db/             Dexie database (db.ts) and local-cache CRUD helpers (crud/)
   hooks/          Shared hook types plus current live-query hooks and future API query hooks
   lib/api/        Data-layer adapters for beans, brews, machines, and stats
   pages/          Route components (incl. log/ subroutes)
-  providers/      App-level providers (theme, etc.)
+  providers/      App-level providers (theme, query, sync session)
   types/          Shared TypeScript models (Bean, Brew, Machine)
 ```
 
