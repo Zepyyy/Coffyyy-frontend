@@ -45,32 +45,28 @@ export async function getSession() {
 
 export async function enableSync() {
 	await bootstrapCsrf();
-	const response = await api.post<EnableSyncResponse>("/auth/sync/enable");
-	if (response.data.csrfToken) {
-		setCsrfToken(response.data.csrfToken);
-	}
+	const response = await api.post<EnableSyncResponse>(`/auth/sync/enable`);
+	setCsrfToken(response.data.csrfToken);
 	return response.data;
 }
 
-export async function pairSyncCode(code: string) {
+export async function pairSync(code: string) {
 	await bootstrapCsrf();
 	const response = await api.post<PairResponse>("/auth/sync/pair", { code });
-	if (response.data.csrfToken) {
-		setCsrfToken(response.data.csrfToken);
-	}
+	setCsrfToken(response.data.csrfToken);
 	return response.data;
 }
 
 export async function logout() {
 	try {
-		await api.post<void>("/auth/sync/logout");
+		await api.post("/auth/sync/logout");
 	} finally {
 		clearCsrfToken();
 	}
 }
 
 export async function revokeSessions() {
-	await api.post<void>("/auth/sync/sessions/revoke");
+	await api.post("/auth/sync/sessions/revoke");
 }
 
 export async function rotateSyncCode() {
