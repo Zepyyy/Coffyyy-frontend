@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
 			try {
 				snapshot = await snapshotLocalData();
-				const result = await authApi.pairSyncCode(code.trim());
+				const result = await authApi.pairSync(code.trim());
 				const remote = await fetchRemoteWorkspace();
 				await replaceWithRemoteData(remote);
 				const nextSession = await authApi.getSession();
