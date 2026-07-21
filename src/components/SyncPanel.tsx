@@ -2,6 +2,7 @@ import { LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useDatabaseCounts } from "@/hooks/api/useDatabase";
 
 function formatExpiry(value: string | null) {
 	if (!value) return "";
@@ -23,6 +24,7 @@ export default function SyncPanel() {
 		rotateSyncCode,
 		logout,
 	} = useAuth();
+	const counts = useDatabaseCounts();
 	const [open, setOpen] = useState(false);
 	const [code, setCode] = useState("");
 	const [copied, setCopied] = useState(false);
@@ -48,6 +50,13 @@ export default function SyncPanel() {
 
 	async function handlePair() {
 		if (!code.trim()) return;
+		if (
+			(counts.beans > 0 || counts.machines > 0 || counts.brews > 0) &&
+			!window.confirm(
+				"Replace this browser's local data with the connected workspace?",
+			)
+		)
+			return;
 		setMessage(null);
 		try {
 			await pairSyncCode(code);
@@ -99,6 +108,19 @@ export default function SyncPanel() {
 
 					{status !== "synced" ? (
 						<div className="mt-4 space-y-4">
+							<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
+								<p className="font-Mono text-[10px] uppercase tracking-[0.12em]">
+									Local data preview
+								</p>
+								<p className="mt-2">
+									{counts.beans} beans · {counts.machines} machines ·{" "}
+									{counts.brews} brews
+								</p>
+								<p className="mt-1">
+									Bean origins → countries · varieties → varieties · brand →
+									brands
+								</p>
+							</div>
 							<Button
 								type="button"
 								onClick={() => void handleEnable()}
