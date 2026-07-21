@@ -50,7 +50,7 @@ Stack:
 ## Current State
 The app remains local-first and can be used without an account or password. IndexedDB currently powers the app, so clearing browser storage will remove local data until sync is enabled.
 
-Issue #10 Phase 1 is complete on the backend `dev` integration branch: server-session workspace ownership, cloud schema and indexes, idempotent import, and anonymous-workspace security are in place. Backend `master` and Railway staging do not yet contain or verify these changes.
+Issue #10 Phase 1 is complete on backend `dev`: server-session workspace ownership, cloud schema and indexes, idempotent import, and anonymous-workspace security are in place. Railway staging runs commit `c665d917` and passes core cookie-session, CSRF, pairing, revocation, and import-idempotency checks. Expiry and rate-limit timing checks remain open. Backend `master` remains separate for production.
 
 The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, and a local-first sync panel. End-to-end import, remote hydration, data-layer completion, and offline reconciliation remain WIP.
 
@@ -64,7 +64,7 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
 - [x] Issue #10 Phase 1: backend contract and security on backend `dev`
-- [ ] Issue #10 Phase 1.5: Railway staging deployment and verification
+- [ ] Issue #10 Phase 1.5: Railway staging deployment and verification (core flow verified; expiry/rate-limit checks open)
 - [ ] Issue #10 Phase 2: frontend enable-sync and connect-existing-data flows
 - [ ] Issue #10 Phase 3: complete the frontend data-layer boundary (PR #14 is partial groundwork)
 - [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
