@@ -1,8 +1,10 @@
 import axios, {
 	type AxiosError,
+	AxiosHeaders,
 	type AxiosInstance,
 	type AxiosRequestConfig,
 } from "axios";
+import { getCsrfToken } from "./csrf";
 
 export const BACKENDS = {
 	staging: "https://coffyyy-backend-staging.up.railway.app/api",
@@ -27,17 +29,6 @@ export class ApiError extends Error {
 	}
 }
 
-function readCsrfToken() {
-	if (typeof document === "undefined") return undefined;
-	const value = document.cookie
-		.split(";")
-		.map((cookie) => cookie.trim())
-		.find((cookie) => cookie.startsWith("coffyyy_csrf="));
-	return value
-		? decodeURIComponent(value.slice("coffyyy_csrf=".length))
-		: undefined;
-}
-
 function isMutating(config: AxiosRequestConfig) {
 	return ["post", "put", "patch", "delete"].includes(
 		(config.method ?? "get").toLowerCase(),
@@ -54,7 +45,9 @@ function normalizeError(error: AxiosError<unknown>) {
 }
 
 export const api: AxiosInstance = axios.create({
-	headers: { "Content-Type": "application/json" },
+	headers: {
+		"Content-Type": "application/json",
+	},
 	timeout: 5000,
 	withCredentials: true,
 });
@@ -62,9 +55,14 @@ export const api: AxiosInstance = axios.create({
 api.interceptors.request.use((config) => {
 	const env = (localStorage.getItem(API_ENV_KEY) ?? "staging") as BackendEnv;
 	config.baseURL = BACKENDS[env] ?? BACKENDS.staging;
+	config.headers = AxiosHeaders.from(config.headers);
+
 	if (isMutating(config)) {
-		const csrfToken = readCsrfToken();
-		if (csrfToken) config.headers["X-CSRF-Token"] = csrfToken;
+		const csrfToken = getCsrfToken();
+
+		if (csrfToken) {
+			config.headers.set("X-CSRF-TOKEN", csrfToken);
+		}
 	}
 
 	return config;

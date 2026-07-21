@@ -1,4 +1,5 @@
 import { api } from "@/lib/axios";
+import { clearCsrfToken, setCsrfToken } from "../csrf";
 
 export type SessionState = {
 	authenticated: true;
@@ -11,12 +12,14 @@ export type EnableSyncResponse = {
 	workspaceId: number;
 	syncCode: string;
 	syncCodeExpiresAt: string;
+	csrfToken: string | undefined;
 };
 
 export type PairResponse = {
 	connected: true;
 	workspaceId: number;
 	expiresAt: string;
+	csrfToken: string | undefined;
 };
 
 export type RotatedSyncCode = {
@@ -24,8 +27,15 @@ export type RotatedSyncCode = {
 	expiresAt: string;
 };
 
+type BootstrapCsrfResponse = {
+	csrfRequired: true;
+	csrfToken: string;
+};
+
 export async function bootstrapCsrf() {
-	await api.get<{ csrfRequired: true }>("/auth/sync/csrf");
+	const response = await api.get<BootstrapCsrfResponse>("/auth/sync/csrf");
+	setCsrfToken(response.data.csrfToken);
+	return response.data;
 }
 
 export async function getSession() {
@@ -36,17 +46,27 @@ export async function getSession() {
 export async function enableSync() {
 	await bootstrapCsrf();
 	const response = await api.post<EnableSyncResponse>("/auth/sync/enable");
+	if (response.data.csrfToken) {
+		setCsrfToken(response.data.csrfToken);
+	}
 	return response.data;
 }
 
 export async function pairSyncCode(code: string) {
 	await bootstrapCsrf();
 	const response = await api.post<PairResponse>("/auth/sync/pair", { code });
+	if (response.data.csrfToken) {
+		setCsrfToken(response.data.csrfToken);
+	}
 	return response.data;
 }
 
 export async function logout() {
-	await api.post<void>("/auth/sync/logout");
+	try {
+		await api.post<void>("/auth/sync/logout");
+	} finally {
+		clearCsrfToken();
+	}
 }
 
 export async function revokeSessions() {
