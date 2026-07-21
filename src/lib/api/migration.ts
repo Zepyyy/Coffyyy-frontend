@@ -106,6 +106,27 @@ export async function fetchRemoteWorkspace(): Promise<RemoteWorkspace> {
 	};
 }
 
+export function assertCanonicalWorkspace(
+	snapshot: LocalSnapshot,
+	remote: RemoteWorkspace,
+) {
+	const remoteBeanNames = new Set(remote.beans.map((bean) => text(bean.name)));
+	const remoteMachineNames = new Set(
+		remote.machines.map((machine) => text(machine.name)),
+	);
+	if (snapshot.beans.some((bean) => !remoteBeanNames.has(bean.name))) {
+		throw new Error("Canonical bean verification failed");
+	}
+	if (
+		snapshot.machines.some((machine) => !remoteMachineNames.has(machine.name))
+	) {
+		throw new Error("Canonical machine verification failed");
+	}
+	if (remote.brews.length < snapshot.brews.length) {
+		throw new Error("Canonical brew verification failed");
+	}
+}
+
 function text(value: unknown) {
 	return typeof value === "string" ? value : "";
 }

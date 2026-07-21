@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/lib/api/auth";
 import {
+	assertCanonicalWorkspace,
 	fetchRemoteWorkspace,
 	importLocalData,
 	replaceWithRemoteData,
@@ -74,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const snapshot = await snapshotLocalData();
 			const result = await authApi.enableSync();
 			await importLocalData(snapshot);
-			await replaceWithRemoteData(await fetchRemoteWorkspace());
+			const remote = await fetchRemoteWorkspace();
+			assertCanonicalWorkspace(snapshot, remote);
+			await replaceWithRemoteData(remote);
 			const nextSession = await authApi.getSession();
 			setSession(nextSession);
 			setStatus("synced");
@@ -99,7 +102,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			try {
 				snapshot = await snapshotLocalData();
 				const result = await authApi.pairSyncCode(code.trim());
-				await replaceWithRemoteData(await fetchRemoteWorkspace());
+				const remote = await fetchRemoteWorkspace();
+				await replaceWithRemoteData(remote);
 				const nextSession = await authApi.getSession();
 				setSession(nextSession);
 				setStatus("synced");
