@@ -1,6 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/lib/api/auth";
+import {
+	fetchRemoteWorkspace,
+	importLocalData,
+	replaceWithRemoteData,
+	restoreLocalData,
+	snapshotLocalData,
+} from "@/lib/api/migration";
 import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
 import {
 	AuthContext,
@@ -64,7 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setIsBusy(true);
 		setLastError(null);
 		try {
+			const snapshot = await snapshotLocalData();
 			const result = await authApi.enableSync();
+			await importLocalData(snapshot);
+			await replaceWithRemoteData(await fetchRemoteWorkspace());
 			const nextSession = await authApi.getSession();
 			setSession(nextSession);
 			setStatus("synced");
@@ -73,6 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			await queryClient.invalidateQueries();
 			return result;
 		} catch (error) {
+			await authApi.logout().catch(() => undefined);
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
@@ -84,8 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		async (code: string) => {
 			setIsBusy(true);
 			setLastError(null);
+			let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
 			try {
+				snapshot = await snapshotLocalData();
 				const result = await authApi.pairSyncCode(code.trim());
+				await replaceWithRemoteData(await fetchRemoteWorkspace());
 				const nextSession = await authApi.getSession();
 				setSession(nextSession);
 				setStatus("synced");
@@ -94,6 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				await queryClient.invalidateQueries();
 				return result;
 			} catch (error) {
+				await authApi.logout().catch(() => undefined);
+				if (snapshot) await restoreLocalData(snapshot).catch(() => undefined);
 				setLastError(errorMessage(error));
 				throw error;
 			} finally {
