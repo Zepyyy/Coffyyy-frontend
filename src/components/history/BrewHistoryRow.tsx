@@ -11,7 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import { useState } from "react";
-import { deleteBrewById } from "@/db/crud/delete";
+import { deleteBrewById } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
 

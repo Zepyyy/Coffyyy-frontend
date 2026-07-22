@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import * as machineStatsApi from "../../lib/api/machines";
+import * as machineStatsApi from "@/lib/data";
 
 export const useAllMachines = () => {
 	return useLiveQuery(() => machineStatsApi.getAllMachines(), []) ?? [];
