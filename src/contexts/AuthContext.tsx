@@ -49,7 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
 
 		void authApi
-			.getSession()
+			.bootstrapCsrf()
+			.then(() => authApi.getSession())
 			.then((nextSession) => {
 				if (!active) return;
 				setSession(nextSession);
