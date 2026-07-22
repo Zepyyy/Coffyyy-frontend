@@ -1,8 +1,8 @@
 import { LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
 import { useDatabaseCounts } from "@/hooks/api/useDatabase";
+import { useAuth } from "@/hooks/useAuth";
 
 function formatExpiry(value: string | null) {
 	if (!value) return "";
