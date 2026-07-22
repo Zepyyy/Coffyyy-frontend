@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import * as authApi from "@/lib/api/auth";
 import {
 	assertCanonicalWorkspace,
+	assertRemoteWorkspace,
 	fetchRemoteWorkspace,
 	importLocalData,
 	replaceWithRemoteData,
@@ -94,12 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				await restoreLocalData(snapshot).catch(() => undefined);
 			}
 			await authApi.logout().catch(() => undefined);
+			setLocal();
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
 			setIsBusy(false);
 		}
-	}, [queryClient]);
+	}, [queryClient, setLocal]);
 
 	const pairSyncCode = useCallback(
 		async (code: string) => {
@@ -111,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				const result = await authApi.pairSync(code.trim());
 				const nextSession = await authApi.getSession();
 				const remote = await fetchRemoteWorkspace();
+				assertRemoteWorkspace(remote);
 				await replaceWithRemoteData(remote);
 				setSession(nextSession);
 				setStatus("synced");
@@ -121,13 +124,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			} catch (error) {
 				await authApi.logout().catch(() => undefined);
 				if (snapshot) await restoreLocalData(snapshot).catch(() => undefined);
+				setLocal();
 				setLastError(errorMessage(error));
 				throw error;
 			} finally {
 				setIsBusy(false);
 			}
 		},
-		[queryClient],
+		[queryClient, setLocal],
 	);
 
 	const rotateSyncCode = useCallback(async () => {
