@@ -55,10 +55,13 @@ function enumValue(value: string, fallback: string) {
 	return value ? value.replaceAll(" ", "_").toUpperCase() : fallback;
 }
 
-function toImportPayload(snapshot: LocalSnapshot): ImportPayload {
+function toImportPayload(
+	snapshot: LocalSnapshot,
+	idempotencyKey: string,
+): ImportPayload {
 	return {
 		schemaVersion: 5,
-		idempotencyKey: crypto.randomUUID(),
+		idempotencyKey,
 		beans: snapshot.beans.map((bean) => ({
 			localId: bean.id,
 			name: bean.name,
@@ -106,10 +109,7 @@ export async function importLocalData(
 	snapshot: LocalSnapshot,
 	idempotencyKey = crypto.randomUUID(),
 ) {
-	const payload = {
-		...toImportPayload(snapshot),
-		idempotencyKey,
-	};
+	const payload = toImportPayload(snapshot, idempotencyKey);
 	return api.post<{ status: string }>("/migration/import", payload);
 }
 
@@ -130,6 +130,7 @@ export function assertCanonicalWorkspace(
 	snapshot: LocalSnapshot,
 	remote: RemoteWorkspace,
 ) {
+	assertRemoteWorkspace(remote);
 	const counts = getSnapshotCounts(snapshot);
 	if (
 		remote.beans.length !== counts.beans ||
@@ -150,8 +151,30 @@ export function assertCanonicalWorkspace(
 	) {
 		throw new Error("Canonical machine verification failed");
 	}
-	if (remote.brews.length !== snapshot.brews.length) {
-		throw new Error("Canonical brew verification failed");
+}
+
+export function assertRemoteWorkspace(remote: RemoteWorkspace) {
+	if (
+		!Array.isArray(remote.beans) ||
+		!Array.isArray(remote.machines) ||
+		!Array.isArray(remote.brews)
+	) {
+		throw new Error("Remote workspace response is invalid");
+	}
+
+	const beanIds = new Set(remote.beans.map((bean) => bean.id));
+	const machineIds = new Set(remote.machines.map((machine) => machine.id));
+	if (
+		remote.beans.some((bean) => !Number.isInteger(bean.id)) ||
+		remote.machines.some((machine) => !Number.isInteger(machine.id)) ||
+		remote.brews.some(
+			(brew) =>
+				!Number.isInteger(brew.id) ||
+				!beanIds.has(Number(brew.beanId)) ||
+				!machineIds.has(Number(brew.machineId)),
+		)
+	) {
+		throw new Error("Remote workspace references are invalid");
 	}
 }
 
