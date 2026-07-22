@@ -3,9 +3,9 @@ import { Link, useParams } from "react-router";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
-import { useAllMachines } from "@/hooks/api/useMachines";
 import { useBean } from "@/hooks/api/useBeans";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
+import { useAllMachines } from "@/hooks/api/useMachines";
 import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
