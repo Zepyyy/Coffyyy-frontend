@@ -71,14 +71,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const enableSync = useCallback(async () => {
 		setIsBusy(true);
 		setLastError(null);
+		let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
+		let localDataReplaced = false;
 		try {
-			const snapshot = await snapshotLocalData();
+			snapshot = await snapshotLocalData();
+			const idempotencyKey = crypto.randomUUID();
 			const result = await authApi.enableSync();
-			await importLocalData(snapshot);
+			await importLocalData(snapshot, idempotencyKey);
 			const remote = await fetchRemoteWorkspace();
 			assertCanonicalWorkspace(snapshot, remote);
-			await replaceWithRemoteData(remote);
 			const nextSession = await authApi.getSession();
+			localDataReplaced = true;
+			await replaceWithRemoteData(remote);
 			setSession(nextSession);
 			setStatus("synced");
 			setSyncCode(result.syncCode);
@@ -86,6 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			await queryClient.invalidateQueries();
 			return result;
 		} catch (error) {
+			if (localDataReplaced && snapshot) {
+				await restoreLocalData(snapshot).catch(() => undefined);
+			}
 			await authApi.logout().catch(() => undefined);
 			setLastError(errorMessage(error));
 			throw error;
@@ -102,9 +109,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			try {
 				snapshot = await snapshotLocalData();
 				const result = await authApi.pairSync(code.trim());
+				const nextSession = await authApi.getSession();
 				const remote = await fetchRemoteWorkspace();
 				await replaceWithRemoteData(remote);
-				const nextSession = await authApi.getSession();
 				setSession(nextSession);
 				setStatus("synced");
 				setSyncCode(null);
