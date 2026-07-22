@@ -10,6 +10,12 @@ export type LocalSnapshot = {
 	brews: Brews[];
 };
 
+export type LocalDataCounts = {
+	beans: number;
+	machines: number;
+	brews: number;
+};
+
 type ImportPayload = {
 	schemaVersion: number;
 	idempotencyKey: string;
@@ -35,6 +41,14 @@ export async function snapshotLocalData(): Promise<LocalSnapshot> {
 		db.Brews.toArray(),
 	]);
 	return { beans, machines, brews };
+}
+
+export function getSnapshotCounts(snapshot: LocalSnapshot): LocalDataCounts {
+	return {
+		beans: snapshot.beans.length,
+		machines: snapshot.machines.length,
+		brews: snapshot.brews.length,
+	};
 }
 
 function enumValue(value: string, fallback: string) {
@@ -88,8 +102,14 @@ function toImportPayload(snapshot: LocalSnapshot): ImportPayload {
 	};
 }
 
-export async function importLocalData(snapshot: LocalSnapshot) {
-	const payload = toImportPayload(snapshot);
+export async function importLocalData(
+	snapshot: LocalSnapshot,
+	idempotencyKey = crypto.randomUUID(),
+) {
+	const payload = {
+		...toImportPayload(snapshot),
+		idempotencyKey,
+	};
 	return api.post<{ status: string }>("/migration/import", payload);
 }
 
@@ -110,6 +130,14 @@ export function assertCanonicalWorkspace(
 	snapshot: LocalSnapshot,
 	remote: RemoteWorkspace,
 ) {
+	const counts = getSnapshotCounts(snapshot);
+	if (
+		remote.beans.length !== counts.beans ||
+		remote.machines.length !== counts.machines ||
+		remote.brews.length !== counts.brews
+	) {
+		throw new Error("Canonical workspace count verification failed");
+	}
 	const remoteBeanNames = new Set(remote.beans.map((bean) => text(bean.name)));
 	const remoteMachineNames = new Set(
 		remote.machines.map((machine) => text(machine.name)),
@@ -122,7 +150,7 @@ export function assertCanonicalWorkspace(
 	) {
 		throw new Error("Canonical machine verification failed");
 	}
-	if (remote.brews.length < snapshot.brews.length) {
+	if (remote.brews.length !== snapshot.brews.length) {
 		throw new Error("Canonical brew verification failed");
 	}
 }
