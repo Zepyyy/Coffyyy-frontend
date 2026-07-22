@@ -2,7 +2,7 @@ import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addMachine } from "@/db/crud/add";
+import { addMachine } from "@/lib/data";
 import { useMachineSuggestions } from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
 import type { MachineForm } from "@/types/MachineTypes";

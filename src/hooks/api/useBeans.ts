@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import * as beanStatsApi from "@/lib/api/beans";
+import * as beanStatsApi from "@/lib/data";
 
 export const useBean = (beanId: number | undefined) => {
 	return (

@@ -6,7 +6,7 @@ import FieldLabel from "@/components/log/FieldLabel";
 import OptionChips from "@/components/log/OptionChips";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SectionTitle from "@/components/log/SectionTitle";
-import { addBrew } from "@/db/crud/add";
+import { addBrew } from "@/lib/data";
 import { useBrewSuggestions } from "@/hooks/api/useBrews";
 import {
 	DEFAULT_FLOW,

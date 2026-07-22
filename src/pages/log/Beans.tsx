@@ -4,7 +4,7 @@ import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addBean } from "@/db/crud/add";
+import { addBean } from "@/lib/data";
 import { useBeanSuggestions } from "@/hooks/api/useBeans";
 import {
 	DEFAULT_BOTANICS,

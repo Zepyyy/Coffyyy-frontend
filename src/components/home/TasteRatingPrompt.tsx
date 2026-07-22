@@ -1,6 +1,6 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
-import { updateBrewById } from "@/db/crud/update";
+import { updateBrewById } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
 

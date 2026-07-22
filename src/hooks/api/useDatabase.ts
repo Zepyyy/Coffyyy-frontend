@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { getDatabaseCounts } from "@/lib/api/database";
+import { getDatabaseCounts } from "@/lib/data";
 
 export const useDatabaseCounts = () => {
 	return (

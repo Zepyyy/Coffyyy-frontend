@@ -11,7 +11,7 @@ import {
 	Salad,
 } from "lucide-react";
 import { useState } from "react";
-import { deleteBeanById } from "@/db/crud/delete";
+import { deleteBeanById } from "@/lib/data";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
