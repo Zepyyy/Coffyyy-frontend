@@ -7,7 +7,7 @@ import type {
 import { uniqueSorted } from "./utils";
 
 export async function getAllMachines(): Promise<Array<Machines>> {
-	return db.Machines.toArray();
+	return getActiveMachines();
 }
 
 export async function getMachineCount(): Promise<number> {

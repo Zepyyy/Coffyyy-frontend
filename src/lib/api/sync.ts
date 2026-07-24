@@ -29,7 +29,7 @@ export type RemoteChange = {
 	revision: number;
 	entityType: Uppercase<SyncEntity>;
 	serverId: number;
-	clientId: string;
+	clientId: string | null;
 	operation: Uppercase<SyncOperation>;
 	payload: Record<string, unknown>;
 };
@@ -59,6 +59,9 @@ export async function getRemoteHistory(options?: {
 	serverId?: number;
 	limit?: number;
 }) {
+	if ((options?.entity === undefined) !== (options?.serverId === undefined)) {
+		throw new Error("Remote history filters require entity and serverId together");
+	}
 	const changes: RecoveryHistoryEntry[] = [];
 	let since = 0;
 	let hasMore = false;
@@ -318,9 +321,14 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 
 	await db.transaction(
 		"rw",
-		db.Outbox,
-		db.RemoteMappings,
-		db.Tombstones,
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.Outbox,
+			db.RemoteMappings,
+			db.Tombstones,
+		],
 		async () => {
 			const current = await db.Outbox.get(operation.id as number);
 			if (!current || current.status !== "pushing") return;
@@ -335,10 +343,12 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 				});
 				return;
 			}
+			const serverRevision = result.canonicalRevision ?? result.revision;
+			const remoteId = result.serverId ?? 0;
 			await db.Outbox.update(operation.id as number, {
 				status: "acked",
 				serverResult: result,
-				serverRevision: result.canonicalRevision ?? result.revision,
+				serverRevision,
 				updatedAt: Date.now(),
 			});
 			if (result.serverId !== undefined) {
@@ -346,7 +356,10 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 					entity: operation.entity,
 					localId: operation.entityLocalId,
 					remoteId: result.serverId,
-					serverRevision: result.canonicalRevision ?? result.revision,
+					serverRevision,
+					...(operation.operation === "delete"
+						? { deletedAt: Date.now() }
+						: {}),
 					updatedAt: Date.now(),
 				};
 				const existing = await db.RemoteMappings.where("[entity+localId]")
@@ -354,6 +367,48 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 					.first();
 				if (existing?.id === undefined) await db.RemoteMappings.add(mapping);
 				else await db.RemoteMappings.update(existing.id, mapping);
+				if (operation.operation === "delete") {
+					await putTombstone({
+						entity: operation.entity,
+						localId: operation.entityLocalId,
+						remoteId: result.serverId,
+						serverRevision: serverRevision ?? 0,
+						deletedAt: Date.now(),
+						updatedAt: Date.now(),
+					});
+				}
+			}
+
+			if (operation.operation !== "delete") {
+				const hasOtherLocalWork = Boolean(
+					await db.Outbox.where("entityLocalId")
+						.equals(operation.entityLocalId)
+						.filter(
+							(candidate) =>
+								candidate.entity === operation.entity &&
+								candidate.operationId !== operation.operationId &&
+								UNRESOLVED_OUTBOX_STATUSES.some(
+									(status) => status === candidate.status,
+								),
+						)
+						.first(),
+				);
+				if (!hasOtherLocalWork && isRecord(result.canonical)) {
+					await upsertLocalRecord(
+						operation.entity,
+						operation.entityLocalId,
+						remoteId,
+						result.canonical,
+						serverRevision ?? 0,
+					);
+				} else {
+					await updateLocalRevision(
+						operation.entity,
+						operation.entityLocalId,
+						remoteId,
+						serverRevision ?? 0,
+					);
+				}
 			}
 		},
 	);
@@ -393,8 +448,30 @@ async function markFailed(
 	if (mapping?.id !== undefined)
 		await db.RemoteMappings.update(mapping.id, {
 			serverRevision,
+			...(result?.reason === "already_deleted"
+				? { deletedAt: Date.now() }
+				: {}),
 			updatedAt: Date.now(),
 		});
+	if (
+		result?.reason === "already_deleted" &&
+		result.serverId !== undefined
+	) {
+		await putTombstone({
+			entity: operation.entity,
+			localId: operation.entityLocalId,
+			remoteId: result.serverId,
+			serverRevision: serverRevision ?? 0,
+			deletedAt: Date.now(),
+			updatedAt: Date.now(),
+		});
+		await tombstoneLocalRecord(
+			operation.entity,
+			operation.entityLocalId,
+			result.serverId,
+			serverRevision ?? 0,
+		);
+	}
 }
 
 function isTerminalFailure(error: unknown) {
@@ -415,7 +492,9 @@ async function applyRemoteChange(change: RemoteChange) {
 	const entity = normalizeEntity(change.entityType);
 	const operation = normalizeOperation(change.operation);
 	const mapping = await findMapping(entity, change.serverId, change.clientId);
-	const localId = mapping?.localId ?? change.clientId ?? crypto.randomUUID();
+	const localId =
+		mapping?.localId ??
+		stableRemoteLocalId(entity, change.serverId, change.clientId);
 	const currentRevision = Math.max(
 		Number(mapping?.serverRevision ?? 0),
 		await localRevision(entity, localId, change.serverId),
@@ -476,16 +555,18 @@ async function applyRemoteChange(change: RemoteChange) {
 async function findMapping(
 	entity: SyncEntity,
 	serverId: number,
-	clientId: string,
+	clientId: string | null,
 ) {
 	return (
 		(await db.RemoteMappings.where("remoteId")
 			.equals(serverId)
 			.filter((candidate) => candidate.entity === entity)
 			.first()) ??
-		(await db.RemoteMappings.where("[entity+localId]")
-			.equals([entity, clientId])
-			.first())
+		(clientId === null
+			? undefined
+			: await db.RemoteMappings.where("[entity+localId]")
+					.equals([entity, clientId])
+					.first())
 	);
 }
 
@@ -542,6 +623,15 @@ async function hasUnresolvedLocalWork(entity: SyncEntity, localId: string) {
 }
 
 async function preserveLocalRecord(
+	entity: SyncEntity,
+	localId: string,
+	serverId: number,
+	serverRevision: number,
+) {
+	await updateLocalRevision(entity, localId, serverId, serverRevision);
+}
+
+async function updateLocalRevision(
 	entity: SyncEntity,
 	localId: string,
 	serverId: number,
@@ -810,6 +900,14 @@ function normalizeEntity(value: string): SyncEntity {
 	throw new Error(`Unsupported remote entity: ${value}`);
 }
 
+function stableRemoteLocalId(
+	entity: SyncEntity,
+	serverId: number,
+	clientId: string | null,
+) {
+	return clientId?.trim() || `remote:${entity}:${serverId}`;
+}
+
 function normalizeOperation(value: string): SyncOperation {
 	const operation = value.toLowerCase();
 	if (
@@ -825,11 +923,28 @@ function validateChangePage(value: ChangePage) {
 	if (
 		!value ||
 		!Array.isArray(value.changes) ||
-		(typeof value.nextCursor !== "number" && value.nextCursor !== null) ||
+		(value.nextCursor !== null && !isCursor(value.nextCursor)) ||
 		typeof value.hasMore !== "boolean" ||
 		typeof value.fullResyncRequired !== "boolean"
 	) {
 		throw new Error("Remote change response is invalid");
+	}
+	for (const change of value.changes) {
+		if (
+			!isRecord(change) ||
+			!isCursor(change.revision) ||
+			change.revision < 1 ||
+			!isCursor(change.serverId) ||
+			change.serverId < 1 ||
+			typeof change.entityType !== "string" ||
+			typeof change.operation !== "string" ||
+			(typeof change.clientId !== "string" && change.clientId !== null) ||
+			!isRecord(change.payload)
+		) {
+			throw new Error("Remote change response is invalid");
+		}
+		normalizeEntity(change.entityType);
+		normalizeOperation(change.operation);
 	}
 	return value;
 }
@@ -838,13 +953,17 @@ function validateRecoveryHistoryPage(value: RecoveryHistoryPage) {
 	if (
 		!value ||
 		!Array.isArray(value.changes) ||
-		(typeof value.nextCursor !== "number" || value.nextCursor < 0) ||
+		!isCursor(value.nextCursor) ||
 		typeof value.hasMore !== "boolean" ||
 		typeof value.retentionBoundary !== "string"
 	) {
 		throw new Error("Remote recovery history response is invalid");
 	}
 	return value;
+}
+
+function isCursor(value: unknown): value is number {
+	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 function recoveryPayload(payload: Record<string, unknown>) {
@@ -890,4 +1009,8 @@ function titleEnum(value: unknown, fallback: string) {
 
 function mappingKey(entity: string, localId: string) {
 	return `${entity}:${localId}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }

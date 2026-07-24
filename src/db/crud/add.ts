@@ -12,7 +12,10 @@ import {
 async function addBean(bean: Omit<Beans, "id">) {
 	try {
 		// Check if a bean with the same name already exists
-		const existingBean = await db.Beans.where("name").equals(bean.name).first();
+		const existingBean = await db.Beans.where("name")
+			.equals(bean.name)
+			.filter((record) => record.deletedAt === undefined)
+			.first();
 		if (!existingBean) {
 			const localId = crypto.randomUUID();
 			return await db.transaction("rw", db.Beans, db.Outbox, async () => {
@@ -78,6 +81,7 @@ async function addMachine(machine: Omit<Machines, "id">) {
 		// Check if a bean with the same name already exists
 		const existingMachine = await db.Machines.where("name")
 			.equals(machine.name)
+			.filter((record) => record.deletedAt === undefined)
 			.first();
 		if (!existingMachine) {
 			const localId = crypto.randomUUID();

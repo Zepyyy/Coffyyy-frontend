@@ -21,7 +21,7 @@ import {
 import { ApiError, api } from "@/lib/axios";
 import type { OutboxRecord } from "@/db/sync/types";
 import { getAllBeans, getBeanCount } from "@/lib/api/beans";
-import { getMachineCount } from "@/lib/api/machines";
+import { getAllMachines, getMachineCount } from "@/lib/api/machines";
 import { getBrewsForHistoryView, getBrewSuggestions } from "@/lib/api/brews";
 import { PendingOutboxError, replaceWithRemoteData } from "@/lib/api/migration";
 
@@ -40,6 +40,71 @@ beforeEach(async () => {
 });
 
 describe("offline outbox", () => {
+	it("allows active names to be reused after remote tombstones", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "deleted-bean",
+			deletedAt: Date.now(),
+			name: "Ethiopia",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.Machines.put({
+			id: 12,
+			localId: "deleted-machine",
+			deletedAt: Date.now(),
+			name: "Linea Mini",
+			brand: "",
+			type: "",
+			purchaseDate: "",
+			model: "",
+			grindRange: "",
+			capacity: "",
+		});
+
+		const beanId = await addBean({
+			name: "Ethiopia",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		const machineId = await addMachine({
+			name: "Linea Mini",
+			brand: "",
+			type: "",
+			purchaseDate: "",
+			model: "",
+			grindRange: "",
+			capacity: "",
+		});
+
+		expect(beanId).toEqual(expect.any(Number));
+		expect(machineId).toEqual(expect.any(Number));
+		expect(await getAllMachines()).toEqual([
+			expect.objectContaining({ id: machineId, name: "Linea Mini" }),
+		]);
+		expect(await getMachineCount()).toBe(1);
+	});
+
 	it("writes a bean and its backend-shaped create operation atomically", async () => {
 		const result = await addBean({
 			name: "Ethiopia",
@@ -259,6 +324,98 @@ describe("push sync", () => {
 		expect(await db.RemoteMappings.count()).toBe(1);
 	});
 
+	it("persists a tombstone when a local delete is acknowledged", async () => {
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-local",
+			remoteId: 42,
+			serverRevision: 7,
+			updatedAt: 0,
+		});
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "bean-local",
+			operation: "delete",
+			payload: {},
+		});
+		const [operation] = await db.Outbox.toArray();
+		vi.spyOn(api, "post").mockResolvedValue({
+			data: {
+				operationId: operation.operationId,
+				status: "applied",
+				serverId: 42,
+				revision: 8,
+			},
+		} as never);
+
+		await pushPendingOperations();
+		expect(await db.Tombstones.toArray()).toEqual([
+			expect.objectContaining({
+				entity: "bean",
+				localId: "bean-local",
+				remoteId: 42,
+				serverRevision: 8,
+			}),
+		]);
+		expect(await db.RemoteMappings.toArray()).toEqual([
+			expect.objectContaining({ deletedAt: expect.any(Number) }),
+		]);
+	});
+
+	it("applies the server canonical record after an accepted push", async () => {
+		const id = (await addBean({
+			name: "Local name",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		})) as number;
+		const bean = await db.Beans.get(id);
+		const [operation] = await db.Outbox.toArray();
+		vi.spyOn(api, "post").mockResolvedValue({
+			data: {
+				operationId: operation.operationId,
+				status: "applied",
+				serverId: 42,
+				revision: 7,
+				canonicalRevision: 7,
+				canonical: {
+					id: 42,
+					clientId: bean?.localId,
+					name: "Canonical name",
+					flavors: [],
+					rating: 2,
+					roastLevel: 3,
+					countries: ["Ethiopia"],
+					cities: [],
+					varieties: [],
+					brands: ["Kawa"],
+					status: "GOOD",
+					dominantNote: "FRUITY",
+					botanic: "ARABICA",
+					designation: "PURE_ORIGIN",
+					finished: false,
+					revision: 7,
+				},
+			},
+		} as never);
+
+		await expect(pushPendingOperations()).resolves.toBe(1);
+		expect(await db.Beans.get(id)).toMatchObject({
+			name: "Canonical name",
+			rating: 2,
+			serverRevision: 7,
+		});
+	});
+
 	it("keeps transient failures retryable and terminal failures visible", async () => {
 		await queueOperation({
 			entity: "bean",
@@ -332,7 +489,7 @@ describe("pull sync", () => {
 		operation: "CREATE" | "UPDATE" | "DELETE",
 		entityType: "BEAN" | "MACHINE" | "BREW",
 		serverId: number,
-		clientId: string,
+		clientId: string | null,
 		payload: Record<string, unknown>,
 	) {
 		return {
@@ -389,6 +546,27 @@ describe("pull sync", () => {
 			name: "Kenya",
 			localId: "bean-1",
 			serverRevision: 2,
+		});
+	});
+
+	it("uses a stable local identity for legacy changes without client IDs", async () => {
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [
+					change(1, "CREATE", "BEAN", 11, null, {
+						id: 11,
+						name: "Legacy bean",
+					}),
+				],
+				nextCursor: 1,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await pullRemoteChanges();
+		expect(await db.Beans.get(11)).toMatchObject({
+			localId: "remote:bean:11",
 		});
 	});
 
@@ -860,6 +1038,23 @@ describe("pull sync", () => {
 		await expect(pullRemoteChanges()).resolves.toMatchObject({ cursor: 0 });
 	});
 
+	it("rejects non-finite remote cursors without mutating the durable cursor", async () => {
+		await db.SyncState.put({ id: "changes", cursor: 4, updatedAt: 0 });
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [],
+				nextCursor: Number.POSITIVE_INFINITY,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await expect(pullRemoteChanges()).rejects.toThrow(
+			"Remote change response is invalid",
+		);
+		expect(await getSyncCursor()).toBe(4);
+	});
+
 	it("rebuilds an equivalent cache after a reload from the durable feed", async () => {
 		const remoteChanges = [
 			change(1, "CREATE", "BEAN", 11, "bean-1", {
@@ -949,6 +1144,14 @@ describe("pull sync", () => {
 });
 
 describe("recovery history", () => {
+	it("rejects history filters that the backend cannot scope safely", async () => {
+		const get = vi.spyOn(api, "get");
+		await expect(getRemoteHistory({ entity: "bean" })).rejects.toThrow(
+			"entity and serverId together",
+		);
+		expect(get).not.toHaveBeenCalled();
+	});
+
 	it("loads paginated retained history and preserves the retention boundary", async () => {
 		vi.spyOn(api, "get")
 			.mockResolvedValueOnce({
@@ -1241,6 +1444,31 @@ describe("restore conflict retry", () => {
 });
 
 describe("full resync safety", () => {
+	it("preserves historical brews when a snapshot omits deleted parents", async () => {
+		await replaceWithRemoteData(
+			{
+				beans: [],
+				machines: [],
+				brews: [
+					{
+						id: 20,
+						beanId: 11,
+						machineId: 12,
+						date: "2026-07-24T00:00:00.000Z",
+					},
+				],
+			},
+			{ discardOutbox: true },
+		);
+
+		expect(await db.Brews.get(20)).toMatchObject({
+			beanId: undefined,
+			machineId: undefined,
+			remoteBeanId: 11,
+			remoteMachineId: 12,
+		});
+	});
+
 	it("refuses to replace the cache while unresolved outbox work exists", async () => {
 		const beanId = (await addBean({
 			name: "Local bean",
