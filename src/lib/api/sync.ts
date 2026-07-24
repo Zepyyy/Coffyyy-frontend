@@ -13,6 +13,7 @@ import type {
 	OutboxRecord,
 	PushResponse,
 	RemoteMapping,
+	RemoteTombstone,
 	SyncEntity,
 	SyncOperation,
 } from "@/db/sync/types";
@@ -73,6 +74,7 @@ export async function pullRemoteChanges(limit = 100) {
 				db.Brews,
 				db.Outbox,
 				db.RemoteMappings,
+				db.Tombstones,
 				db.SyncState,
 			],
 			async () => {
@@ -199,28 +201,45 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 		return;
 	}
 
-	await db.transaction("rw", db.Outbox, db.RemoteMappings, async () => {
-		await db.Outbox.update(operation.id as number, {
-			status: "acked",
-			serverResult: result,
-			serverRevision: result.canonicalRevision ?? result.revision,
-			updatedAt: Date.now(),
-		});
-		if (result.serverId !== undefined) {
-			const mapping = {
-				entity: operation.entity,
-				localId: operation.entityLocalId,
-				remoteId: result.serverId,
+	await db.transaction(
+		"rw",
+		db.Outbox,
+		db.RemoteMappings,
+		db.Tombstones,
+		async () => {
+			const tombstone = await db.Tombstones.where("[entity+localId]")
+				.equals([operation.entity, operation.entityLocalId])
+				.first();
+			if (tombstone) {
+				await db.Outbox.update(operation.id as number, {
+					status: "failed",
+					lastError: "Remote entity was deleted",
+					updatedAt: Date.now(),
+				});
+				return;
+			}
+			await db.Outbox.update(operation.id as number, {
+				status: "acked",
+				serverResult: result,
 				serverRevision: result.canonicalRevision ?? result.revision,
 				updatedAt: Date.now(),
-			};
-			const existing = await db.RemoteMappings.where("[entity+localId]")
-				.equals([mapping.entity, mapping.localId])
-				.first();
-			if (existing?.id === undefined) await db.RemoteMappings.add(mapping);
-			else await db.RemoteMappings.update(existing.id, mapping);
-		}
-	});
+			});
+			if (result.serverId !== undefined) {
+				const mapping = {
+					entity: operation.entity,
+					localId: operation.entityLocalId,
+					remoteId: result.serverId,
+					serverRevision: result.canonicalRevision ?? result.revision,
+					updatedAt: Date.now(),
+				};
+				const existing = await db.RemoteMappings.where("[entity+localId]")
+					.equals([mapping.entity, mapping.localId])
+					.first();
+				if (existing?.id === undefined) await db.RemoteMappings.add(mapping);
+				else await db.RemoteMappings.update(existing.id, mapping);
+			}
+		},
+	);
 }
 
 async function recordFailure(operation: OutboxRecord, error: unknown) {
@@ -275,14 +294,30 @@ async function applyRemoteChange(change: RemoteChange) {
 		localId,
 		remoteId: change.serverId,
 		serverRevision: change.revision,
+		deletedAt: operation === "delete" ? Date.now() : undefined,
 		updatedAt: Date.now(),
 	});
 
 	if (operation === "delete") {
-		await deleteLocalRecord(entity, localId, change.serverId);
+		await putTombstone({
+			entity,
+			localId,
+			remoteId: change.serverId,
+			serverRevision: change.revision,
+			deletedAt: Date.now(),
+			updatedAt: Date.now(),
+		});
+		await failPendingOperations(entity, localId);
+		await tombstoneLocalRecord(
+			entity,
+			localId,
+			change.serverId,
+			change.revision,
+		);
 		return true;
 	}
 
+	await clearTombstone(entity, localId);
 	await upsertLocalRecord(
 		entity,
 		localId,
@@ -320,23 +355,65 @@ async function putMapping(mapping: Omit<RemoteMapping, "id">) {
 	else await db.RemoteMappings.update(existing.id, mapping);
 }
 
-async function deleteLocalRecord(
+async function putTombstone(tombstone: Omit<RemoteTombstone, "id">) {
+	const existing = await db.Tombstones.where("[entity+localId]")
+		.equals([tombstone.entity, tombstone.localId])
+		.first();
+	if (existing?.id === undefined) await db.Tombstones.add(tombstone);
+	else await db.Tombstones.update(existing.id, tombstone);
+}
+
+async function clearTombstone(entity: SyncEntity, localId: string) {
+	const existing = await db.Tombstones.where("[entity+localId]")
+		.equals([entity, localId])
+		.first();
+	if (existing?.id !== undefined) await db.Tombstones.delete(existing.id);
+}
+
+async function failPendingOperations(entity: SyncEntity, localId: string) {
+	await db.Outbox.where("entityLocalId")
+		.equals(localId)
+		.filter(
+			(operation) =>
+				operation.entity === entity && operation.status === "pending",
+		)
+		.modify((operation) => {
+			operation.status = "failed";
+			operation.lastError = "Remote entity was deleted";
+			operation.updatedAt = Date.now();
+		});
+}
+
+async function tombstoneLocalRecord(
 	entity: SyncEntity,
 	localId: string,
 	serverId: number,
+	serverRevision: number,
 ) {
 	if (entity === "bean") {
 		const current = await localRecord(db.Beans, localId, serverId);
-		if (current) await db.Beans.delete(current.id);
+		if (current)
+			await db.Beans.update(current.id, {
+				deletedAt: Date.now(),
+				serverRevision,
+			});
 		return;
 	}
 	if (entity === "machine") {
 		const current = await localRecord(db.Machines, localId, serverId);
-		if (current) await db.Machines.delete(current.id);
+		if (current)
+			await db.Machines.update(current.id, {
+				deletedAt: Date.now(),
+				serverRevision,
+			});
 		return;
 	}
 	const current = await localRecord(db.Brews, localId, serverId);
-	if (current) await db.Brews.delete(current.id);
+	if (current)
+		await db.Brews.update(current.id, {
+			deletedAt: Date.now(),
+			serverRevision,
+		});
 }
 
 async function upsertLocalRecord(

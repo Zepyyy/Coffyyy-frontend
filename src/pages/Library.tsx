@@ -23,6 +23,9 @@ export default function Library() {
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
+	const activeMachines = allMachines.filter(
+		(machine) => machine.deletedAt === undefined,
+	);
 
 	const beanIds = useMemo(
 		() =>
@@ -61,23 +64,23 @@ export default function Library() {
 
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of allMachines) {
+		for (const machine of activeMachines) {
 			const type = machine.type?.trim();
 			if (!type) continue;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [allMachines]);
+	}, [activeMachines]);
 
 	const brandsCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of allMachines) {
+		for (const machine of activeMachines) {
 			const brand = machine.brand?.trim();
 			if (!brand) continue;
 			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [allMachines]);
+	}, [activeMachines]);
 
 	const toggleSelection = (
 		value: string,
@@ -114,7 +117,7 @@ export default function Library() {
 
 	const filteredMachines = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return allMachines.filter((m) => {
+		return activeMachines.filter((m) => {
 			const matchesSearch =
 				!q ||
 				[m.name, m.brand, m.model, m.type]
@@ -130,7 +133,7 @@ export default function Library() {
 				(m.brand != null && selectedBrands.includes(m.brand.trim()));
 			return matchesSearch && matchesType && matchesBrand;
 		});
-	}, [search, selectedBrands, selectedTypes, allMachines]);
+	}, [search, selectedBrands, selectedTypes, activeMachines]);
 
 	const beanCountryOptions = useMemo(
 		() =>
@@ -304,11 +307,11 @@ export default function Library() {
 							{filteredMachines.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border p-8 text-center">
 									<p className="text-sm text-muted-foreground">
-										{allMachines.length === 0
+										{activeMachines.length === 0
 											? "No equipment yet."
 											: "No machines match your search."}
 									</p>
-									{allMachines.length === 0 && (
+									{activeMachines.length === 0 && (
 										<Link
 											to="/log/machine"
 											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
