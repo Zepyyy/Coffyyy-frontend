@@ -52,7 +52,7 @@ The app remains local-first and can be used without an account or password. Inde
 
 Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d917` passes cookie-session, CSRF, pairing, revocation, import-idempotency, expiry, and rate-limit checks. Backend `master` remains separate for production.
 
-The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, and a local-first sync panel. End-to-end import, remote hydration, data-layer completion, and offline reconciliation remain WIP.
+The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, a local-first sync panel, and resumable remote pull. Full conflict recovery and multi-tab reconciliation remain WIP.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
 - Vitest covers the offline outbox/push seams (`npm test`).
@@ -80,7 +80,7 @@ Cloud sync is optional; local-only use remains the default. A user does not need
 - **Enable sync:** the planned flow backs up and previews local data, imports it through the backend, verifies canonical records, then hydrates Dexie before switching modes. The current foundation does not complete this flow.
 - **Connect existing data:** the planned flow pairs through a sync code, confirms replacement of non-empty local data, downloads the workspace, and hydrates Dexie transactionally. The current foundation does not complete this flow.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
-- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie remains local storage for local-only use; the synced-workspace cache/outbox and reconciliation contract remain Phase 4 work.
+- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie stores the synced-workspace cache, outbox, remote mappings, and durable pull cursor.
 
 ## App Routes
 
@@ -112,7 +112,7 @@ src/
 
 `@/` is aliased to `src/`.
 
-During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache infrastructure; the synced-workspace cache, outbox, and reconciliation engine are not complete.
+During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache infrastructure; incremental pull is available through the sync data boundary.
 
 ## Getting Started
 

@@ -1,6 +1,7 @@
 export type Machines = {
 	id: number;
 	localId?: string;
+	serverRevision?: number;
 	name: string;
 	brand: string;
 	type: string;

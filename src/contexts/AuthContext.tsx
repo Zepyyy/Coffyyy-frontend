@@ -11,7 +11,7 @@ import {
 	snapshotLocalData,
 } from "@/lib/api/migration";
 import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
-import { pushPendingOperations } from "@/lib/api/sync";
+import { pullRemoteChanges, pushPendingOperations } from "@/lib/api/sync";
 import {
 	AuthContext,
 	type AuthContextValue,
@@ -73,17 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	useEffect(() => {
 		if (status !== "synced") return;
-		const push = () => {
-			if (navigator.onLine) void pushPendingOperations().catch(() => undefined);
+		let inFlight: Promise<void> | null = null;
+		const sync = () => {
+			if (!navigator.onLine || inFlight) return;
+			inFlight = (async () => {
+				await pushPendingOperations();
+				await pullRemoteChanges();
+				await queryClient.invalidateQueries();
+			})()
+				.catch((error: unknown) => {
+					if (!(error instanceof ApiError) || error.status !== 401) {
+						setLastError(errorMessage(error));
+					}
+				})
+				.finally(() => {
+					inFlight = null;
+				});
 		};
-		window.addEventListener("online", push);
-		const interval = window.setInterval(push, 30_000);
-		push();
+		window.addEventListener("online", sync);
+		const interval = window.setInterval(sync, 30_000);
+		sync();
 		return () => {
-			window.removeEventListener("online", push);
+			window.removeEventListener("online", sync);
 			window.clearInterval(interval);
 		};
-	}, [status]);
+	}, [queryClient, status]);
 
 	const enableSync = useCallback(async () => {
 		setIsBusy(true);

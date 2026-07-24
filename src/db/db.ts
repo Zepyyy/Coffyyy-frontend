@@ -2,7 +2,7 @@ import { Dexie, type EntityTable } from "dexie";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
-import type { OutboxRecord, RemoteMapping } from "./sync/types";
+import type { OutboxRecord, RemoteMapping, SyncCursor } from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
@@ -10,6 +10,7 @@ const db = new Dexie("Coffyyy") as Dexie & {
 	Brews: EntityTable<Brews, "id">;
 	Outbox: EntityTable<OutboxRecord, "id">;
 	RemoteMappings: EntityTable<RemoteMapping, "id">;
+	SyncState: EntityTable<SyncCursor, "id">;
 };
 
 db.version(1).stores({
@@ -71,5 +72,9 @@ db.version(6)
 			});
 		}
 	});
+
+db.version(7).stores({
+	SyncState: "&id",
+});
 
 export { db };

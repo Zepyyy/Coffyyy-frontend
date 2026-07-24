@@ -2,7 +2,7 @@ import { db } from "@/db/db";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
-import type { OutboxRecord, RemoteMapping } from "@/db/sync/types";
+import type { OutboxRecord, RemoteMapping, SyncCursor } from "@/db/sync/types";
 import { api } from "@/lib/axios";
 
 export type LocalSnapshot = {
@@ -11,6 +11,7 @@ export type LocalSnapshot = {
 	brews: Brews[];
 	remoteMappings: RemoteMapping[];
 	outbox: OutboxRecord[];
+	syncState: SyncCursor[];
 };
 
 export type LocalDataCounts = {
@@ -45,7 +46,8 @@ export async function snapshotLocalData(): Promise<LocalSnapshot> {
 	]);
 	const remoteMappings = await db.RemoteMappings.toArray();
 	const outbox = await db.Outbox.toArray();
-	return { beans, machines, brews, remoteMappings, outbox };
+	const syncState = await db.SyncState.toArray();
+	return { beans, machines, brews, remoteMappings, outbox, syncState };
 }
 
 export function getSnapshotCounts(snapshot: LocalSnapshot): LocalDataCounts {
@@ -223,6 +225,8 @@ function remoteBean(bean: RemoteBean): Beans {
 	return {
 		id: bean.id,
 		localId: clientId(bean.clientId),
+		serverRevision:
+			typeof bean.revision === "number" ? bean.revision : undefined,
 		name: text(bean.name),
 		flavors: strings(bean.flavors),
 		rating: Number(bean.rating) || 0,
@@ -249,6 +253,8 @@ function remoteMachine(machine: RemoteMachine): Machines {
 	return {
 		id: machine.id,
 		localId: clientId(machine.clientId),
+		serverRevision:
+			typeof machine.revision === "number" ? machine.revision : undefined,
 		name: text(machine.name),
 		brand: text(machine.brand),
 		type: text(machine.type),
@@ -263,6 +269,8 @@ function remoteBrew(brew: RemoteBrew): Brews {
 	return {
 		id: brew.id,
 		localId: clientId(brew.clientId),
+		serverRevision:
+			typeof brew.revision === "number" ? brew.revision : undefined,
 		beanWeight: Number(brew.beanWeight) || 0,
 		espressoWeight: Number(brew.espressoWeight) || 0,
 		extractionTime: text(brew.extractionTime),
@@ -289,7 +297,14 @@ export async function replaceWithRemoteData(
 	const brews = remote.brews.map(remoteBrew);
 	await db.transaction(
 		"rw",
-		[db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox],
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.RemoteMappings,
+			db.Outbox,
+			db.SyncState,
+		],
 		async () => {
 			await db.Brews.clear();
 			await db.Beans.clear();
@@ -314,6 +329,11 @@ export async function replaceWithRemoteData(
 					remoteMapping("brew", brew.localId, brew.id, remote.brews),
 				),
 			]);
+			await db.SyncState.put({
+				id: "changes",
+				cursor: 0,
+				updatedAt: Date.now(),
+			});
 			if (options.discardOutbox) await db.Outbox.clear();
 			if (options.removeOutboxOperationIds?.length) {
 				await db.Outbox.where("operationId")
@@ -327,7 +347,14 @@ export async function replaceWithRemoteData(
 export async function restoreLocalData(snapshot: LocalSnapshot) {
 	await db.transaction(
 		"rw",
-		[db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox],
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.RemoteMappings,
+			db.Outbox,
+			db.SyncState,
+		],
 		async () => {
 			await db.Brews.clear();
 			await db.Beans.clear();
@@ -339,6 +366,7 @@ export async function restoreLocalData(snapshot: LocalSnapshot) {
 			await db.Brews.bulkPut(snapshot.brews);
 			await db.RemoteMappings.bulkPut(snapshot.remoteMappings);
 			await db.Outbox.bulkPut(snapshot.outbox);
+			await db.SyncState.bulkPut(snapshot.syncState);
 		},
 	);
 }
