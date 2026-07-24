@@ -860,6 +860,69 @@ describe("pull sync", () => {
 		await expect(pullRemoteChanges()).resolves.toMatchObject({ cursor: 0 });
 	});
 
+	it("rebuilds an equivalent cache after a reload from the durable feed", async () => {
+		const remoteChanges = [
+			change(1, "CREATE", "BEAN", 11, "bean-1", {
+				id: 11,
+				name: "Ethiopia",
+				status: "GOOD",
+				roastLevel: 4,
+				countries: ["Ethiopia"],
+				varieties: [],
+				brands: [],
+				flavors: [],
+				botanic: "ARABICA",
+				dominantNote: "FRUITY",
+				designation: "PURE_ORIGIN",
+				finished: false,
+			}),
+			change(2, "UPDATE", "BEAN", 11, "bean-1", {
+				id: 11,
+				name: "Ethiopia Guji",
+				status: "GOOD",
+				roastLevel: 4,
+				countries: ["Ethiopia"],
+				varieties: [],
+				brands: [],
+				flavors: [],
+				botanic: "ARABICA",
+				dominantNote: "FRUITY",
+				designation: "PURE_ORIGIN",
+				finished: false,
+			}),
+		];
+		vi.spyOn(api, "get").mockImplementation(async () => ({
+			data: {
+				changes: remoteChanges,
+				nextCursor: 2,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		}) as never);
+
+		await expect(pullRemoteChanges()).resolves.toMatchObject({
+			applied: 2,
+			cursor: 2,
+		});
+		const firstDevice = await db.Beans.get(11);
+
+		await Promise.all([
+			db.Beans.clear(),
+			db.Machines.clear(),
+			db.Brews.clear(),
+			db.RemoteMappings.clear(),
+			db.Tombstones.clear(),
+			db.SyncState.clear(),
+		]);
+		await expect(pullRemoteChanges()).resolves.toMatchObject({
+			applied: 2,
+			cursor: 2,
+		});
+
+		expect(await db.Beans.get(11)).toEqual(firstDevice);
+		expect(await getSyncCursor()).toBe(2);
+	});
+
 	it("recovers a pushing operation after reload", async () => {
 		await queueOperation({
 			entity: "bean",
