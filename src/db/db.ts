@@ -7,6 +7,7 @@ import type {
 	RemoteMapping,
 	RemoteTombstone,
 	SyncCursor,
+	SyncLease,
 } from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
@@ -17,6 +18,7 @@ const db = new Dexie("Coffyyy") as Dexie & {
 	RemoteMappings: EntityTable<RemoteMapping, "id">;
 	Tombstones: EntityTable<RemoteTombstone, "id">;
 	SyncState: EntityTable<SyncCursor, "id">;
+	SyncLeases: EntityTable<SyncLease, "id">;
 };
 
 db.version(1).stores({
@@ -95,6 +97,10 @@ db.version(8).stores({
 	Tombstones:
 		"++id, &[entity+localId], entity, localId, remoteId, serverRevision",
 	SyncState: "&id",
+});
+
+db.version(9).stores({
+	SyncLeases: "&id, workspaceId, ownerId, expiresAt",
 });
 
 export { db };

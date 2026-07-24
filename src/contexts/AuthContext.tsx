@@ -1,9 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	listUnresolvedOperations,
 	markOperationsReconciled,
 } from "@/db/sync/outbox";
+import { SyncCoordinator } from "@/db/sync/coordinator";
 import * as authApi from "@/lib/api/auth";
 import {
 	assertCanonicalWorkspace,
@@ -31,6 +32,7 @@ function errorMessage(error: unknown) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const queryClient = useQueryClient();
+	const [coordinator] = useState(() => new SyncCoordinator());
 	const [status, setStatus] = useState<AuthStatus>("loading");
 	const [session, setSession] = useState<authApi.SessionState | null>(null);
 	const [syncCode, setSyncCode] = useState<string | null>(null);
@@ -39,6 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	);
 	const [isBusy, setIsBusy] = useState(false);
 	const [lastError, setLastError] = useState<string | null>(null);
+	const workspaceIdRef = useRef<number | undefined>(undefined);
+	workspaceIdRef.current = session?.workspaceId;
 
 	const setLocal = useCallback(() => {
 		setStatus("local");
@@ -47,10 +51,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setSyncCodeExpiresAt(null);
 	}, []);
 
+	const pauseSession = useCallback(() => {
+		if (workspaceIdRef.current !== undefined)
+			coordinator.broadcast("session-paused", workspaceIdRef.current);
+		setLocal();
+	}, [coordinator, setLocal]);
+
+	useEffect(() => {
+		return () => {
+			coordinator.close();
+		};
+	}, [coordinator]);
+
+	useEffect(() => {
+		return coordinator.subscribe((signal) => {
+			if (signal.type === "cache-invalidated" || signal.type === "sync-completed") {
+				void queryClient.invalidateQueries();
+				return;
+			}
+			if (signal.type === "sync-failed") {
+				if (status === "synced") setLastError(signal.message ?? "Sync failed");
+				return;
+			}
+			if (signal.type === "session-paused") {
+				if (session?.workspaceId === signal.workspaceId) setLocal();
+				return;
+			}
+			if (!navigator.onLine) return;
+			void authApi
+				.bootstrapCsrf()
+				.then(() => authApi.getSession())
+				.then((nextSession) => {
+					if (nextSession.workspaceId !== signal.workspaceId) return;
+					setSession(nextSession);
+					setStatus("synced");
+					setLastError(null);
+				})
+				.catch((error: unknown) => {
+					if (!(error instanceof ApiError) || error.status !== 401)
+						setLastError(errorMessage(error));
+				});
+		});
+	}, [coordinator, queryClient, session?.workspaceId, setLocal, status]);
+
 	useEffect(() => {
 		let active = true;
 		const handleUnauthorized = () => {
-			if (active) setLocal();
+			if (active) pauseSession();
 		};
 		window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
 
@@ -61,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				if (!active) return;
 				setSession(nextSession);
 				setStatus("synced");
+				coordinator.broadcast("session-resumed", nextSession.workspaceId);
 			})
 			.catch((error: unknown) => {
 				if (!active) return;
@@ -74,17 +122,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			active = false;
 			window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
 		};
-	}, [setLocal]);
+	}, [coordinator, pauseSession, setLocal]);
 
 	useEffect(() => {
-		if (status !== "synced") return;
+		if (status !== "synced" || session?.workspaceId === undefined) return;
 		let inFlight: Promise<void> | null = null;
 		const sync = () => {
 			if (!navigator.onLine || inFlight) return;
 			inFlight = (async () => {
-				await pushPendingOperations();
-				await pullRemoteChanges();
-				await queryClient.invalidateQueries();
+				await coordinator.run(session.workspaceId, async (assertLease) => {
+					await pushPendingOperations(assertLease);
+					await pullRemoteChanges(100, assertLease);
+					await queryClient.invalidateQueries();
+				});
 			})()
 				.catch((error: unknown) => {
 					if (!(error instanceof ApiError) || error.status !== 401) {
@@ -102,13 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			window.removeEventListener("online", sync);
 			window.clearInterval(interval);
 		};
-	}, [queryClient, status]);
+	}, [coordinator, queryClient, session?.workspaceId, status]);
 
 	const enableSync = useCallback(async () => {
 		setIsBusy(true);
 		setLastError(null);
 		let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
 		let localDataReplaced = false;
+		let workspaceId: number | undefined;
+		let ownsWorkspaceLease = false;
 		try {
 			snapshot = await snapshotLocalData();
 			const importedOperationIds = snapshot.outbox.map(
@@ -116,55 +168,90 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			);
 			const idempotencyKey = crypto.randomUUID();
 			const result = await authApi.enableSync();
-			await importLocalData(snapshot, idempotencyKey);
-			const remote = await fetchRemoteWorkspace();
-			assertCanonicalWorkspace(snapshot, remote);
-			const nextSession = await authApi.getSession();
-			await markOperationsReconciled(importedOperationIds);
-			await replaceWithRemoteData(remote, {
-				removeOutboxOperationIds: importedOperationIds,
-			});
+			workspaceId = result.workspaceId;
+			const localSnapshot = snapshot;
+			const coordinated = await coordinator.run(
+				result.workspaceId,
+				async (assertLease) => {
+					await assertLease();
+					await importLocalData(localSnapshot, idempotencyKey);
+					await assertLease();
+					const remote = await fetchRemoteWorkspace();
+					await assertLease();
+					assertCanonicalWorkspace(localSnapshot, remote);
+					const nextSession = await authApi.getSession();
+					await markOperationsReconciled(importedOperationIds);
+					await replaceWithRemoteData(remote, {
+						removeOutboxOperationIds: importedOperationIds,
+					});
+					return nextSession;
+				},
+			);
+			ownsWorkspaceLease = coordinated.acquired;
+			if (!coordinated.acquired)
+				throw new Error("Another tab is syncing this workspace");
 			localDataReplaced = true;
-			setSession(nextSession);
+			setSession(coordinated.value);
 			setStatus("synced");
 			setSyncCode(result.syncCode);
 			setSyncCodeExpiresAt(result.syncCodeExpiresAt);
+			coordinator.broadcast("session-resumed", result.workspaceId);
+			coordinator.broadcast("cache-invalidated", result.workspaceId);
 			await queryClient.invalidateQueries();
 			return result;
 		} catch (error) {
+			if (workspaceId !== undefined && ownsWorkspaceLease)
+				coordinator.broadcast("session-paused", workspaceId);
 			if (localDataReplaced && snapshot) {
 				await restoreLocalData(snapshot).catch(() => undefined);
 			}
-			await authApi.logout().catch(() => undefined);
+			if (ownsWorkspaceLease) await authApi.logout().catch(() => undefined);
 			setLocal();
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
 			setIsBusy(false);
 		}
-	}, [queryClient, setLocal]);
+	}, [coordinator, queryClient, setLocal]);
 
 	const pairSyncCode = useCallback(
 		async (code: string) => {
 			setIsBusy(true);
 			setLastError(null);
 			let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
+			let ownsWorkspaceLease = false;
+			let localDataReplaced = false;
 			try {
 				snapshot = await snapshotLocalData();
 				const result = await authApi.pairSync(code.trim());
-				const nextSession = await authApi.getSession();
-				const remote = await fetchRemoteWorkspace();
-				assertRemoteWorkspace(remote);
-				await replaceWithRemoteData(remote, { discardOutbox: true });
-				setSession(nextSession);
+				const coordinated = await coordinator.run(
+					result.workspaceId,
+					async (assertLease) => {
+						await assertLease();
+						const nextSession = await authApi.getSession();
+						const remote = await fetchRemoteWorkspace();
+						await assertLease();
+						assertRemoteWorkspace(remote);
+						await replaceWithRemoteData(remote, { discardOutbox: true });
+						return nextSession;
+					},
+				);
+				ownsWorkspaceLease = coordinated.acquired;
+				if (!coordinated.acquired)
+					throw new Error("Another tab is syncing this workspace");
+				localDataReplaced = true;
+				setSession(coordinated.value);
 				setStatus("synced");
 				setSyncCode(null);
 				setSyncCodeExpiresAt(null);
+				coordinator.broadcast("session-resumed", result.workspaceId);
+				coordinator.broadcast("cache-invalidated", result.workspaceId);
 				await queryClient.invalidateQueries();
 				return result;
 			} catch (error) {
-				await authApi.logout().catch(() => undefined);
-				if (snapshot) await restoreLocalData(snapshot).catch(() => undefined);
+				if (ownsWorkspaceLease) await authApi.logout().catch(() => undefined);
+				if (localDataReplaced && snapshot)
+					await restoreLocalData(snapshot).catch(() => undefined);
 				setLocal();
 				setLastError(errorMessage(error));
 				throw error;
@@ -172,7 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				setIsBusy(false);
 			}
 		},
-		[queryClient, setLocal],
+		[coordinator, queryClient, setLocal],
 	);
 
 	const reconcile = useCallback(
@@ -180,14 +267,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setIsBusy(true);
 			setLastError(null);
 			try {
-				await pushPendingOperations();
-				const unresolved = await listUnresolvedOperations();
-				if (unresolved.length && !discardOutbox) {
-					throw new PendingOutboxError(unresolved);
-				}
-				const remote = await fetchRemoteWorkspace();
-				assertRemoteWorkspace(remote);
-				await replaceWithRemoteData(remote, { discardOutbox });
+				if (session?.workspaceId === undefined)
+					throw new Error("Sync session is not active");
+				const result = await coordinator.run(
+					session.workspaceId,
+					async (assertLease) => {
+						await pushPendingOperations(assertLease);
+						const unresolved = await listUnresolvedOperations();
+						if (unresolved.length && !discardOutbox) {
+							throw new PendingOutboxError(unresolved);
+						}
+						const remote = await fetchRemoteWorkspace();
+						await assertLease();
+						assertRemoteWorkspace(remote);
+						await replaceWithRemoteData(remote, { discardOutbox });
+					},
+				);
+				if (!result.acquired)
+					throw new Error("Another tab is syncing this workspace");
 				await queryClient.invalidateQueries();
 			} catch (error) {
 				setLastError(errorMessage(error));
@@ -196,7 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				setIsBusy(false);
 			}
 		},
-		[queryClient],
+		[coordinator, queryClient, session?.workspaceId],
 	);
 
 	const rotateSyncCode = useCallback(async () => {
@@ -225,10 +322,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				setLastError(errorMessage(error));
 			}
 		} finally {
-			setLocal();
+			pauseSession();
 			setIsBusy(false);
 		}
-	}, [setLocal]);
+	}, [pauseSession]);
 
 	const revokeSessions = useCallback(async () => {
 		setIsBusy(true);
@@ -239,10 +336,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
-			setLocal();
+			pauseSession();
 			setIsBusy(false);
 		}
-	}, [setLocal]);
+	}, [pauseSession]);
 
 	const value = useMemo<AuthContextValue>(
 		() => ({

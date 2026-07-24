@@ -49,6 +49,14 @@ export type SyncCursor = {
 	updatedAt: number;
 };
 
+export type SyncLease = {
+	id: string;
+	workspaceId: number;
+	ownerId: string;
+	expiresAt: number;
+	updatedAt: number;
+};
+
 export type BackendPushOperation = {
 	operationId: string;
 	entityType: Uppercase<SyncEntity>;
