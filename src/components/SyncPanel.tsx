@@ -77,7 +77,10 @@ export default function SyncPanel() {
 	async function handlePair() {
 		if (!code.trim()) return;
 		if (
-			(counts.beans > 0 || counts.machines > 0 || counts.brews > 0 || pendingCount > 0) &&
+			(counts.beans > 0 ||
+				counts.machines > 0 ||
+				counts.brews > 0 ||
+				pendingCount > 0) &&
 			!window.confirm(
 				`Replace this browser's local data with the connected workspace?${pendingCount > 0 ? ` This discards ${pendingCount} pending sync operation${pendingCount === 1 ? "" : "s"}.` : ""}`,
 			)
@@ -186,13 +189,26 @@ export default function SyncPanel() {
 						<div className="mt-4 space-y-3">
 							{pendingCount > 0 && (
 								<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
-									{pendingCount} operation{pendingCount === 1 ? "" : "s"} awaiting sync.
+									{pendingCount} operation{pendingCount === 1 ? "" : "s"}{" "}
+									awaiting sync.
 									{failedCount > 0 && (
 										<div className="mt-2 flex gap-2">
-											<Button type="button" size="sm" variant="outline" onClick={() => void retryFailures()} className="flex-1 font-Mono text-[10px]">
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												onClick={() => void retryFailures()}
+												className="flex-1 font-Mono text-[10px]"
+											>
 												Retry {failedCount}
 											</Button>
-											<Button type="button" size="sm" variant="ghost" onClick={() => void downloadFailures()} className="gap-1 font-Mono text-[10px]">
+											<Button
+												type="button"
+												size="sm"
+												variant="ghost"
+												onClick={() => void downloadFailures()}
+												className="gap-1 font-Mono text-[10px]"
+											>
 												<Download size={12} /> Export
 											</Button>
 										</div>

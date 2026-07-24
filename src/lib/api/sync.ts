@@ -18,19 +18,28 @@ export function toBackendOperation(
 	mappings: RemoteMapping[],
 ): BackendPushOperation {
 	const mappingByKey = new Map(
-		mappings.map((mapping) => [mappingKey(mapping.entity, mapping.localId), mapping]),
+		mappings.map((mapping) => [
+			mappingKey(mapping.entity, mapping.localId),
+			mapping,
+		]),
 	);
-	const entityType = operation.entity.toUpperCase() as Uppercase<typeof operation.entity>;
+	const entityType = operation.entity.toUpperCase() as Uppercase<
+		typeof operation.entity
+	>;
 	const backend: BackendPushOperation = {
 		operationId: operation.operationId,
 		entityType,
-		operation: operation.operation.toUpperCase() as Uppercase<typeof operation.operation>,
+		operation: operation.operation.toUpperCase() as Uppercase<
+			typeof operation.operation
+		>,
 		clientId: operation.clientId,
 		payload: { ...operation.payload },
 	};
 
 	if (operation.operation !== "create") {
-		const mapping = mappingByKey.get(mappingKey(operation.entity, operation.entityLocalId));
+		const mapping = mappingByKey.get(
+			mappingKey(operation.entity, operation.entityLocalId),
+		);
 		if (!mapping || typeof mapping.remoteId !== "number") {
 			throw new Error(`Missing remote mapping for ${operation.entityLocalId}`);
 		}
@@ -96,7 +105,9 @@ async function claim(operation: OutboxRecord) {
 async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 	if (operation.id === undefined) return;
 	const results = Array.isArray(response) ? response : [response];
-	const result = results.find((item) => item.operationId === operation.operationId);
+	const result = results.find(
+		(item) => item.operationId === operation.operationId,
+	);
 	if (!result) throw new Error("Push response did not acknowledge operation");
 	if (result.status === "rejected") {
 		await markFailed(operation, result.reason ?? "Server rejected operation");
@@ -151,9 +162,16 @@ async function markFailed(operation: OutboxRecord, reason: string) {
 
 function isTerminalFailure(error: unknown) {
 	if (error instanceof ApiError) {
-		return error.status === 400 || error.status === 404 || error.status === 409 || error.status === 422;
+		return (
+			error.status === 400 ||
+			error.status === 404 ||
+			error.status === 409 ||
+			error.status === 422
+		);
 	}
-	return error instanceof Error && error.message.startsWith("Missing remote mapping");
+	return (
+		error instanceof Error && error.message.startsWith("Missing remote mapping")
+	);
 }
 
 function mappingKey(entity: string, localId: string) {
