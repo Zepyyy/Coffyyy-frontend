@@ -1,5 +1,6 @@
 export type Beans = {
 	id: number;
+	localId?: string;
 	name: string;
 	rating: number;
 	status: "Excellent" | "Good" | "Mid" | "Horrible" | "New" | "";

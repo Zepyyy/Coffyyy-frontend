@@ -11,6 +11,7 @@ import {
 	snapshotLocalData,
 } from "@/lib/api/migration";
 import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
+import { pushPendingOperations } from "@/lib/api/sync";
 import {
 	AuthContext,
 	type AuthContextValue,
@@ -70,6 +71,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		};
 	}, [setLocal]);
 
+	useEffect(() => {
+		if (status !== "synced") return;
+		const push = () => {
+			if (navigator.onLine) void pushPendingOperations().catch(() => undefined);
+		};
+		window.addEventListener("online", push);
+		const interval = window.setInterval(push, 30_000);
+		push();
+		return () => {
+			window.removeEventListener("online", push);
+			window.clearInterval(interval);
+		};
+	}, [status]);
+
 	const enableSync = useCallback(async () => {
 		setIsBusy(true);
 		setLastError(null);
@@ -77,6 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		let localDataReplaced = false;
 		try {
 			snapshot = await snapshotLocalData();
+			const importedOperationIds = snapshot.outbox.map(
+				(operation) => operation.operationId,
+			);
 			const idempotencyKey = crypto.randomUUID();
 			const result = await authApi.enableSync();
 			await importLocalData(snapshot, idempotencyKey);
@@ -84,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			assertCanonicalWorkspace(snapshot, remote);
 			const nextSession = await authApi.getSession();
 			localDataReplaced = true;
-			await replaceWithRemoteData(remote);
+			await replaceWithRemoteData(remote, {
+				removeOutboxOperationIds: importedOperationIds,
+			});
 			setSession(nextSession);
 			setStatus("synced");
 			setSyncCode(result.syncCode);
@@ -115,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				const nextSession = await authApi.getSession();
 				const remote = await fetchRemoteWorkspace();
 				assertRemoteWorkspace(remote);
-				await replaceWithRemoteData(remote);
+				await replaceWithRemoteData(remote, { discardOutbox: true });
 				setSession(nextSession);
 				setStatus("synced");
 				setSyncCode(null);
