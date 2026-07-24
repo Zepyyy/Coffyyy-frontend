@@ -7,6 +7,7 @@ import {
 	maxAttempts,
 	nextRetry,
 	recoverStalePushes,
+	UNRESOLVED_OUTBOX_STATUSES,
 } from "@/db/sync/outbox";
 import type {
 	BackendPushOperation,
@@ -207,6 +208,8 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 		db.RemoteMappings,
 		db.Tombstones,
 		async () => {
+			const current = await db.Outbox.get(operation.id as number);
+			if (!current || current.status !== "pushing") return;
 			const tombstone = await db.Tombstones.where("[entity+localId]")
 				.equals([operation.entity, operation.entityLocalId])
 				.first();
@@ -318,13 +321,22 @@ async function applyRemoteChange(change: RemoteChange) {
 	}
 
 	await clearTombstone(entity, localId);
-	await upsertLocalRecord(
-		entity,
-		localId,
-		change.serverId,
-		change.payload,
-		change.revision,
-	);
+	if (await hasUnresolvedLocalWork(entity, localId)) {
+		await preserveLocalRecord(
+			entity,
+			localId,
+			change.serverId,
+			change.revision,
+		);
+	} else {
+		await upsertLocalRecord(
+			entity,
+			localId,
+			change.serverId,
+			change.payload,
+			change.revision,
+		);
+	}
 	if (entity === "bean" || entity === "machine") {
 		await repairBrewReferences(entity, change.serverId);
 	}
@@ -382,6 +394,41 @@ async function failPendingOperations(entity: SyncEntity, localId: string) {
 			operation.lastError = "Remote entity was deleted";
 			operation.updatedAt = Date.now();
 		});
+}
+
+async function hasUnresolvedLocalWork(entity: SyncEntity, localId: string) {
+	return Boolean(
+		await db.Outbox.where("entityLocalId")
+			.equals(localId)
+			.filter(
+				(operation) =>
+					operation.entity === entity &&
+					UNRESOLVED_OUTBOX_STATUSES.some(
+						(status) => status === operation.status,
+					),
+			)
+			.first(),
+	);
+}
+
+async function preserveLocalRecord(
+	entity: SyncEntity,
+	localId: string,
+	serverId: number,
+	serverRevision: number,
+) {
+	if (entity === "bean") {
+		const current = await localRecord(db.Beans, localId, serverId);
+		if (current) await db.Beans.update(current.id, { serverRevision });
+		return;
+	}
+	if (entity === "machine") {
+		const current = await localRecord(db.Machines, localId, serverId);
+		if (current) await db.Machines.update(current.id, { serverRevision });
+		return;
+	}
+	const current = await localRecord(db.Brews, localId, serverId);
+	if (current) await db.Brews.update(current.id, { serverRevision });
 }
 
 async function tombstoneLocalRecord(

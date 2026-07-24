@@ -1,11 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	listUnresolvedOperations,
+	markOperationsReconciled,
+} from "@/db/sync/outbox";
 import * as authApi from "@/lib/api/auth";
 import {
 	assertCanonicalWorkspace,
 	assertRemoteWorkspace,
 	fetchRemoteWorkspace,
 	importLocalData,
+	PendingOutboxError,
 	replaceWithRemoteData,
 	restoreLocalData,
 	snapshotLocalData,
@@ -115,10 +120,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const remote = await fetchRemoteWorkspace();
 			assertCanonicalWorkspace(snapshot, remote);
 			const nextSession = await authApi.getSession();
-			localDataReplaced = true;
+			await markOperationsReconciled(importedOperationIds);
 			await replaceWithRemoteData(remote, {
 				removeOutboxOperationIds: importedOperationIds,
 			});
+			localDataReplaced = true;
 			setSession(nextSession);
 			setStatus("synced");
 			setSyncCode(result.syncCode);
@@ -167,6 +173,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			}
 		},
 		[queryClient, setLocal],
+	);
+
+	const reconcile = useCallback(
+		async (discardOutbox = false) => {
+			setIsBusy(true);
+			setLastError(null);
+			try {
+				await pushPendingOperations();
+				const unresolved = await listUnresolvedOperations();
+				if (unresolved.length && !discardOutbox) {
+					throw new PendingOutboxError(unresolved);
+				}
+				const remote = await fetchRemoteWorkspace();
+				assertRemoteWorkspace(remote);
+				await replaceWithRemoteData(remote, { discardOutbox });
+				await queryClient.invalidateQueries();
+			} catch (error) {
+				setLastError(errorMessage(error));
+				throw error;
+			} finally {
+				setIsBusy(false);
+			}
+		},
+		[queryClient],
 	);
 
 	const rotateSyncCode = useCallback(async () => {
@@ -224,6 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			lastError,
 			enableSync,
 			pairSyncCode,
+			reconcile,
 			rotateSyncCode,
 			logout,
 			revokeSessions,
@@ -238,6 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			lastError,
 			enableSync,
 			pairSyncCode,
+			reconcile,
 			rotateSyncCode,
 			logout,
 			revokeSessions,

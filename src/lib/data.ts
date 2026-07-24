@@ -65,6 +65,8 @@ export {
 	listPendingOperations,
 	retryOperation,
 	exportFailedOperations,
+	exportOutboxOperations,
+	listUnresolvedOperations,
 	countOutboxOperations,
 	countFailedOperations,
 	clearOutbox,

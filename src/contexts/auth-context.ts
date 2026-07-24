@@ -12,6 +12,7 @@ export type AuthContextValue = {
 	lastError: string | null;
 	enableSync: () => Promise<authApi.EnableSyncResponse>;
 	pairSyncCode: (code: string) => Promise<authApi.PairResponse>;
+	reconcile: (discardOutbox?: boolean) => Promise<void>;
 	rotateSyncCode: () => Promise<authApi.RotatedSyncCode>;
 	logout: () => Promise<void>;
 	revokeSessions: () => Promise<void>;

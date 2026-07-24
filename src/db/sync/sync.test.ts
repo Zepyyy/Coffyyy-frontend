@@ -5,6 +5,7 @@ import { deleteBeanById } from "@/db/crud/delete";
 import { db } from "@/db/db";
 import {
 	listPendingOperations,
+	markOperationsReconciled,
 	queueOperation,
 	retryOperation,
 } from "@/db/sync/outbox";
@@ -20,6 +21,7 @@ import type { OutboxRecord } from "@/db/sync/types";
 import { getAllBeans, getBeanCount } from "@/lib/api/beans";
 import { getMachineCount } from "@/lib/api/machines";
 import { getBrewsForHistoryView, getBrewSuggestions } from "@/lib/api/brews";
+import { PendingOutboxError, replaceWithRemoteData } from "@/lib/api/migration";
 
 beforeEach(async () => {
 	await db.open();
@@ -787,7 +789,7 @@ describe("pull sync", () => {
 		await db.Beans.put({
 			id: 11,
 			localId: "bean-1",
-			name: "Local edit",
+			name: "Pending local edit",
 			rating: 0,
 			status: "New",
 			dominantNote: "Fruity",
@@ -829,7 +831,10 @@ describe("pull sync", () => {
 		} as never);
 
 		await pullRemoteChanges();
-		expect(await db.Beans.get(11)).toMatchObject({ name: "Remote edit" });
+		expect(await db.Beans.get(11)).toMatchObject({
+			name: "Pending local edit",
+			serverRevision: 2,
+		});
 		expect(await db.Outbox.toArray()).toEqual([
 			expect.objectContaining({ status: "pending", baseRevision: 1 }),
 		]);
@@ -850,5 +855,125 @@ describe("pull sync", () => {
 		await expect(pullRemoteChanges()).rejects.toThrow("offline");
 		expect(await getSyncCursor()).toBe(0);
 		await expect(pullRemoteChanges()).resolves.toMatchObject({ cursor: 0 });
+	});
+
+	it("recovers a pushing operation after reload", async () => {
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "local-bean",
+			operation: "create",
+			payload: { name: "Local bean" },
+		});
+		const operation = (await db.Outbox.toArray())[0];
+		await db.Outbox.update(operation.id as number, {
+			status: "pushing",
+			updatedAt: Date.now() - 6 * 60_000,
+		});
+		db.close();
+		await db.open();
+
+		expect(await listPendingOperations()).toEqual([
+			expect.objectContaining({
+				operationId: operation.operationId,
+				status: "pending",
+				lastError: "Recovered interrupted sync; retrying",
+			}),
+		]);
+	});
+});
+
+describe("full resync safety", () => {
+	it("refuses to replace the cache while unresolved outbox work exists", async () => {
+		const beanId = (await addBean({
+			name: "Local bean",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		})) as number;
+		await db.Outbox.clear();
+		await updateBeanById({ name: "Pending local edit" }, beanId);
+		const [operation] = await db.Outbox.toArray();
+
+		await expect(
+			replaceWithRemoteData(
+				{ beans: [], machines: [], brews: [] },
+				{ removeOutboxOperationIds: [operation.operationId] },
+			),
+		).rejects.toBeInstanceOf(PendingOutboxError);
+		expect(await db.Beans.get(beanId)).toMatchObject({
+			name: "Pending local edit",
+		});
+		expect(await db.Outbox.toArray()).toEqual([
+			expect.objectContaining({ status: "pending" }),
+		]);
+	});
+
+	it("discards unresolved work only through explicit transactional consent", async () => {
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "local-bean",
+			operation: "create",
+			payload: { name: "Local bean" },
+		});
+
+		await replaceWithRemoteData(
+			{ beans: [], machines: [], brews: [] },
+			{ discardOutbox: true },
+		);
+
+		expect(await db.Beans.count()).toBe(0);
+		expect(await db.Outbox.count()).toBe(0);
+		expect(await getSyncCursor()).toBe(0);
+	});
+
+	it("allows replacement to remove only reconciled operations", async () => {
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "local-bean",
+			operation: "create",
+			payload: { name: "Local bean" },
+		});
+		const [operation] = await db.Outbox.toArray();
+		await markOperationsReconciled([operation.operationId]);
+
+		await replaceWithRemoteData(
+			{ beans: [], machines: [], brews: [] },
+			{ removeOutboxOperationIds: [operation.operationId] },
+		);
+
+		expect(await db.Outbox.count()).toBe(0);
+	});
+
+	it("does not mutate state when the remote change cursor has expired", async () => {
+		await db.SyncState.put({ id: "changes", cursor: 12, updatedAt: 0 });
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "local-bean",
+			operation: "create",
+			payload: { name: "Local bean" },
+		});
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [],
+				nextCursor: 0,
+				hasMore: false,
+				fullResyncRequired: true,
+			},
+		} as never);
+
+		await expect(pullRemoteChanges()).rejects.toThrow(
+			"Remote change history expired",
+		);
+		expect(await getSyncCursor()).toBe(12);
+		expect(await db.Outbox.count()).toBe(1);
 	});
 });
