@@ -82,7 +82,7 @@ export type PushResponse = PushResult | PushResult[];
 export type RecoveryHistoryEntry = {
 	entityType: Uppercase<SyncEntity>;
 	serverId: number;
-	clientId: string;
+	clientId: string | null;
 	revision: number;
 	operation: Uppercase<SyncOperation>;
 	accepted: boolean;

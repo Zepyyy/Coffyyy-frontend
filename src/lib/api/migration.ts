@@ -215,16 +215,14 @@ export function assertRemoteWorkspace(remote: RemoteWorkspace) {
 		throw new Error("Remote workspace response is invalid");
 	}
 
-	const beanIds = new Set(remote.beans.map((bean) => bean.id));
-	const machineIds = new Set(remote.machines.map((machine) => machine.id));
 	if (
 		remote.beans.some((bean) => !Number.isInteger(bean.id)) ||
 		remote.machines.some((machine) => !Number.isInteger(machine.id)) ||
 		remote.brews.some(
 			(brew) =>
 				!Number.isInteger(brew.id) ||
-				!beanIds.has(Number(brew.beanId)) ||
-				!machineIds.has(Number(brew.machineId)),
+				!Number.isInteger(Number(brew.beanId)) ||
+				!Number.isInteger(Number(brew.machineId)),
 		)
 	) {
 		throw new Error("Remote workspace references are invalid");
@@ -255,7 +253,7 @@ function remoteBean(bean: RemoteBean): Beans {
 	const brands = strings(bean.brands);
 	return {
 		id: bean.id,
-		localId: clientId(bean.clientId),
+		localId: clientId(bean.clientId, `remote:bean:${bean.id}`),
 		serverRevision:
 			typeof bean.revision === "number" ? bean.revision : undefined,
 		name: text(bean.name),
@@ -283,7 +281,7 @@ function remoteBean(bean: RemoteBean): Beans {
 function remoteMachine(machine: RemoteMachine): Machines {
 	return {
 		id: machine.id,
-		localId: clientId(machine.clientId),
+		localId: clientId(machine.clientId, `remote:machine:${machine.id}`),
 		serverRevision:
 			typeof machine.revision === "number" ? machine.revision : undefined,
 		name: text(machine.name),
@@ -296,10 +294,16 @@ function remoteMachine(machine: RemoteMachine): Machines {
 	};
 }
 
-function remoteBrew(brew: RemoteBrew): Brews {
+function remoteBrew(
+	brew: RemoteBrew,
+	beanIds: Set<number>,
+	machineIds: Set<number>,
+): Brews {
+	const beanId = Number(brew.beanId);
+	const machineId = Number(brew.machineId);
 	return {
 		id: brew.id,
-		localId: clientId(brew.clientId),
+		localId: clientId(brew.clientId, `remote:brew:${brew.id}`),
 		serverRevision:
 			typeof brew.revision === "number" ? brew.revision : undefined,
 		beanWeight: Number(brew.beanWeight) || 0,
@@ -311,8 +315,10 @@ function remoteBrew(brew: RemoteBrew): Brews {
 		strengthScore: Number(brew.strengthScore) || 0,
 		grindSize: Number(brew.grindSize) || 0,
 		date: new Date(text(brew.date)),
-		beanId: Number(brew.beanId),
-		machineId: Number(brew.machineId),
+		beanId: beanIds.has(beanId) ? beanId : undefined,
+		machineId: machineIds.has(machineId) ? machineId : undefined,
+		...(beanIds.has(beanId) ? {} : { remoteBeanId: beanId }),
+		...(machineIds.has(machineId) ? {} : { remoteMachineId: machineId }),
 	};
 }
 
@@ -326,7 +332,11 @@ export async function replaceWithRemoteData(
 	assertRemoteWorkspace(remote);
 	const beans = remote.beans.map(remoteBean);
 	const machines = remote.machines.map(remoteMachine);
-	const brews = remote.brews.map(remoteBrew);
+	const beanIds = new Set(remote.beans.map((bean) => bean.id));
+	const machineIds = new Set(remote.machines.map((machine) => machine.id));
+	const brews = remote.brews.map((brew) =>
+		remoteBrew(brew, beanIds, machineIds),
+	);
 	await db.transaction(
 		"rw",
 		[
@@ -433,8 +443,8 @@ export async function restoreLocalData(snapshot: LocalSnapshot) {
 	);
 }
 
-function clientId(value: unknown) {
-	return typeof value === "string" && value ? value : crypto.randomUUID();
+function clientId(value: unknown, fallback: string) {
+	return typeof value === "string" && value ? value : fallback;
 }
 
 function remoteMapping(
@@ -446,7 +456,7 @@ function remoteMapping(
 	const row = rows.find((candidate) => candidate.id === remoteId);
 	return {
 		entity,
-		localId: localId ?? clientId(row?.clientId),
+		localId: localId ?? clientId(row?.clientId, `remote:${entity}:${remoteId}`),
 		remoteId,
 		serverRevision:
 			typeof row?.revision === "number" ? row.revision : undefined,
