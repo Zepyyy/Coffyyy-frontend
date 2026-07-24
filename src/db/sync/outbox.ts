@@ -61,7 +61,7 @@ export async function queueOperation(input: QueueOperationInput) {
 }
 
 export async function listPendingOperations(now = Date.now()) {
-	await recoverStalePushes();
+	await recoverStalePushes(undefined, now);
 	const pending = await db.Outbox.where("status")
 		.equals("pending")
 		.filter((operation) => operation.nextAttemptAt <= now)
@@ -130,15 +130,19 @@ export async function retryOperation(id: number) {
 	});
 }
 
-export async function recoverStalePushes(maxAgeMs = 5 * 60_000) {
-	const cutoff = Date.now() - maxAgeMs;
+export async function recoverStalePushes(
+	maxAgeMs = 5 * 60_000,
+	now = Date.now(),
+) {
+	const cutoff = now - maxAgeMs;
 	await db.Outbox.where("status")
 		.equals("pushing")
 		.modify((operation) => {
 			if (operation.updatedAt < cutoff) {
 				operation.status = "pending";
-				operation.nextAttemptAt = Date.now();
+				operation.nextAttemptAt = now;
 				operation.lastError = "Recovered interrupted sync; retrying";
+				operation.updatedAt = now;
 			}
 		});
 }

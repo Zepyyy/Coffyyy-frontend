@@ -15,7 +15,7 @@ npm run verify:sync
 
 Optional variables:
 
-- `COFFYYY_SYNC_BASE_URL` (default `http://localhost:3000/api`)
+- `COFFYYY_SYNC_BASE_URL` (default `https://coffyyy-backend-staging.up.railway.app/api`)
 - `COFFYYY_SYNC_CURSOR` (default `0`; use each device's durable cursor when known)
 
 The command compares both device snapshots, validates brew references, checks
@@ -38,7 +38,7 @@ It prints counts and cursors only; credentials are not logged.
 
 ## Evidence captured 2026-07-24
 
-Separate live API probes against `http://localhost:3000/api`:
+Separate live API probes against `https://coffyyy-backend-staging.up.railway.app/api`:
 
 - `GET /auth/sync/csrf` → `200`; CSRF token bootstrap available.
 - `GET /auth/sync/session` without a session → `401 Session required`.

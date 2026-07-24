@@ -1,4 +1,7 @@
-const baseUrl = (process.env.COFFYYY_SYNC_BASE_URL ?? "http://localhost:3000/api").replace(/\/$/, "");
+const baseUrl = (
+	process.env.COFFYYY_SYNC_BASE_URL ??
+	"https://coffyyy-backend-staging.up.railway.app/api"
+).replace(/\/$/, "");
 const cursor = Number(process.env.COFFYYY_SYNC_CURSOR ?? 0);
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const CLOCK_TOLERANCE_MS = 5 * 60 * 1000;

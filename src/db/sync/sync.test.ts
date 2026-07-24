@@ -1119,6 +1119,7 @@ describe("pull sync", () => {
 	});
 
 	it("recovers a pushing operation after reload", async () => {
+		const now = Date.now();
 		await queueOperation({
 			entity: "bean",
 			entityLocalId: "local-bean",
@@ -1128,16 +1129,18 @@ describe("pull sync", () => {
 		const operation = (await db.Outbox.toArray())[0];
 		await db.Outbox.update(operation.id as number, {
 			status: "pushing",
-			updatedAt: Date.now() - 6 * 60_000,
+			updatedAt: now - 6 * 60_000,
 		});
 		db.close();
 		await db.open();
 
-		expect(await listPendingOperations()).toEqual([
+		expect(await listPendingOperations(now)).toEqual([
 			expect.objectContaining({
 				operationId: operation.operationId,
 				status: "pending",
 				lastError: "Recovered interrupted sync; retrying",
+				nextAttemptAt: now,
+				updatedAt: now,
 			}),
 		]);
 	});
