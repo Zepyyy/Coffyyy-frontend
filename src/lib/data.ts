@@ -56,7 +56,11 @@ export {
 	updateBrewByName,
 	updateMachineById,
 } from "../db/crud/update";
-export { pushPendingOperations } from "./api/sync";
+export {
+	getSyncCursor,
+	pullRemoteChanges,
+	pushPendingOperations,
+} from "./api/sync";
 export {
 	listPendingOperations,
 	retryOperation,

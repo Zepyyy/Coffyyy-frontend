@@ -181,7 +181,14 @@ function validateCounts(counts: DatabaseSeedCounts) {
 export async function clearDatabase() {
 	await db.transaction(
 		"rw",
-		[db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings],
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.Outbox,
+			db.RemoteMappings,
+			db.SyncState,
+		],
 		async () => {
 			await Promise.all([
 				db.Brews.clear(),
@@ -189,6 +196,7 @@ export async function clearDatabase() {
 				db.Machines.clear(),
 				db.Outbox.clear(),
 				db.RemoteMappings.clear(),
+				db.SyncState.clear(),
 			]);
 		},
 	);
@@ -201,7 +209,14 @@ export async function resetDatabaseWithSeed(
 
 	return db.transaction(
 		"rw",
-		[db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings],
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.Outbox,
+			db.RemoteMappings,
+			db.SyncState,
+		],
 		async () => {
 			await Promise.all([
 				db.Brews.clear(),
@@ -209,6 +224,7 @@ export async function resetDatabaseWithSeed(
 				db.Machines.clear(),
 				db.Outbox.clear(),
 				db.RemoteMappings.clear(),
+				db.SyncState.clear(),
 			]);
 
 			const beanIds: number[] = [];

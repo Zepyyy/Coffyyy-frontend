@@ -5,7 +5,12 @@ import { deleteBeanById } from "@/db/crud/delete";
 import { db } from "@/db/db";
 import { listPendingOperations, queueOperation } from "@/db/sync/outbox";
 import { updateBeanById } from "@/db/crud/update";
-import { toBackendOperation, pushPendingOperations } from "@/lib/api/sync";
+import {
+	getSyncCursor,
+	pullRemoteChanges,
+	toBackendOperation,
+	pushPendingOperations,
+} from "@/lib/api/sync";
 import { ApiError, api } from "@/lib/axios";
 import type { OutboxRecord } from "@/db/sync/types";
 
@@ -17,6 +22,7 @@ beforeEach(async () => {
 		db.Brews.clear(),
 		db.Outbox.clear(),
 		db.RemoteMappings.clear(),
+		db.SyncState.clear(),
 	]);
 });
 
@@ -304,5 +310,294 @@ describe("push sync", () => {
 		await expect(pushPendingOperations()).resolves.toBe(0);
 		release();
 		await expect(first).resolves.toBe(1);
+	});
+});
+
+describe("pull sync", () => {
+	function change(
+		revision: number,
+		operation: "CREATE" | "UPDATE" | "DELETE",
+		entityType: "BEAN" | "MACHINE" | "BREW",
+		serverId: number,
+		clientId: string,
+		payload: Record<string, unknown>,
+	) {
+		return {
+			revision,
+			operation,
+			entityType,
+			serverId,
+			clientId,
+			payload,
+		};
+	}
+
+	it("consumes every page and resumes from the durable cursor", async () => {
+		vi.spyOn(api, "get")
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(1, "CREATE", "BEAN", 11, "bean-1", {
+							id: 11,
+							name: "Ethiopia",
+							revision: 1,
+						}),
+					],
+					nextCursor: 1,
+					hasMore: true,
+					fullResyncRequired: false,
+				},
+			} as never)
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(2, "UPDATE", "BEAN", 11, "bean-1", {
+							id: 11,
+							name: "Kenya",
+							revision: 2,
+						}),
+					],
+					nextCursor: 2,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never);
+
+		await expect(pullRemoteChanges(1)).resolves.toMatchObject({
+			pages: 2,
+			applied: 2,
+			cursor: 2,
+		});
+		expect(vi.mocked(api.get).mock.calls.map(([, config]) => config)).toEqual([
+			expect.objectContaining({ params: { since: 0, limit: 1 } }),
+			expect.objectContaining({ params: { since: 1, limit: 1 } }),
+		]);
+		expect(await db.Beans.get(11)).toMatchObject({
+			name: "Kenya",
+			localId: "bean-1",
+			serverRevision: 2,
+		});
+	});
+
+	it("ignores duplicate delivery and stale local revisions", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			serverRevision: 5,
+			name: "Local newer",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-1",
+			remoteId: 11,
+			serverRevision: 5,
+			updatedAt: 0,
+		});
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [
+					change(4, "UPDATE", "BEAN", 11, "bean-1", {
+						id: 11,
+						name: "Stale",
+						revision: 4,
+					}),
+				],
+				nextCursor: 4,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await expect(pullRemoteChanges()).resolves.toMatchObject({ applied: 0 });
+		await expect(pullRemoteChanges()).resolves.toMatchObject({ applied: 0 });
+		expect(await db.Beans.get(11)).toMatchObject({ name: "Local newer" });
+		expect(await getSyncCursor()).toBe(4);
+	});
+
+	it("maps remote brew foreign keys to existing local records", async () => {
+		await db.Beans.put({
+			id: 101,
+			localId: "bean-local",
+			name: "Ethiopia",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.Machines.put({
+			id: 102,
+			localId: "machine-local",
+			name: "Linea Mini",
+			brand: "",
+			type: "",
+			purchaseDate: "",
+			model: "",
+			grindRange: "",
+			capacity: "",
+		});
+		await db.RemoteMappings.bulkPut([
+			{ entity: "bean", localId: "bean-local", remoteId: 11, updatedAt: 0 },
+			{
+				entity: "machine",
+				localId: "machine-local",
+				remoteId: 12,
+				updatedAt: 0,
+			},
+		]);
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [
+					change(1, "CREATE", "BREW", 20, "brew-1", {
+						id: 20,
+						beanId: 11,
+						machineId: 12,
+						date: "2026-07-24T00:00:00.000Z",
+					}),
+				],
+				nextCursor: 1,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await pullRemoteChanges();
+		expect(await db.Brews.get(20)).toMatchObject({
+			localId: "brew-1",
+			beanId: 101,
+			machineId: 102,
+		});
+	});
+
+	it("repairs a brew when its parent mapping arrives later", async () => {
+		vi.spyOn(api, "get")
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(1, "CREATE", "BREW", 20, "brew-1", {
+							id: 20,
+							beanId: 11,
+							machineId: 12,
+							date: "2026-07-24T00:00:00.000Z",
+						}),
+					],
+					nextCursor: 1,
+					hasMore: true,
+					fullResyncRequired: false,
+				},
+			} as never)
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(2, "CREATE", "BEAN", 11, "bean-1", {
+							id: 11,
+							name: "Ethiopia",
+						}),
+						change(3, "CREATE", "MACHINE", 12, "machine-1", {
+							id: 12,
+							name: "Linea Mini",
+						}),
+					],
+					nextCursor: 3,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never);
+
+		await pullRemoteChanges();
+		expect(await db.Brews.get(20)).toMatchObject({
+			beanId: 11,
+			machineId: 12,
+		});
+		expect(await db.Brews.get(20)).not.toHaveProperty("remoteBeanId");
+		expect(await db.Brews.get(20)).not.toHaveProperty("remoteMachineId");
+	});
+
+	it("applies remote canonical state without dropping pending local work", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			name: "Local edit",
+			rating: 0,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-1",
+			remoteId: 11,
+			serverRevision: 1,
+			updatedAt: 0,
+		});
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "bean-1",
+			operation: "update",
+			payload: { name: "Pending local edit" },
+		});
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [
+					change(2, "UPDATE", "BEAN", 11, "bean-1", {
+						id: 11,
+						name: "Remote edit",
+					}),
+				],
+				nextCursor: 2,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await pullRemoteChanges();
+		expect(await db.Beans.get(11)).toMatchObject({ name: "Remote edit" });
+		expect(await db.Outbox.toArray()).toEqual([
+			expect.objectContaining({ status: "pending", baseRevision: 1 }),
+		]);
+	});
+
+	it("keeps the cursor unchanged when reconnect retries after a failure", async () => {
+		vi.spyOn(api, "get")
+			.mockRejectedValueOnce(new Error("offline"))
+			.mockResolvedValueOnce({
+				data: {
+					changes: [],
+					nextCursor: 0,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never);
+
+		await expect(pullRemoteChanges()).rejects.toThrow("offline");
+		expect(await getSyncCursor()).toBe(0);
+		await expect(pullRemoteChanges()).resolves.toMatchObject({ cursor: 0 });
 	});
 });

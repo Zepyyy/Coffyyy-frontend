@@ -18,6 +18,7 @@ export type OutboxRecord = {
 	lastError?: string;
 	serverResult?: unknown;
 	serverRevision?: string | number;
+	baseRevision?: number;
 	createdAt: number;
 	updatedAt: number;
 };
@@ -31,12 +32,19 @@ export type RemoteMapping = {
 	updatedAt: number;
 };
 
+export type SyncCursor = {
+	id: "changes";
+	cursor: number;
+	updatedAt: number;
+};
+
 export type BackendPushOperation = {
 	operationId: string;
 	entityType: Uppercase<SyncEntity>;
 	operation: Uppercase<SyncOperation>;
 	clientId: string;
 	serverId?: number;
+	baseRevision?: number;
 	payload: Record<string, unknown>;
 };
 
@@ -45,6 +53,8 @@ export type PushResult = {
 	status: "applied" | "rejected";
 	serverId?: number;
 	revision?: number;
+	canonicalRevision?: number;
+	canonical?: Record<string, unknown>;
 	reason?: string;
 };
 

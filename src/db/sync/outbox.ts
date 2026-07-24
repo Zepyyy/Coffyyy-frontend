@@ -15,10 +15,13 @@ const BACKOFF_MS = [1_000, 5_000, 30_000, 300_000, 1_800_000];
 export async function queueOperation(input: QueueOperationInput) {
 	const now = Date.now();
 	const dependencyIds = new Set(input.dependencyIds ?? []);
+	const mapping =
+		input.operation === "create"
+			? undefined
+			: await db.RemoteMappings.where("[entity+localId]")
+					.equals([input.entity, input.entityLocalId])
+					.first();
 	if (input.operation !== "create") {
-		const mapping = await db.RemoteMappings.where("[entity+localId]")
-			.equals([input.entity, input.entityLocalId])
-			.first();
 		if (!mapping) {
 			const pendingCreate = await db.Outbox.where("entityLocalId")
 				.equals(input.entityLocalId)
@@ -39,6 +42,9 @@ export async function queueOperation(input: QueueOperationInput) {
 		dependencyIds: [...dependencyIds],
 		sequence: 0,
 		status: "pending",
+		...(input.operation === "create" || !mapping
+			? {}
+			: { baseRevision: Number(mapping.serverRevision ?? 0) }),
 		attempts: 0,
 		nextAttemptAt: now,
 		createdAt: now,
