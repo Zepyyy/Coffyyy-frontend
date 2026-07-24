@@ -8,6 +8,7 @@ import {
 	countFailedOperations,
 	countOutboxOperations,
 	exportFailedOperations,
+	exportOutboxOperations,
 	retryFailedOperations,
 } from "@/lib/data";
 
@@ -19,6 +20,19 @@ function formatExpiry(value: string | null) {
 	}).format(new Date(value));
 }
 
+function downloadJson(filename: string, value: unknown) {
+	const url = URL.createObjectURL(
+		new Blob([JSON.stringify(value, null, 2)], {
+			type: "application/json",
+		}),
+	);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	anchor.click();
+	URL.revokeObjectURL(url);
+}
+
 export default function SyncPanel() {
 	const {
 		status,
@@ -28,6 +42,7 @@ export default function SyncPanel() {
 		lastError,
 		enableSync,
 		pairSyncCode,
+		reconcile,
 		rotateSyncCode,
 		logout,
 	} = useAuth();
@@ -47,14 +62,12 @@ export default function SyncPanel() {
 
 	async function downloadFailures() {
 		const failed = await exportFailedOperations();
-		const url = URL.createObjectURL(
-			new Blob([JSON.stringify(failed, null, 2)], { type: "application/json" }),
-		);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = "coffyyy-sync-failures.json";
-		anchor.click();
-		URL.revokeObjectURL(url);
+		downloadJson("coffyyy-sync-failures.json", failed);
+	}
+
+	async function downloadOutbox() {
+		const operations = await exportOutboxOperations();
+		downloadJson("coffyyy-sync-operations.json", operations);
 	}
 
 	async function copyCode() {
@@ -101,6 +114,16 @@ export default function SyncPanel() {
 		try {
 			await rotateSyncCode();
 			setMessage("New code generated. The previous code is no longer valid.");
+		} catch {
+			// AuthProvider exposes the normalized error below.
+		}
+	}
+
+	async function handleReconcile(discardOutbox = false) {
+		setMessage(null);
+		try {
+			await reconcile(discardOutbox);
+			setMessage("Workspace reconciled.");
 		} catch {
 			// AuthProvider exposes the normalized error below.
 		}
@@ -183,10 +206,58 @@ export default function SyncPanel() {
 										Connect
 									</Button>
 								</div>
+								{pendingCount > 0 && (
+									<Button
+										type="button"
+										size="sm"
+										variant="ghost"
+										onClick={() => void downloadOutbox()}
+										className="mt-2 gap-1 font-Mono text-[10px]"
+									>
+										<Download size={12} /> Export local changes
+									</Button>
+								)}
 							</div>
 						</div>
 					) : (
 						<div className="mt-4 space-y-3">
+							{(lastError?.includes("history expired") ||
+								lastError?.includes("unresolved sync operation")) && (
+								<div className="border border-destructive/30 bg-destructive/5 p-3 text-[11px] text-muted-foreground">
+									<p>Remote history expired. Reconcile before continuing.</p>
+									<div className="mt-2 flex gap-2">
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											onClick={() => void handleReconcile()}
+											disabled={isBusy}
+											className="flex-1 font-Mono text-[10px]"
+										>
+											Reconcile
+										</Button>
+										{pendingCount > 0 && (
+											<Button
+												type="button"
+												size="sm"
+												variant="ghost"
+												onClick={() => {
+													if (
+														window.confirm(
+															"Discard unresolved local sync operations and replace this workspace?",
+														)
+													)
+														void handleReconcile(true);
+												}}
+												disabled={isBusy}
+												className="font-Mono text-[10px]"
+											>
+												Discard & resync
+											</Button>
+										)}
+									</div>
+								</div>
+							)}
 							{pendingCount > 0 && (
 								<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
 									{pendingCount} operation{pendingCount === 1 ? "" : "s"}{" "}
@@ -213,6 +284,15 @@ export default function SyncPanel() {
 											</Button>
 										</div>
 									)}
+									<Button
+										type="button"
+										size="sm"
+										variant="ghost"
+										onClick={() => void downloadOutbox()}
+										className="gap-1 font-Mono text-[10px]"
+									>
+										<Download size={12} /> Export all
+									</Button>
 								</div>
 							)}
 							{syncCode && (

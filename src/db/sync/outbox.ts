@@ -11,6 +11,11 @@ export type QueueOperationInput = {
 
 const MAX_ATTEMPTS = 5;
 const BACKOFF_MS = [1_000, 5_000, 30_000, 300_000, 1_800_000];
+export const UNRESOLVED_OUTBOX_STATUSES = [
+	"pending",
+	"pushing",
+	"failed",
+] as const;
 
 export async function queueOperation(input: QueueOperationInput) {
 	const now = Date.now();
@@ -128,6 +133,7 @@ export async function recoverStalePushes(maxAgeMs = 5 * 60_000) {
 			if (operation.updatedAt < cutoff) {
 				operation.status = "pending";
 				operation.nextAttemptAt = Date.now();
+				operation.lastError = "Recovered interrupted sync; retrying";
 			}
 		});
 }
@@ -136,14 +142,45 @@ export async function exportFailedOperations() {
 	return db.Outbox.where("status").equals("failed").toArray();
 }
 
+export async function listUnresolvedOperations() {
+	return db.Outbox.where("status")
+		.anyOf(...UNRESOLVED_OUTBOX_STATUSES)
+		.toArray();
+}
+
+export async function exportOutboxOperations() {
+	return listUnresolvedOperations();
+}
+
+export async function markOperationsReconciled(operationIds: string[]) {
+	if (!operationIds.length) return;
+	await db.transaction("rw", db.Outbox, async () => {
+		const operations = await db.Outbox.where("operationId")
+			.anyOf(operationIds)
+			.toArray();
+		if (operations.some((operation) => operation.status === "pushing")) {
+			throw new Error(
+				"Cannot reconcile an outbox operation while it is being pushed",
+			);
+		}
+		await Promise.all(
+			operations.map((operation) =>
+				db.Outbox.update(operation.id as number, {
+					status: "acked",
+					serverResult: { status: "imported" },
+					updatedAt: Date.now(),
+				}),
+			),
+		);
+	});
+}
+
 export async function listOutboxOperations() {
 	return db.Outbox.toArray();
 }
 
 export async function countOutboxOperations() {
-	return db.Outbox.where("status")
-		.anyOf("pending", "pushing", "failed")
-		.count();
+	return (await listUnresolvedOperations()).length;
 }
 
 export async function countFailedOperations() {

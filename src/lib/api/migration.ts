@@ -8,7 +8,20 @@ import type {
 	RemoteTombstone,
 	SyncCursor,
 } from "@/db/sync/types";
+import { listUnresolvedOperations } from "@/db/sync/outbox";
 import { api } from "@/lib/axios";
+
+export class PendingOutboxError extends Error {
+	readonly operations: OutboxRecord[];
+
+	constructor(operations: OutboxRecord[]) {
+		super(
+			`${operations.length} unresolved sync operation${operations.length === 1 ? "" : "s"} must be pushed, exported, or discarded before replacing local data`,
+		);
+		this.name = "PendingOutboxError";
+		this.operations = operations;
+	}
+}
 
 export type LocalSnapshot = {
 	beans: Beans[];
@@ -45,24 +58,27 @@ export type RemoteWorkspace = {
 };
 
 export async function snapshotLocalData(): Promise<LocalSnapshot> {
-	const [beans, machines, brews] = await Promise.all([
-		db.Beans.toArray(),
-		db.Machines.toArray(),
-		db.Brews.toArray(),
-	]);
-	const remoteMappings = await db.RemoteMappings.toArray();
-	const tombstones = await db.Tombstones.toArray();
-	const outbox = await db.Outbox.toArray();
-	const syncState = await db.SyncState.toArray();
-	return {
-		beans,
-		machines,
-		brews,
-		remoteMappings,
-		tombstones,
-		outbox,
-		syncState,
-	};
+	return db.transaction(
+		"r",
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.RemoteMappings,
+			db.Tombstones,
+			db.Outbox,
+			db.SyncState,
+		],
+		async () => ({
+			beans: await db.Beans.toArray(),
+			machines: await db.Machines.toArray(),
+			brews: await db.Brews.toArray(),
+			remoteMappings: await db.RemoteMappings.toArray(),
+			tombstones: await db.Tombstones.toArray(),
+			outbox: await db.Outbox.toArray(),
+			syncState: await db.SyncState.toArray(),
+		}),
+	);
 }
 
 export function getSnapshotCounts(snapshot: LocalSnapshot): LocalDataCounts {
@@ -307,6 +323,7 @@ export async function replaceWithRemoteData(
 		discardOutbox?: boolean;
 	} = {},
 ) {
+	assertRemoteWorkspace(remote);
 	const beans = remote.beans.map(remoteBean);
 	const machines = remote.machines.map(remoteMachine);
 	const brews = remote.brews.map(remoteBrew);
@@ -322,6 +339,30 @@ export async function replaceWithRemoteData(
 			db.SyncState,
 		],
 		async () => {
+			const unresolved = await listUnresolvedOperations();
+			const removable = new Set(options.removeOutboxOperationIds ?? []);
+			const requested = removable.size
+				? await db.Outbox.where("operationId")
+						.anyOf([...removable])
+						.toArray()
+				: [];
+			const unacknowledged = requested.filter(
+				(operation) => operation.status !== "acked",
+			);
+			const protectedOperations = options.discardOutbox
+				? []
+				: unresolved.filter(
+						(operation) => !removable.has(operation.operationId),
+					);
+			if (
+				!options.discardOutbox &&
+				(unacknowledged.length || protectedOperations.length)
+			) {
+				throw new PendingOutboxError([
+					...unacknowledged,
+					...protectedOperations,
+				]);
+			}
 			await db.Brews.clear();
 			await db.Beans.clear();
 			await db.Machines.clear();
