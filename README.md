@@ -55,7 +55,7 @@ Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d9
 The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, and a local-first sync panel. End-to-end import, remote hydration, data-layer completion, and offline reconciliation remain WIP.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
-- No automated test runner is configured yet.
+- Vitest covers the offline outbox/push seams (`npm test`).
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
 - Home-screen charts are wired to live brew data and are the most developed of the insight views.
 

@@ -54,7 +54,19 @@ export {
 	updateBeanByName,
 	updateBrewById,
 	updateBrewByName,
+	updateMachineById,
 } from "../db/crud/update";
+export { pushPendingOperations } from "./api/sync";
+export {
+	listPendingOperations,
+	retryOperation,
+	exportFailedOperations,
+	countOutboxOperations,
+	countFailedOperations,
+	clearOutbox,
+	listOutboxOperations,
+	retryFailedOperations,
+} from "../db/sync/outbox";
 export {
 	clearDatabase,
 	resetDatabaseWithSeed,

@@ -3,6 +3,7 @@ import type { MachineCardProps } from "./MachineTypes";
 
 export type Brews = {
 	id: number;
+	localId?: string;
 	beanWeight: number;
 	espressoWeight: number;
 	extractionTime: string | undefined;

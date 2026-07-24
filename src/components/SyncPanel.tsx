@@ -1,8 +1,15 @@
-import { LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
+import { Download, LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useDatabaseCounts } from "@/hooks/api/useDatabase";
 import { useAuth } from "@/hooks/useAuth";
+import {
+	countFailedOperations,
+	countOutboxOperations,
+	exportFailedOperations,
+	retryFailedOperations,
+} from "@/lib/data";
 
 function formatExpiry(value: string | null) {
 	if (!value) return "";
@@ -29,7 +36,26 @@ export default function SyncPanel() {
 	const [code, setCode] = useState("");
 	const [copied, setCopied] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const pendingCount = useLiveQuery(countOutboxOperations, [], 0);
+	const failedCount = useLiveQuery(countFailedOperations, [], 0);
 	const isLoading = status === "loading";
+
+	async function retryFailures() {
+		await retryFailedOperations();
+		setMessage("Failed operations queued for retry.");
+	}
+
+	async function downloadFailures() {
+		const failed = await exportFailedOperations();
+		const url = URL.createObjectURL(
+			new Blob([JSON.stringify(failed, null, 2)], { type: "application/json" }),
+		);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = "coffyyy-sync-failures.json";
+		anchor.click();
+		URL.revokeObjectURL(url);
+	}
 
 	async function copyCode() {
 		if (!syncCode) return;
@@ -51,9 +77,9 @@ export default function SyncPanel() {
 	async function handlePair() {
 		if (!code.trim()) return;
 		if (
-			(counts.beans > 0 || counts.machines > 0 || counts.brews > 0) &&
+			(counts.beans > 0 || counts.machines > 0 || counts.brews > 0 || pendingCount > 0) &&
 			!window.confirm(
-				"Replace this browser's local data with the connected workspace?",
+				`Replace this browser's local data with the connected workspace?${pendingCount > 0 ? ` This discards ${pendingCount} pending sync operation${pendingCount === 1 ? "" : "s"}.` : ""}`,
 			)
 		)
 			return;
@@ -158,6 +184,21 @@ export default function SyncPanel() {
 						</div>
 					) : (
 						<div className="mt-4 space-y-3">
+							{pendingCount > 0 && (
+								<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
+									{pendingCount} operation{pendingCount === 1 ? "" : "s"} awaiting sync.
+									{failedCount > 0 && (
+										<div className="mt-2 flex gap-2">
+											<Button type="button" size="sm" variant="outline" onClick={() => void retryFailures()} className="flex-1 font-Mono text-[10px]">
+												Retry {failedCount}
+											</Button>
+											<Button type="button" size="sm" variant="ghost" onClick={() => void downloadFailures()} className="gap-1 font-Mono text-[10px]">
+												<Download size={12} /> Export
+											</Button>
+										</div>
+									)}
+								</div>
+							)}
 							{syncCode && (
 								<div className="border border-primary/30 bg-primary/5 p-3">
 									<p className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">

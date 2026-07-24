@@ -2,12 +2,15 @@ import { db } from "@/db/db";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
+import type { OutboxRecord, RemoteMapping } from "@/db/sync/types";
 import { api } from "@/lib/axios";
 
 export type LocalSnapshot = {
 	beans: Beans[];
 	machines: Machines[];
 	brews: Brews[];
+	remoteMappings: RemoteMapping[];
+	outbox: OutboxRecord[];
 };
 
 export type LocalDataCounts = {
@@ -40,7 +43,9 @@ export async function snapshotLocalData(): Promise<LocalSnapshot> {
 		db.Machines.toArray(),
 		db.Brews.toArray(),
 	]);
-	return { beans, machines, brews };
+	const remoteMappings = await db.RemoteMappings.toArray();
+	const outbox = await db.Outbox.toArray();
+	return { beans, machines, brews, remoteMappings, outbox };
 }
 
 export function getSnapshotCounts(snapshot: LocalSnapshot): LocalDataCounts {
@@ -59,11 +64,17 @@ function toImportPayload(
 	snapshot: LocalSnapshot,
 	idempotencyKey: string,
 ): ImportPayload {
+	const beanLocalIds = new Map(
+		snapshot.beans.map((bean) => [bean.id, bean.localId ?? String(bean.id)]),
+	);
+	const machineLocalIds = new Map(
+		snapshot.machines.map((machine) => [machine.id, machine.localId ?? String(machine.id)]),
+	);
 	return {
 		schemaVersion: 5,
 		idempotencyKey,
 		beans: snapshot.beans.map((bean) => ({
-			localId: bean.id,
+			localId: bean.localId ?? String(bean.id),
 			name: bean.name,
 			flavors: bean.flavors,
 			rating: bean.rating,
@@ -79,7 +90,7 @@ function toImportPayload(
 			finished: bean.finished,
 		})),
 		machines: snapshot.machines.map((machine) => ({
-			localId: machine.id,
+			localId: machine.localId ?? String(machine.id),
 			name: machine.name,
 			brand: machine.brand,
 			type: machine.type,
@@ -89,9 +100,15 @@ function toImportPayload(
 			capacity: machine.capacity,
 		})),
 		brews: snapshot.brews.map((brew) => ({
-			localId: brew.id,
-			beanLocalId: brew.beanId,
-			machineLocalId: brew.machineId,
+			localId: brew.localId ?? String(brew.id),
+			beanLocalId:
+				brew.beanId === undefined
+					? undefined
+					: beanLocalIds.get(brew.beanId) ?? String(brew.beanId),
+			machineLocalId:
+				brew.machineId === undefined
+					? undefined
+					: machineLocalIds.get(brew.machineId) ?? String(brew.machineId),
 			beanWeight: brew.beanWeight,
 			espressoWeight: brew.espressoWeight,
 			extractionTime: brew.extractionTime ?? "",
@@ -202,6 +219,7 @@ function remoteBean(bean: RemoteBean): Beans {
 	const brands = strings(bean.brands);
 	return {
 		id: bean.id,
+		localId: clientId(bean.clientId),
 		name: text(bean.name),
 		flavors: strings(bean.flavors),
 		rating: Number(bean.rating) || 0,
@@ -227,6 +245,7 @@ function remoteBean(bean: RemoteBean): Beans {
 function remoteMachine(machine: RemoteMachine): Machines {
 	return {
 		id: machine.id,
+		localId: clientId(machine.clientId),
 		name: text(machine.name),
 		brand: text(machine.brand),
 		type: text(machine.type),
@@ -240,6 +259,7 @@ function remoteMachine(machine: RemoteMachine): Machines {
 function remoteBrew(brew: RemoteBrew): Brews {
 	return {
 		id: brew.id,
+		localId: clientId(brew.clientId),
 		beanWeight: Number(brew.beanWeight) || 0,
 		espressoWeight: Number(brew.espressoWeight) || 0,
 		extractionTime: text(brew.extractionTime),
@@ -254,24 +274,68 @@ function remoteBrew(brew: RemoteBrew): Brews {
 	};
 }
 
-export async function replaceWithRemoteData(remote: RemoteWorkspace) {
-	await db.transaction("rw", db.Beans, db.Machines, db.Brews, async () => {
+export async function replaceWithRemoteData(
+	remote: RemoteWorkspace,
+	options: { removeOutboxOperationIds?: string[]; discardOutbox?: boolean } = {},
+) {
+	const beans = remote.beans.map(remoteBean);
+	const machines = remote.machines.map(remoteMachine);
+	const brews = remote.brews.map(remoteBrew);
+	await db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox],
+		async () => {
 		await db.Brews.clear();
 		await db.Beans.clear();
 		await db.Machines.clear();
-		await db.Beans.bulkPut(remote.beans.map(remoteBean));
-		await db.Machines.bulkPut(remote.machines.map(remoteMachine));
-		await db.Brews.bulkPut(remote.brews.map(remoteBrew));
-	});
+		await db.RemoteMappings.clear();
+		await db.Beans.bulkPut(beans);
+		await db.Machines.bulkPut(machines);
+		await db.Brews.bulkPut(brews);
+		await db.RemoteMappings.bulkPut([
+			...beans.map((bean) => remoteMapping("bean", bean.localId, bean.id, remote.beans)),
+			...machines.map((machine) => remoteMapping("machine", machine.localId, machine.id, remote.machines)),
+			...brews.map((brew) => remoteMapping("brew", brew.localId, brew.id, remote.brews)),
+		]);
+		if (options.discardOutbox) await db.Outbox.clear();
+		if (options.removeOutboxOperationIds?.length) {
+			await db.Outbox.where("operationId").anyOf(options.removeOutboxOperationIds).delete();
+		}
+		},
+	);
 }
 
 export async function restoreLocalData(snapshot: LocalSnapshot) {
-	await db.transaction("rw", db.Beans, db.Machines, db.Brews, async () => {
+	await db.transaction("rw", [db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox], async () => {
 		await db.Brews.clear();
 		await db.Beans.clear();
 		await db.Machines.clear();
+		await db.RemoteMappings.clear();
+		await db.Outbox.clear();
 		await db.Beans.bulkPut(snapshot.beans);
 		await db.Machines.bulkPut(snapshot.machines);
 		await db.Brews.bulkPut(snapshot.brews);
+		await db.RemoteMappings.bulkPut(snapshot.remoteMappings);
+		await db.Outbox.bulkPut(snapshot.outbox);
 	});
+}
+
+function clientId(value: unknown) {
+	return typeof value === "string" && value ? value : crypto.randomUUID();
+}
+
+function remoteMapping(
+	entity: "bean" | "machine" | "brew",
+	localId: string | undefined,
+	remoteId: number,
+	rows: Array<Record<string, unknown>>,
+) {
+	const row = rows.find((candidate) => candidate.id === remoteId);
+	return {
+		entity,
+		localId: localId ?? clientId(row?.clientId),
+		remoteId,
+		serverRevision: typeof row?.revision === "number" ? row.revision : undefined,
+		updatedAt: Date.now(),
+	};
 }
