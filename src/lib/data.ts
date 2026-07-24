@@ -58,8 +58,10 @@ export {
 } from "../db/crud/update";
 export {
 	getSyncCursor,
+	getRemoteHistory,
 	pullRemoteChanges,
 	pushPendingOperations,
+	restoreRemoteVersion,
 } from "./api/sync";
 export {
 	listPendingOperations,

@@ -6,15 +6,19 @@ import {
 	listPendingOperations,
 	maxAttempts,
 	nextRetry,
+	queueOperation,
 	recoverStalePushes,
 	UNRESOLVED_OUTBOX_STATUSES,
 } from "@/db/sync/outbox";
 import type {
 	BackendPushOperation,
 	OutboxRecord,
+	PushResult,
 	PushResponse,
 	RemoteMapping,
 	RemoteTombstone,
+	RecoveryHistoryEntry,
+	RecoveryHistoryPage,
 	SyncEntity,
 	SyncOperation,
 } from "@/db/sync/types";
@@ -45,6 +49,88 @@ export class FullResyncRequiredError extends Error {
 
 export async function getSyncCursor() {
 	return (await db.SyncState.get("changes"))?.cursor ?? 0;
+}
+
+export async function getRemoteHistory(options?: {
+	entity?: SyncEntity;
+	serverId?: number;
+	limit?: number;
+}) {
+	const changes: RecoveryHistoryEntry[] = [];
+	let since = 0;
+	let hasMore = false;
+	let retentionBoundary = "";
+
+	do {
+		const response = await api.get<RecoveryHistoryPage>("/sync/history", {
+			params: {
+				since,
+				limit: options?.limit ?? 100,
+				...(options?.entity
+					? { entityType: options.entity.toUpperCase() }
+					: {}),
+				...(options?.serverId !== undefined
+					? { serverId: options.serverId }
+					: {}),
+			},
+		});
+		const page = validateRecoveryHistoryPage(response.data);
+		changes.push(...page.changes);
+		retentionBoundary = page.retentionBoundary;
+		hasMore = page.hasMore;
+		if (hasMore && page.nextCursor <= since) {
+			throw new Error("Remote recovery history made no progress");
+		}
+		since = page.nextCursor;
+	} while (hasMore);
+
+	return { changes, retentionBoundary };
+}
+
+export async function restoreRemoteVersion(entry: RecoveryHistoryEntry) {
+	const entity = normalizeEntity(entry.entityType);
+	const mapping = await findMapping(entity, entry.serverId, entry.clientId);
+	if (!mapping || typeof mapping.serverRevision !== "number") {
+		throw new Error("Sync record revision unavailable; sync before restoring");
+	}
+
+	const payload = recoveryPayload(entry.payload);
+	return db.transaction(
+		"rw",
+		[
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.Outbox,
+			db.RemoteMappings,
+			db.Tombstones,
+		],
+		async () => {
+			const tombstone = await db.Tombstones.where("[entity+localId]")
+				.equals([entity, mapping.localId])
+				.first();
+			const deleted = Boolean(tombstone || mapping.deletedAt !== undefined);
+			const localId = deleted ? crypto.randomUUID() : mapping.localId;
+			if (!deleted) await clearTombstone(entity, mapping.localId);
+			await upsertLocalRecord(
+				entity,
+				localId,
+				entry.serverId,
+				payload,
+				deleted ? 0 : (mapping.serverRevision as number),
+			);
+			const id = await queueOperation({
+				entity,
+				entityLocalId: localId,
+				operation: deleted ? "create" : "update",
+				payload,
+			});
+			const operation = await db.Outbox.get(id);
+			if (!operation?.operationId)
+				throw new Error("Restore operation was not queued");
+			return { operationId: operation.operationId, recreated: deleted };
+		},
+	);
 }
 
 export async function pullRemoteChanges(limit = 100) {
@@ -198,7 +284,15 @@ async function acknowledge(operation: OutboxRecord, response: PushResponse) {
 	);
 	if (!result) throw new Error("Push response did not acknowledge operation");
 	if (result.status === "rejected") {
-		await markFailed(operation, result.reason ?? "Server rejected operation");
+		await markFailed(
+			operation,
+			result.reason === "stale_revision"
+				? "Conflict: a newer server revision exists"
+				: result.reason === "already_deleted"
+					? "Conflict: record is deleted on server"
+					: (result.reason ?? "Server rejected operation"),
+			result,
+		);
 		return;
 	}
 
@@ -258,13 +352,29 @@ async function recordFailure(operation: OutboxRecord, error: unknown) {
 	});
 }
 
-async function markFailed(operation: OutboxRecord, reason: string) {
+async function markFailed(
+	operation: OutboxRecord,
+	reason: string,
+	result?: PushResult,
+) {
 	if (operation.id === undefined) return;
+	const serverRevision = result?.canonicalRevision ?? result?.revision;
 	await db.Outbox.update(operation.id, {
 		status: "failed",
 		lastError: reason,
+		...(result ? { serverResult: result } : {}),
+		...(serverRevision === undefined ? {} : { serverRevision }),
 		updatedAt: Date.now(),
 	});
+	if (serverRevision === undefined) return;
+	const mapping = await db.RemoteMappings.where("[entity+localId]")
+		.equals([operation.entity, operation.entityLocalId])
+		.first();
+	if (mapping?.id !== undefined)
+		await db.RemoteMappings.update(mapping.id, {
+			serverRevision,
+			updatedAt: Date.now(),
+		});
 }
 
 function isTerminalFailure(error: unknown) {
@@ -702,6 +812,36 @@ function validateChangePage(value: ChangePage) {
 		throw new Error("Remote change response is invalid");
 	}
 	return value;
+}
+
+function validateRecoveryHistoryPage(value: RecoveryHistoryPage) {
+	if (
+		!value ||
+		!Array.isArray(value.changes) ||
+		(typeof value.nextCursor !== "number" || value.nextCursor < 0) ||
+		typeof value.hasMore !== "boolean" ||
+		typeof value.retentionBoundary !== "string"
+	) {
+		throw new Error("Remote recovery history response is invalid");
+	}
+	return value;
+}
+
+function recoveryPayload(payload: Record<string, unknown>) {
+	return Object.fromEntries(
+		Object.entries(payload).filter(
+			([key]) =>
+				![
+					"id",
+					"revision",
+					"deletedAt",
+					"userId",
+					"clientId",
+					"createdAt",
+					"updatedAt",
+				].includes(key),
+		),
+	);
 }
 
 function number(value: unknown) {

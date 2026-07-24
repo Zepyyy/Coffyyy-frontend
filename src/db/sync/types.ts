@@ -70,3 +70,21 @@ export type PushResult = {
 };
 
 export type PushResponse = PushResult | PushResult[];
+
+export type RecoveryHistoryEntry = {
+	entityType: Uppercase<SyncEntity>;
+	serverId: number;
+	clientId: string;
+	revision: number;
+	operation: Uppercase<SyncOperation>;
+	accepted: boolean;
+	payload: Record<string, unknown>;
+	createdAt: string;
+};
+
+export type RecoveryHistoryPage = {
+	changes: RecoveryHistoryEntry[];
+	nextCursor: number;
+	hasMore: boolean;
+	retentionBoundary: string;
+};
