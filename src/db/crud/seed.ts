@@ -179,15 +179,19 @@ function validateCounts(counts: DatabaseSeedCounts) {
 }
 
 export async function clearDatabase() {
-	await db.transaction("rw", [db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings], async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Machines.clear(),
-			db.Outbox.clear(),
-			db.RemoteMappings.clear(),
-		]);
-	});
+	await db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings],
+		async () => {
+			await Promise.all([
+				db.Brews.clear(),
+				db.Beans.clear(),
+				db.Machines.clear(),
+				db.Outbox.clear(),
+				db.RemoteMappings.clear(),
+			]);
+		},
+	);
 }
 
 export async function resetDatabaseWithSeed(
@@ -195,40 +199,50 @@ export async function resetDatabaseWithSeed(
 ): Promise<DatabaseSeedSummary> {
 	validateCounts(counts);
 
-	return db.transaction("rw", [db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings], async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Machines.clear(),
-			db.Outbox.clear(),
-			db.RemoteMappings.clear(),
-		]);
+	return db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.Outbox, db.RemoteMappings],
+		async () => {
+			await Promise.all([
+				db.Brews.clear(),
+				db.Beans.clear(),
+				db.Machines.clear(),
+				db.Outbox.clear(),
+				db.RemoteMappings.clear(),
+			]);
 
-		const beanIds: number[] = [];
-		for (let index = 0; index < counts.beans; index += 1) {
-			beanIds.push(
-				await db.Beans.add({ ...createBean(index), localId: crypto.randomUUID() }),
-			);
-		}
+			const beanIds: number[] = [];
+			for (let index = 0; index < counts.beans; index += 1) {
+				beanIds.push(
+					await db.Beans.add({
+						...createBean(index),
+						localId: crypto.randomUUID(),
+					}),
+				);
+			}
 
-		const machineIds: number[] = [];
-		for (let index = 0; index < counts.machines; index += 1) {
-			machineIds.push(
-				await db.Machines.add({ ...createMachine(index), localId: crypto.randomUUID() }),
-			);
-		}
+			const machineIds: number[] = [];
+			for (let index = 0; index < counts.machines; index += 1) {
+				machineIds.push(
+					await db.Machines.add({
+						...createMachine(index),
+						localId: crypto.randomUUID(),
+					}),
+				);
+			}
 
-		for (let index = 0; index < counts.brews; index += 1) {
-			await db.Brews.add({
-				...createBrew(
-					index,
-					beanIds[index % beanIds.length],
-					machineIds[index % machineIds.length],
-				),
-				localId: crypto.randomUUID(),
-			});
-		}
+			for (let index = 0; index < counts.brews; index += 1) {
+				await db.Brews.add({
+					...createBrew(
+						index,
+						beanIds[index % beanIds.length],
+						machineIds[index % machineIds.length],
+					),
+					localId: crypto.randomUUID(),
+				});
+			}
 
-		return counts;
-	});
+			return counts;
+		},
+	);
 }

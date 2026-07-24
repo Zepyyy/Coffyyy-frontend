@@ -20,8 +20,7 @@ export async function queueOperation(input: QueueOperationInput) {
 			.equals([input.entity, input.entityLocalId])
 			.first();
 		if (!mapping) {
-			const pendingCreate = await db.Outbox
-				.where("entityLocalId")
+			const pendingCreate = await db.Outbox.where("entityLocalId")
 				.equals(input.entityLocalId)
 				.filter(
 					(operation) =>
@@ -61,7 +60,8 @@ export async function listPendingOperations(now = Date.now()) {
 			(operation) => operation.entityLocalId,
 		),
 	);
-	for (const mapping of await db.RemoteMappings.toArray()) completed.add(mapping.localId);
+	for (const mapping of await db.RemoteMappings.toArray())
+		completed.add(mapping.localId);
 	const failed = new Set(
 		(await db.Outbox.where("status").equals("failed").toArray()).map(
 			(operation) => operation.entityLocalId,
@@ -69,7 +69,9 @@ export async function listPendingOperations(now = Date.now()) {
 	);
 	const ready = [];
 	for (const operation of pending) {
-		const failedDependency = operation.dependencyIds.find((id) => failed.has(id));
+		const failedDependency = operation.dependencyIds.find((id) =>
+			failed.has(id),
+		);
 		if (failedDependency) {
 			await db.Outbox.update(operation.id as number, {
 				status: "failed",
@@ -78,7 +80,11 @@ export async function listPendingOperations(now = Date.now()) {
 			});
 			continue;
 		}
-		if (operation.dependencyIds.every((dependencyId) => completed.has(dependencyId))) {
+		if (
+			operation.dependencyIds.every((dependencyId) =>
+				completed.has(dependencyId),
+			)
+		) {
 			ready.push(operation);
 		}
 	}
@@ -97,12 +103,14 @@ export async function retryOperation(id: number) {
 
 export async function recoverStalePushes(maxAgeMs = 5 * 60_000) {
 	const cutoff = Date.now() - maxAgeMs;
-	await db.Outbox.where("status").equals("pushing").modify((operation) => {
-		if (operation.updatedAt < cutoff) {
-			operation.status = "pending";
-			operation.nextAttemptAt = Date.now();
-		}
-	});
+	await db.Outbox.where("status")
+		.equals("pushing")
+		.modify((operation) => {
+			if (operation.updatedAt < cutoff) {
+				operation.status = "pending";
+				operation.nextAttemptAt = Date.now();
+			}
+		});
 }
 
 export async function exportFailedOperations() {
@@ -114,7 +122,9 @@ export async function listOutboxOperations() {
 }
 
 export async function countOutboxOperations() {
-	return db.Outbox.where("status").anyOf("pending", "pushing", "failed").count();
+	return db.Outbox.where("status")
+		.anyOf("pending", "pushing", "failed")
+		.count();
 }
 
 export async function countFailedOperations() {
@@ -123,7 +133,11 @@ export async function countFailedOperations() {
 
 export async function retryFailedOperations() {
 	const failed = await exportFailedOperations();
-	await Promise.all(failed.flatMap((operation) => (operation.id === undefined ? [] : [retryOperation(operation.id)])));
+	await Promise.all(
+		failed.flatMap((operation) =>
+			operation.id === undefined ? [] : [retryOperation(operation.id)],
+		),
+	);
 }
 
 export async function clearOutbox() {

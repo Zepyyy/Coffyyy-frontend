@@ -43,16 +43,16 @@ describe("offline outbox", () => {
 		const [operation] = await db.Outbox.toArray();
 		expect(bean?.localId).toEqual(expect.any(String));
 		expect(operation).toMatchObject({
-		entity: "bean",
-		operation: "create",
-		entityLocalId: bean?.localId,
-		clientId: bean?.localId,
-	});
+			entity: "bean",
+			operation: "create",
+			entityLocalId: bean?.localId,
+			clientId: bean?.localId,
+		});
 		expect(operation.payload).toMatchObject({
-		countries: ["Ethiopia"],
-		brands: ["Kawa"],
-		status: "GOOD",
-	});
+			countries: ["Ethiopia"],
+			brands: ["Kawa"],
+			status: "GOOD",
+		});
 		expect(operation.payload).not.toHaveProperty("id");
 	});
 
@@ -92,21 +92,28 @@ describe("offline outbox", () => {
 			date: new Date("2026-07-24"),
 		});
 
-		expect((await listPendingOperations()).map(({ entity }) => entity)).toEqual([
-			"bean",
-			"machine",
-		]);
+		expect((await listPendingOperations()).map(({ entity }) => entity)).toEqual(
+			["bean", "machine"],
+		);
 		const bean = await db.Beans.get(beanId);
 		const machine = await db.Machines.get(machineId);
 		await db.RemoteMappings.bulkPut([
-			{ entity: "bean", localId: bean?.localId as string, remoteId: 11, updatedAt: Date.now() },
-			{ entity: "machine", localId: machine?.localId as string, remoteId: 12, updatedAt: Date.now() },
+			{
+				entity: "bean",
+				localId: bean?.localId as string,
+				remoteId: 11,
+				updatedAt: Date.now(),
+			},
+			{
+				entity: "machine",
+				localId: machine?.localId as string,
+				remoteId: 12,
+				updatedAt: Date.now(),
+			},
 		]);
-		expect((await listPendingOperations()).map(({ entity }) => entity)).toEqual([
-			"bean",
-			"machine",
-			"brew",
-		]);
+		expect((await listPendingOperations()).map(({ entity }) => entity)).toEqual(
+			["bean", "machine", "brew"],
+		);
 	});
 
 	it("queues update and delete inside the same local write", async () => {
@@ -131,10 +138,9 @@ describe("offline outbox", () => {
 
 		expect(await db.Beans.get(beanId)).toBeUndefined();
 		expect(await db.Outbox.count()).toBe(2);
-		expect((await db.Outbox.toArray()).map(({ operation }) => operation)).toEqual([
-			"update",
-			"delete",
-		]);
+		expect(
+			(await db.Outbox.toArray()).map(({ operation }) => operation),
+		).toEqual(["update", "delete"]);
 	});
 });
 
@@ -147,7 +153,11 @@ describe("push sync", () => {
 			entity: "brew",
 			entityLocalId: "brew-local",
 			operation: "create",
-			payload: { beanId: "bean-local", machineId: "machine-local", date: "2026-07-24" },
+			payload: {
+				beanId: "bean-local",
+				machineId: "machine-local",
+				date: "2026-07-24",
+			},
 			dependencyIds: ["bean-local", "machine-local"],
 			sequence: 1,
 			status: "pending",
@@ -160,7 +170,12 @@ describe("push sync", () => {
 		expect(
 			toBackendOperation(operation, [
 				{ entity: "bean", localId: "bean-local", remoteId: 11, updatedAt: 0 },
-				{ entity: "machine", localId: "machine-local", remoteId: 12, updatedAt: 0 },
+				{
+					entity: "machine",
+					localId: "machine-local",
+					remoteId: 12,
+					updatedAt: 0,
+				},
 			]),
 		).toEqual({
 			operationId: "op-1",
@@ -183,11 +198,18 @@ describe("push sync", () => {
 		} as never);
 		const operation = (await db.Outbox.toArray())[0];
 		vi.mocked(api.post).mockResolvedValue({
-			data: { operationId: operation.operationId, status: "applied", serverId: 42, revision: 7 },
+			data: {
+				operationId: operation.operationId,
+				status: "applied",
+				serverId: 42,
+				revision: 7,
+			},
 		} as never);
 
 		await expect(pushPendingOperations()).resolves.toBe(1);
-		expect(await db.Outbox.get(operation.id)).toMatchObject({ status: "acked" });
+		expect(await db.Outbox.get(operation.id)).toMatchObject({
+			status: "acked",
+		});
 		expect(
 			await db.RemoteMappings.where("[entity+localId]")
 				.equals(["bean", "bean-local"])
@@ -203,9 +225,16 @@ describe("push sync", () => {
 			operation: "update",
 			payload: { name: "Ethiopia updated" },
 		});
-		const update = (await db.Outbox.toCollection().sortBy("sequence")).at(-1) as OutboxRecord;
+		const update = (await db.Outbox.toCollection().sortBy("sequence")).at(
+			-1,
+		) as OutboxRecord;
 		vi.mocked(api.post).mockResolvedValue({
-			data: { operationId: update.operationId, status: "applied", serverId: 42, revision: 8 },
+			data: {
+				operationId: update.operationId,
+				status: "applied",
+				serverId: 42,
+				revision: 8,
+			},
 		} as never);
 		await expect(pushPendingOperations()).resolves.toBe(1);
 		expect(await db.RemoteMappings.count()).toBe(1);
@@ -261,7 +290,12 @@ describe("push sync", () => {
 			await requestRelease;
 			const operation = (await db.Outbox.toArray())[0];
 			return {
-				data: { operationId: operation.operationId, status: "applied", serverId: 42, revision: 7 },
+				data: {
+					operationId: operation.operationId,
+					status: "applied",
+					serverId: 42,
+					revision: 7,
+				},
 			} as never;
 		});
 

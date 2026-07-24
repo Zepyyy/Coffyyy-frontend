@@ -68,7 +68,10 @@ function toImportPayload(
 		snapshot.beans.map((bean) => [bean.id, bean.localId ?? String(bean.id)]),
 	);
 	const machineLocalIds = new Map(
-		snapshot.machines.map((machine) => [machine.id, machine.localId ?? String(machine.id)]),
+		snapshot.machines.map((machine) => [
+			machine.id,
+			machine.localId ?? String(machine.id),
+		]),
 	);
 	return {
 		schemaVersion: 5,
@@ -104,11 +107,11 @@ function toImportPayload(
 			beanLocalId:
 				brew.beanId === undefined
 					? undefined
-					: beanLocalIds.get(brew.beanId) ?? String(brew.beanId),
+					: (beanLocalIds.get(brew.beanId) ?? String(brew.beanId)),
 			machineLocalId:
 				brew.machineId === undefined
 					? undefined
-					: machineLocalIds.get(brew.machineId) ?? String(brew.machineId),
+					: (machineLocalIds.get(brew.machineId) ?? String(brew.machineId)),
 			beanWeight: brew.beanWeight,
 			espressoWeight: brew.espressoWeight,
 			extractionTime: brew.extractionTime ?? "",
@@ -276,7 +279,10 @@ function remoteBrew(brew: RemoteBrew): Brews {
 
 export async function replaceWithRemoteData(
 	remote: RemoteWorkspace,
-	options: { removeOutboxOperationIds?: string[]; discardOutbox?: boolean } = {},
+	options: {
+		removeOutboxOperationIds?: string[];
+		discardOutbox?: boolean;
+	} = {},
 ) {
 	const beans = remote.beans.map(remoteBean);
 	const machines = remote.machines.map(remoteMachine);
@@ -285,39 +291,56 @@ export async function replaceWithRemoteData(
 		"rw",
 		[db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox],
 		async () => {
-		await db.Brews.clear();
-		await db.Beans.clear();
-		await db.Machines.clear();
-		await db.RemoteMappings.clear();
-		await db.Beans.bulkPut(beans);
-		await db.Machines.bulkPut(machines);
-		await db.Brews.bulkPut(brews);
-		await db.RemoteMappings.bulkPut([
-			...beans.map((bean) => remoteMapping("bean", bean.localId, bean.id, remote.beans)),
-			...machines.map((machine) => remoteMapping("machine", machine.localId, machine.id, remote.machines)),
-			...brews.map((brew) => remoteMapping("brew", brew.localId, brew.id, remote.brews)),
-		]);
-		if (options.discardOutbox) await db.Outbox.clear();
-		if (options.removeOutboxOperationIds?.length) {
-			await db.Outbox.where("operationId").anyOf(options.removeOutboxOperationIds).delete();
-		}
+			await db.Brews.clear();
+			await db.Beans.clear();
+			await db.Machines.clear();
+			await db.RemoteMappings.clear();
+			await db.Beans.bulkPut(beans);
+			await db.Machines.bulkPut(machines);
+			await db.Brews.bulkPut(brews);
+			await db.RemoteMappings.bulkPut([
+				...beans.map((bean) =>
+					remoteMapping("bean", bean.localId, bean.id, remote.beans),
+				),
+				...machines.map((machine) =>
+					remoteMapping(
+						"machine",
+						machine.localId,
+						machine.id,
+						remote.machines,
+					),
+				),
+				...brews.map((brew) =>
+					remoteMapping("brew", brew.localId, brew.id, remote.brews),
+				),
+			]);
+			if (options.discardOutbox) await db.Outbox.clear();
+			if (options.removeOutboxOperationIds?.length) {
+				await db.Outbox.where("operationId")
+					.anyOf(options.removeOutboxOperationIds)
+					.delete();
+			}
 		},
 	);
 }
 
 export async function restoreLocalData(snapshot: LocalSnapshot) {
-	await db.transaction("rw", [db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox], async () => {
-		await db.Brews.clear();
-		await db.Beans.clear();
-		await db.Machines.clear();
-		await db.RemoteMappings.clear();
-		await db.Outbox.clear();
-		await db.Beans.bulkPut(snapshot.beans);
-		await db.Machines.bulkPut(snapshot.machines);
-		await db.Brews.bulkPut(snapshot.brews);
-		await db.RemoteMappings.bulkPut(snapshot.remoteMappings);
-		await db.Outbox.bulkPut(snapshot.outbox);
-	});
+	await db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.RemoteMappings, db.Outbox],
+		async () => {
+			await db.Brews.clear();
+			await db.Beans.clear();
+			await db.Machines.clear();
+			await db.RemoteMappings.clear();
+			await db.Outbox.clear();
+			await db.Beans.bulkPut(snapshot.beans);
+			await db.Machines.bulkPut(snapshot.machines);
+			await db.Brews.bulkPut(snapshot.brews);
+			await db.RemoteMappings.bulkPut(snapshot.remoteMappings);
+			await db.Outbox.bulkPut(snapshot.outbox);
+		},
+	);
 }
 
 function clientId(value: unknown) {
@@ -335,7 +358,8 @@ function remoteMapping(
 		entity,
 		localId: localId ?? clientId(row?.clientId),
 		remoteId,
-		serverRevision: typeof row?.revision === "number" ? row.revision : undefined,
+		serverRevision:
+			typeof row?.revision === "number" ? row.revision : undefined,
 		updatedAt: Date.now(),
 	};
 }

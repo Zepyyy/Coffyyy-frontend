@@ -36,28 +36,38 @@ async function addBean(bean: Omit<Beans, "id">) {
 async function addBrew(brew: Omit<Brews, "id">) {
 	try {
 		const localId = crypto.randomUUID();
-		return db.transaction("rw", db.Beans, db.Machines, db.Brews, db.Outbox, async () => {
-			const [beanRecord, machineRecord] = await Promise.all([
-				brew.beanId === undefined ? undefined : db.Beans.get(brew.beanId),
-				brew.machineId === undefined ? undefined : db.Machines.get(brew.machineId),
-			]);
-			const dependencies = [beanRecord?.localId, machineRecord?.localId].filter(
-				(value): value is string => Boolean(value),
-			);
-			const id = await db.Brews.add({ ...brew, localId });
-			await queueOperation({
-				entity: "brew",
-				entityLocalId: localId,
-				operation: "create",
-				payload: brewSyncPayload(
-					{ ...brew, id, localId },
+		return db.transaction(
+			"rw",
+			db.Beans,
+			db.Machines,
+			db.Brews,
+			db.Outbox,
+			async () => {
+				const [beanRecord, machineRecord] = await Promise.all([
+					brew.beanId === undefined ? undefined : db.Beans.get(brew.beanId),
+					brew.machineId === undefined
+						? undefined
+						: db.Machines.get(brew.machineId),
+				]);
+				const dependencies = [
 					beanRecord?.localId,
 					machineRecord?.localId,
-				),
-				dependencyIds: dependencies,
-			});
-			return id;
-		});
+				].filter((value): value is string => Boolean(value));
+				const id = await db.Brews.add({ ...brew, localId });
+				await queueOperation({
+					entity: "brew",
+					entityLocalId: localId,
+					operation: "create",
+					payload: brewSyncPayload(
+						{ ...brew, id, localId },
+						beanRecord?.localId,
+						machineRecord?.localId,
+					),
+					dependencyIds: dependencies,
+				});
+				return id;
+			},
+		);
 	} catch (error) {
 		return error;
 	}
