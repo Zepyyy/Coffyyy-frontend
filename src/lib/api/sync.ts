@@ -23,6 +23,7 @@ import type {
 	SyncOperation,
 } from "@/db/sync/types";
 import { ApiError, api } from "@/lib/axios";
+import { SyncLeaseLostError } from "@/db/sync/coordinator";
 
 export type RemoteChange = {
 	revision: number;
@@ -46,6 +47,8 @@ export class FullResyncRequiredError extends Error {
 		this.name = "FullResyncRequiredError";
 	}
 }
+
+export type SyncLeaseGuard = () => Promise<void>;
 
 export async function getSyncCursor() {
 	return (await db.SyncState.get("changes"))?.cursor ?? 0;
@@ -133,15 +136,20 @@ export async function restoreRemoteVersion(entry: RecoveryHistoryEntry) {
 	);
 }
 
-export async function pullRemoteChanges(limit = 100) {
+export async function pullRemoteChanges(
+	limit = 100,
+	assertLease?: SyncLeaseGuard,
+) {
 	let pages = 0;
 	let applied = 0;
 
 	while (true) {
+		await assertLease?.();
 		const cursor = await getSyncCursor();
 		const response = await api.get<ChangePage>("/sync/changes", {
 			params: { since: cursor, limit },
 		});
+		await assertLease?.();
 		const page = validateChangePage(response.data);
 		if (page.fullResyncRequired) throw new FullResyncRequiredError();
 		const nextCursor = page.nextCursor ?? cursor;
@@ -236,16 +244,18 @@ export function toBackendOperation(
 	return backend;
 }
 
-export async function pushPendingOperations() {
+export async function pushPendingOperations(assertLease?: SyncLeaseGuard) {
 	await recoverStalePushes();
 	let pushed = 0;
 
 	while (true) {
+		await assertLease?.();
 		const operation = (await listPendingOperations())[0];
 		if (!operation) break;
 		if (!(await claim(operation))) continue;
 
 		try {
+			await assertLease?.();
 			const backendOperation = toBackendOperation(
 				operation,
 				await db.RemoteMappings.toArray(),
@@ -254,9 +264,19 @@ export async function pushPendingOperations() {
 				"/sync/push",
 				backendOperation,
 			);
+			await assertLease?.();
 			await acknowledge(operation, response.data);
 			pushed += 1;
 		} catch (error) {
+			if (error instanceof SyncLeaseLostError) {
+				await db.Outbox.update(operation.id as number, {
+					status: "pending",
+					nextAttemptAt: Date.now(),
+					lastError: "Sync lease lost; retrying",
+					updatedAt: Date.now(),
+				});
+				throw error;
+			}
 			await recordFailure(operation, error);
 		}
 	}
