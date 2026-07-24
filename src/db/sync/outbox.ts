@@ -116,11 +116,16 @@ export async function listPendingOperations(now = Date.now()) {
 }
 
 export async function retryOperation(id: number) {
+	const operation = await db.Outbox.get(id);
+	if (!operation) return;
 	await db.Outbox.update(id, {
 		status: "pending",
 		attempts: 0,
 		nextAttemptAt: Date.now(),
 		lastError: undefined,
+		...(typeof operation.serverRevision === "number"
+			? { baseRevision: operation.serverRevision }
+			: {}),
 		updatedAt: Date.now(),
 	});
 }

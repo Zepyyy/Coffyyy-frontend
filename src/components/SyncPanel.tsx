@@ -11,6 +11,11 @@ import {
 	exportOutboxOperations,
 	retryFailedOperations,
 } from "@/lib/data";
+import {
+	getRemoteHistory,
+	restoreRemoteVersion,
+} from "@/lib/api/sync";
+import type { RecoveryHistoryEntry } from "@/db/sync/types";
 
 function formatExpiry(value: string | null) {
 	if (!value) return "";
@@ -51,8 +56,23 @@ export default function SyncPanel() {
 	const [code, setCode] = useState("");
 	const [copied, setCopied] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const [recoveryHistory, setRecoveryHistory] = useState<
+		RecoveryHistoryEntry[] | null
+	>(null);
+	const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+	const [restoringRevision, setRestoringRevision] = useState<number | null>(
+		null,
+	);
 	const pendingCount = useLiveQuery(countOutboxOperations, [], 0);
 	const failedCount = useLiveQuery(countFailedOperations, [], 0);
+	const latestFailure = useLiveQuery(
+		async () => {
+			const failures = await exportFailedOperations();
+			return failures.sort((a, b) => b.updatedAt - a.updatedAt)[0]?.lastError;
+		},
+		[],
+		null,
+	);
 	const isLoading = status === "loading";
 
 	async function retryFailures() {
@@ -126,6 +146,42 @@ export default function SyncPanel() {
 			setMessage("Workspace reconciled.");
 		} catch {
 			// AuthProvider exposes the normalized error below.
+		}
+	}
+
+	async function loadRecoveryHistory() {
+		setIsLoadingHistory(true);
+		setMessage(null);
+		try {
+			const result = await getRemoteHistory();
+			const losingVersions = result.changes.filter((entry) => !entry.accepted);
+			setRecoveryHistory(losingVersions);
+			setMessage(
+				losingVersions.length
+					? "Recovery history loaded."
+					: "No retained losing versions in the seven-day window.",
+			);
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "History load failed");
+		} finally {
+			setIsLoadingHistory(false);
+		}
+	}
+
+	async function restoreVersion(entry: RecoveryHistoryEntry) {
+		setRestoringRevision(entry.revision);
+		setMessage(null);
+		try {
+			const result = await restoreRemoteVersion(entry);
+			setMessage(
+				result.recreated
+					? "Deleted version queued as a new record."
+					: `Revision ${entry.revision} queued. It will be checked against the current server revision.`,
+			);
+		} catch (error) {
+			setMessage(error instanceof Error ? error.message : "Restore failed");
+		} finally {
+			setRestoringRevision(null);
 		}
 	}
 
@@ -221,6 +277,55 @@ export default function SyncPanel() {
 						</div>
 					) : (
 						<div className="mt-4 space-y-3">
+							<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
+								<div className="flex items-center justify-between gap-2">
+									<div>
+										<p className="font-Mono text-[10px] uppercase tracking-[0.12em]">
+											Recovery history
+										</p>
+										<p className="mt-1">
+											Inspect retained record versions from the last seven days.
+										</p>
+									</div>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onClick={() => void loadRecoveryHistory()}
+										disabled={isBusy || isLoadingHistory}
+										className="shrink-0 font-Mono text-[10px]"
+									>
+										{isLoadingHistory ? "Loading…" : "Load"}
+									</Button>
+								</div>
+								{recoveryHistory && recoveryHistory.length > 0 && (
+									<div className="mt-3 max-h-64 space-y-2 overflow-y-auto border-t border-border pt-3">
+										{recoveryHistory.map((entry) => (
+											<div
+												key={`${entry.entityType}-${entry.serverId}-${entry.revision}`}
+												className="flex items-center justify-between gap-2"
+											>
+												<span>
+													{entry.entityType} #{entry.serverId} · rev. {entry.revision}
+													{entry.accepted ? "" : " · losing"}
+												</span>
+												<Button
+													type="button"
+													size="sm"
+													variant="ghost"
+													onClick={() => void restoreVersion(entry)}
+													disabled={restoringRevision !== null}
+													className="font-Mono text-[10px]"
+												>
+													{restoringRevision === entry.revision
+														? "Queuing…"
+														: "Restore"}
+												</Button>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
 							{(lastError?.includes("history expired") ||
 								lastError?.includes("unresolved sync operation")) && (
 								<div className="border border-destructive/30 bg-destructive/5 p-3 text-[11px] text-muted-foreground">
@@ -262,6 +367,9 @@ export default function SyncPanel() {
 								<div className="border border-border bg-muted/20 p-3 text-[11px] text-muted-foreground">
 									{pendingCount} operation{pendingCount === 1 ? "" : "s"}{" "}
 									awaiting sync.
+									{latestFailure && (
+										<p className="mt-1 text-destructive">{latestFailure}</p>
+									)}
 									{failedCount > 0 && (
 										<div className="mt-2 flex gap-2">
 											<Button

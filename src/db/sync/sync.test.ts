@@ -12,7 +12,9 @@ import {
 import { updateBeanById } from "@/db/crud/update";
 import {
 	getSyncCursor,
+	getRemoteHistory,
 	pullRemoteChanges,
+	restoreRemoteVersion,
 	toBackendOperation,
 	pushPendingOperations,
 } from "@/lib/api/sync";
@@ -24,6 +26,7 @@ import { getBrewsForHistoryView, getBrewSuggestions } from "@/lib/api/brews";
 import { PendingOutboxError, replaceWithRemoteData } from "@/lib/api/migration";
 
 beforeEach(async () => {
+	vi.restoreAllMocks();
 	await db.open();
 	await Promise.all([
 		db.Beans.clear(),
@@ -879,6 +882,298 @@ describe("pull sync", () => {
 				lastError: "Recovered interrupted sync; retrying",
 			}),
 		]);
+	});
+});
+
+describe("recovery history", () => {
+	it("loads paginated retained history and preserves the retention boundary", async () => {
+		vi.spyOn(api, "get")
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						{
+							entityType: "BEAN",
+							serverId: 11,
+							clientId: "bean-1",
+							revision: 4,
+							operation: "UPDATE",
+							accepted: false,
+							payload: { id: 11, name: "Older name", revision: 4 },
+							createdAt: "2026-07-24T10:00:00.000Z",
+						},
+					],
+					nextCursor: 4,
+					hasMore: true,
+					retentionBoundary: "2026-07-17T10:00:00.000Z",
+				},
+			} as never)
+			.mockResolvedValueOnce({
+				data: {
+					changes: [],
+					nextCursor: 4,
+					hasMore: false,
+					retentionBoundary: "2026-07-17T10:00:00.000Z",
+				},
+			} as never);
+
+		await expect(getRemoteHistory({ limit: 1 })).resolves.toEqual({
+			changes: [expect.objectContaining({ revision: 4, accepted: false })],
+			retentionBoundary: "2026-07-17T10:00:00.000Z",
+		});
+		expect(vi.mocked(api.get).mock.calls.map(([, config]) => config)).toEqual([
+			expect.objectContaining({ params: { since: 0, limit: 1 } }),
+			expect.objectContaining({ params: { since: 4, limit: 1 } }),
+		]);
+	});
+
+	it("returns no versions when the server has already expired the window", async () => {
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [],
+				nextCursor: 0,
+				hasMore: false,
+				retentionBoundary: "2026-07-17T10:00:00.000Z",
+			},
+		} as never);
+
+		await expect(getRemoteHistory()).resolves.toMatchObject({ changes: [] });
+	});
+
+	it("restores an active version through a revision-aware outbox update", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			serverRevision: 9,
+			name: "Current name",
+			rating: 1,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-1",
+			remoteId: 11,
+			serverRevision: 9,
+			updatedAt: 0,
+		});
+
+		const operationId = await restoreRemoteVersion({
+			entityType: "BEAN",
+			serverId: 11,
+			clientId: "bean-1",
+			revision: 4,
+			operation: "UPDATE",
+			accepted: false,
+			payload: {
+				id: 11,
+				revision: 4,
+				name: "Restored name",
+				status: "GOOD",
+				roastLevel: 3,
+				countries: ["Ethiopia"],
+				varieties: [],
+				brands: [],
+				flavors: [],
+				botanic: "ARABICA",
+				dominantNote: "FRUITY",
+				designation: "PURE_ORIGIN",
+				finished: false,
+			},
+			createdAt: "2026-07-24T10:00:00.000Z",
+		});
+
+		expect(operationId).toMatchObject({ operationId: expect.any(String), recreated: false });
+		expect(await db.Beans.get(11)).toMatchObject({
+			name: "Restored name",
+			serverRevision: 9,
+		});
+		expect(await db.Outbox.toArray()).toEqual([
+			expect.objectContaining({
+				operationId: operationId.operationId,
+				operation: "update",
+				baseRevision: 9,
+				payload: expect.objectContaining({ name: "Restored name" }),
+			}),
+		]);
+	});
+
+	it("recreates a deleted local record before queuing its restore", async () => {
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "deleted-bean",
+			remoteId: 22,
+			serverRevision: 12,
+			updatedAt: 0,
+		});
+		await db.Tombstones.put({
+			entity: "bean",
+			localId: "deleted-bean",
+			remoteId: 22,
+			serverRevision: 12,
+			deletedAt: 1,
+			updatedAt: 1,
+		});
+
+		await restoreRemoteVersion({
+			entityType: "BEAN",
+			serverId: 22,
+			clientId: "deleted-bean",
+			revision: 7,
+			operation: "UPDATE",
+			accepted: false,
+			payload: {
+				id: 22,
+				name: "Recovered",
+				status: "NEW",
+				roastLevel: 2,
+				countries: [],
+				cities: [],
+				varieties: [],
+				brands: [],
+				flavors: [],
+				botanic: "ARABICA",
+				dominantNote: "FRUITY",
+				designation: "PURE_ORIGIN",
+				finished: false,
+			},
+			createdAt: "2026-07-24T10:00:00.000Z",
+		});
+
+		expect(await db.Beans.get(22)).toMatchObject({
+			name: "Recovered",
+			localId: expect.not.stringMatching(/^deleted-bean$/),
+		});
+		expect(await db.Tombstones.count()).toBe(1);
+		const [operation] = await db.Outbox.toArray();
+		expect(operation).toMatchObject({
+			operation: "create",
+			entityLocalId: expect.any(String),
+		});
+		vi.spyOn(api, "post").mockResolvedValue({
+			data: {
+				operationId: operation.operationId,
+				status: "applied",
+				serverId: 33,
+				revision: 13,
+			},
+		} as never);
+		await expect(pushPendingOperations()).resolves.toBe(1);
+		expect(await db.RemoteMappings.toArray()).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					localId: "deleted-bean",
+					remoteId: 22,
+				}),
+				expect.objectContaining({
+					localId: operation.entityLocalId,
+					remoteId: 33,
+				}),
+			]),
+		);
+		expect(await db.Beans.get(22)).toMatchObject({ name: "Recovered" });
+	});
+});
+
+describe("restore conflict retry", () => {
+	it("reports a newer revision and retries against its canonical revision", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			name: "Restore attempt",
+			rating: 1,
+			status: "New",
+			dominantNote: "Fruity",
+			roastLevel: 1,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-1",
+			remoteId: 11,
+			serverRevision: 7,
+			updatedAt: 0,
+		});
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "bean-1",
+			operation: "update",
+			payload: { name: "Restore attempt" },
+		});
+		const [operation] = await db.Outbox.toArray();
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [
+					{
+						revision: 8,
+						operation: "UPDATE",
+						entityType: "BEAN",
+						serverId: 11,
+						clientId: "bean-1",
+						payload: { id: 11, name: "Newer server edit", revision: 8 },
+					},
+				],
+				nextCursor: 8,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+		await pullRemoteChanges();
+		vi.spyOn(api, "post").mockResolvedValueOnce({
+			data: {
+				operationId: operation.operationId,
+				status: "rejected",
+				serverId: 11,
+				revision: 8,
+				canonicalRevision: 8,
+				canonical: { id: 11, name: "Newer" },
+				reason: "stale_revision",
+			},
+		} as never);
+
+		await pushPendingOperations();
+		expect(await db.Outbox.get(operation.id)).toMatchObject({
+			status: "failed",
+			lastError: "Conflict: a newer server revision exists",
+			serverRevision: 8,
+			serverResult: expect.objectContaining({ reason: "stale_revision" }),
+		});
+
+		await retryOperation(operation.id as number);
+		expect(await db.Outbox.get(operation.id)).toMatchObject({
+			status: "pending",
+			baseRevision: 8,
+		});
+		vi.mocked(api.post).mockResolvedValueOnce({
+			data: {
+				operationId: operation.operationId,
+				status: "applied",
+				serverId: 11,
+				revision: 9,
+			},
+		} as never);
+		await expect(pushPendingOperations()).resolves.toBe(1);
+		expect(vi.mocked(api.post).mock.calls[1]?.[1]).toMatchObject({
+			baseRevision: 8,
+		});
+		expect(await db.Outbox.get(operation.id)).toMatchObject({
+			status: "acked",
+		});
 	});
 });
 
