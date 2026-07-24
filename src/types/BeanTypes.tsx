@@ -2,6 +2,7 @@ export type Beans = {
 	id: number;
 	localId?: string;
 	serverRevision?: number;
+	deletedAt?: number;
 	name: string;
 	rating: number;
 	status: "Excellent" | "Good" | "Mid" | "Horrible" | "New" | "";

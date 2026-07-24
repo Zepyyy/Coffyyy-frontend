@@ -29,6 +29,17 @@ export type RemoteMapping = {
 	localId: string;
 	remoteId: string | number;
 	serverRevision?: string | number;
+	deletedAt?: number;
+	updatedAt: number;
+};
+
+export type RemoteTombstone = {
+	id?: number;
+	entity: SyncEntity;
+	localId: string;
+	remoteId: string | number;
+	serverRevision: string | number;
+	deletedAt: number;
 	updatedAt: number;
 };
 

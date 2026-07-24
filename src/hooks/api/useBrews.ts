@@ -21,9 +21,12 @@ export const useHistoryStats = () => {
 	return useLiveQuery(() => brewStatsApi.getHistorySidebarStats(), []);
 };
 
-export const useBrewSuggestions = () => {
+export const useBrewSuggestions = (includeDeleted = false) => {
 	return (
-		useLiveQuery(() => brewStatsApi.getBrewSuggestions(), []) ?? {
+		useLiveQuery(
+			() => brewStatsApi.getBrewSuggestions(includeDeleted),
+			[includeDeleted],
+		) ?? {
 			bean: [],
 			machine: [],
 		}

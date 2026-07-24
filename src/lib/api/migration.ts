@@ -2,7 +2,12 @@ import { db } from "@/db/db";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
-import type { OutboxRecord, RemoteMapping, SyncCursor } from "@/db/sync/types";
+import type {
+	OutboxRecord,
+	RemoteMapping,
+	RemoteTombstone,
+	SyncCursor,
+} from "@/db/sync/types";
 import { api } from "@/lib/axios";
 
 export type LocalSnapshot = {
@@ -10,6 +15,7 @@ export type LocalSnapshot = {
 	machines: Machines[];
 	brews: Brews[];
 	remoteMappings: RemoteMapping[];
+	tombstones?: RemoteTombstone[];
 	outbox: OutboxRecord[];
 	syncState: SyncCursor[];
 };
@@ -45,9 +51,18 @@ export async function snapshotLocalData(): Promise<LocalSnapshot> {
 		db.Brews.toArray(),
 	]);
 	const remoteMappings = await db.RemoteMappings.toArray();
+	const tombstones = await db.Tombstones.toArray();
 	const outbox = await db.Outbox.toArray();
 	const syncState = await db.SyncState.toArray();
-	return { beans, machines, brews, remoteMappings, outbox, syncState };
+	return {
+		beans,
+		machines,
+		brews,
+		remoteMappings,
+		tombstones,
+		outbox,
+		syncState,
+	};
 }
 
 export function getSnapshotCounts(snapshot: LocalSnapshot): LocalDataCounts {
@@ -302,6 +317,7 @@ export async function replaceWithRemoteData(
 			db.Machines,
 			db.Brews,
 			db.RemoteMappings,
+			db.Tombstones,
 			db.Outbox,
 			db.SyncState,
 		],
@@ -310,6 +326,7 @@ export async function replaceWithRemoteData(
 			await db.Beans.clear();
 			await db.Machines.clear();
 			await db.RemoteMappings.clear();
+			await db.Tombstones.clear();
 			await db.Beans.bulkPut(beans);
 			await db.Machines.bulkPut(machines);
 			await db.Brews.bulkPut(brews);
@@ -352,6 +369,7 @@ export async function restoreLocalData(snapshot: LocalSnapshot) {
 			db.Machines,
 			db.Brews,
 			db.RemoteMappings,
+			db.Tombstones,
 			db.Outbox,
 			db.SyncState,
 		],
@@ -360,11 +378,14 @@ export async function restoreLocalData(snapshot: LocalSnapshot) {
 			await db.Beans.clear();
 			await db.Machines.clear();
 			await db.RemoteMappings.clear();
+			await db.Tombstones.clear();
 			await db.Outbox.clear();
 			await db.Beans.bulkPut(snapshot.beans);
 			await db.Machines.bulkPut(snapshot.machines);
 			await db.Brews.bulkPut(snapshot.brews);
 			await db.RemoteMappings.bulkPut(snapshot.remoteMappings);
+			if (snapshot.tombstones?.length)
+				await db.Tombstones.bulkPut(snapshot.tombstones);
 			await db.Outbox.bulkPut(snapshot.outbox);
 			await db.SyncState.bulkPut(snapshot.syncState);
 		},

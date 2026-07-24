@@ -5,6 +5,7 @@ export type Brews = {
 	id: number;
 	localId?: string;
 	serverRevision?: number;
+	deletedAt?: number;
 	beanWeight: number;
 	espressoWeight: number;
 	extractionTime: string | undefined;

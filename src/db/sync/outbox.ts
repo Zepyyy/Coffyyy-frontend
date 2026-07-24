@@ -73,8 +73,21 @@ export async function listPendingOperations(now = Date.now()) {
 			(operation) => operation.entityLocalId,
 		),
 	);
+	const tombstoned = new Set(
+		(await db.Tombstones.toArray()).map(
+			(tombstone) => `${tombstone.entity}:${tombstone.localId}`,
+		),
+	);
 	const ready = [];
 	for (const operation of pending) {
+		if (tombstoned.has(`${operation.entity}:${operation.entityLocalId}`)) {
+			await db.Outbox.update(operation.id as number, {
+				status: "failed",
+				lastError: "Remote entity was deleted",
+				updatedAt: Date.now(),
+			});
+			continue;
+		}
 		const failedDependency = operation.dependencyIds.find((id) =>
 			failed.has(id),
 		);

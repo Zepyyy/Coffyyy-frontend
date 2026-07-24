@@ -2,7 +2,12 @@ import { Dexie, type EntityTable } from "dexie";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
-import type { OutboxRecord, RemoteMapping, SyncCursor } from "./sync/types";
+import type {
+	OutboxRecord,
+	RemoteMapping,
+	RemoteTombstone,
+	SyncCursor,
+} from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
@@ -10,6 +15,7 @@ const db = new Dexie("Coffyyy") as Dexie & {
 	Brews: EntityTable<Brews, "id">;
 	Outbox: EntityTable<OutboxRecord, "id">;
 	RemoteMappings: EntityTable<RemoteMapping, "id">;
+	Tombstones: EntityTable<RemoteTombstone, "id">;
 	SyncState: EntityTable<SyncCursor, "id">;
 };
 
@@ -74,6 +80,20 @@ db.version(6)
 	});
 
 db.version(7).stores({
+	SyncState: "&id",
+});
+
+db.version(8).stores({
+	Beans:
+		"++id, localId, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote, deletedAt",
+	Machines: "++id, localId, name, deletedAt",
+	Brews:
+		"++id, localId, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime, deletedAt",
+	Outbox:
+		"++id, &operationId, status, [status+sequence], entity, entityLocalId, clientId, nextAttemptAt",
+	RemoteMappings: "++id, &[entity+localId], entity, localId, remoteId",
+	Tombstones:
+		"++id, &[entity+localId], entity, localId, remoteId, serverRevision",
 	SyncState: "&id",
 });
 

@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { addBean, addBrew, addMachine } from "@/db/crud/add";
 import { deleteBeanById } from "@/db/crud/delete";
 import { db } from "@/db/db";
-import { listPendingOperations, queueOperation } from "@/db/sync/outbox";
+import {
+	listPendingOperations,
+	queueOperation,
+	retryOperation,
+} from "@/db/sync/outbox";
 import { updateBeanById } from "@/db/crud/update";
 import {
 	getSyncCursor,
@@ -13,6 +17,9 @@ import {
 } from "@/lib/api/sync";
 import { ApiError, api } from "@/lib/axios";
 import type { OutboxRecord } from "@/db/sync/types";
+import { getAllBeans, getBeanCount } from "@/lib/api/beans";
+import { getMachineCount } from "@/lib/api/machines";
+import { getBrewsForHistoryView, getBrewSuggestions } from "@/lib/api/brews";
 
 beforeEach(async () => {
 	await db.open();
@@ -22,6 +29,7 @@ beforeEach(async () => {
 		db.Brews.clear(),
 		db.Outbox.clear(),
 		db.RemoteMappings.clear(),
+		db.Tombstones.clear(),
 		db.SyncState.clear(),
 	]);
 });
@@ -486,6 +494,249 @@ describe("pull sync", () => {
 			beanId: 101,
 			machineId: 102,
 		});
+	});
+
+	it("tombstones remote deletes without breaking historical brew references", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			serverRevision: 1,
+			name: "Ethiopia",
+			rating: 4,
+			status: "Good",
+			dominantNote: "Fruity",
+			roastLevel: 4,
+			origin: ["Ethiopia"],
+			process: [],
+			variety: [],
+			brand: "Kawa",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.Machines.put({
+			id: 12,
+			localId: "machine-1",
+			serverRevision: 1,
+			name: "Linea Mini",
+			brand: "La Marzocco",
+			type: "Espresso",
+			purchaseDate: "",
+			model: "",
+			grindRange: "",
+			capacity: "",
+		});
+		await db.Brews.put({
+			id: 20,
+			localId: "brew-1",
+			serverRevision: 1,
+			beanId: 11,
+			machineId: 12,
+			beanWeight: 18,
+			espressoWeight: 36,
+			extractionTime: "30s",
+			flow: "Even",
+			overallRating: 5,
+			tasteScore: 0,
+			strengthScore: 0,
+			grindSize: 12,
+			date: new Date("2026-07-24"),
+		});
+		await db.RemoteMappings.bulkPut([
+			{
+				entity: "bean",
+				localId: "bean-1",
+				remoteId: 11,
+				serverRevision: 1,
+				updatedAt: 0,
+			},
+			{
+				entity: "machine",
+				localId: "machine-1",
+				remoteId: 12,
+				serverRevision: 1,
+				updatedAt: 0,
+			},
+			{
+				entity: "brew",
+				localId: "brew-1",
+				remoteId: 20,
+				serverRevision: 1,
+				updatedAt: 0,
+			},
+		]);
+		vi.spyOn(api, "get")
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(2, "DELETE", "BEAN", 11, "bean-1", {}),
+						change(3, "DELETE", "MACHINE", 12, "machine-1", {}),
+					],
+					nextCursor: 3,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never)
+			.mockResolvedValueOnce({
+				data: {
+					changes: [change(4, "DELETE", "BREW", 20, "brew-1", {})],
+					nextCursor: 4,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never);
+
+		await pullRemoteChanges();
+
+		expect(await db.Beans.get(11)).toMatchObject({
+			name: "Ethiopia",
+			serverRevision: 2,
+			deletedAt: expect.any(Number),
+		});
+		expect(await db.Machines.get(12)).toMatchObject({
+			name: "Linea Mini",
+			serverRevision: 3,
+			deletedAt: expect.any(Number),
+		});
+		expect(await db.Brews.get(20)).toMatchObject({
+			beanId: 11,
+			machineId: 12,
+			serverRevision: 1,
+		});
+		expect(await getAllBeans()).toEqual([]);
+		expect(await getBeanCount()).toBe(0);
+		expect(await getMachineCount()).toBe(0);
+		expect(
+			await getBrewsForHistoryView("newest", "Ethiopia", null),
+		).toHaveLength(1);
+		expect(
+			await getBrewsForHistoryView("newest", "Linea Mini", null),
+		).toHaveLength(1);
+		expect(await getBrewSuggestions(true)).toMatchObject({
+			bean: [expect.objectContaining({ id: 11, name: "Ethiopia" })],
+			machine: [expect.objectContaining({ id: 12, name: "Linea Mini" })],
+		});
+		db.close();
+		await db.open();
+		expect(await db.Beans.get(11)).toMatchObject({
+			deletedAt: expect.any(Number),
+		});
+		expect(
+			await db.Tombstones.where("[entity+localId]")
+				.equals(["bean", "bean-1"])
+				.count(),
+		).toBe(1);
+		await pullRemoteChanges();
+		expect(await db.Brews.get(20)).toMatchObject({
+			beanId: 11,
+			machineId: 12,
+			serverRevision: 4,
+			deletedAt: expect.any(Number),
+		});
+		expect(await getBrewsForHistoryView("newest", "", null)).toHaveLength(0);
+		for (const mapping of await db.RemoteMappings.toArray()) {
+			expect(mapping).toMatchObject({ deletedAt: expect.any(Number) });
+		}
+	});
+
+	it("keeps a delete tombstone against duplicate and stale updates", async () => {
+		await db.Beans.put({
+			id: 11,
+			localId: "bean-1",
+			name: "Ethiopia",
+			rating: 4,
+			status: "Good",
+			dominantNote: "Fruity",
+			roastLevel: 4,
+			origin: [],
+			process: [],
+			variety: [],
+			brand: "",
+			botanic: "Arabica",
+			designation: "Pure Origin",
+			flavors: [],
+			finished: false,
+		});
+		await db.RemoteMappings.put({
+			entity: "bean",
+			localId: "bean-1",
+			remoteId: 11,
+			serverRevision: 1,
+			updatedAt: 0,
+		});
+		await queueOperation({
+			entity: "bean",
+			entityLocalId: "bean-1",
+			operation: "update",
+			payload: { name: "Local update" },
+		});
+		vi.spyOn(api, "get")
+			.mockResolvedValueOnce({
+				data: {
+					changes: [change(5, "DELETE", "BEAN", 11, "bean-1", {})],
+					nextCursor: 5,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never)
+			.mockResolvedValueOnce({
+				data: {
+					changes: [
+						change(4, "UPDATE", "BEAN", 11, "bean-1", {
+							name: "Stale update",
+						}),
+						change(5, "DELETE", "BEAN", 11, "bean-1", {}),
+					],
+					nextCursor: 5,
+					hasMore: false,
+					fullResyncRequired: false,
+				},
+			} as never);
+
+		await expect(pullRemoteChanges()).resolves.toMatchObject({ applied: 1 });
+		expect(await db.Outbox.toArray()).toEqual([
+			expect.objectContaining({
+				status: "failed",
+				lastError: "Remote entity was deleted",
+			}),
+		]);
+		const operation = (await db.Outbox.toArray())[0];
+		await retryOperation(operation.id as number);
+		expect(await listPendingOperations()).toEqual([]);
+		expect(await db.Outbox.get(operation.id)).toMatchObject({
+			status: "failed",
+			lastError: "Remote entity was deleted",
+		});
+		await expect(pullRemoteChanges()).resolves.toMatchObject({ applied: 0 });
+		expect(await db.Beans.get(11)).toMatchObject({
+			name: "Ethiopia",
+			serverRevision: 5,
+			deletedAt: expect.any(Number),
+		});
+	});
+
+	it("stores tombstones for deletes with no local record", async () => {
+		vi.spyOn(api, "get").mockResolvedValue({
+			data: {
+				changes: [change(1, "DELETE", "BEAN", 99, "remote-bean", {})],
+				nextCursor: 1,
+				hasMore: false,
+				fullResyncRequired: false,
+			},
+		} as never);
+
+		await pullRemoteChanges();
+
+		expect(await db.Beans.count()).toBe(0);
+		expect(await db.Tombstones.toArray()).toMatchObject([
+			expect.objectContaining({
+				entity: "bean",
+				localId: "remote-bean",
+				remoteId: 99,
+				serverRevision: 1,
+			}),
+		]);
 	});
 
 	it("repairs a brew when its parent mapping arrives later", async () => {

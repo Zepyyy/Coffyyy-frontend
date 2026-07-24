@@ -11,7 +11,9 @@ export async function getAllMachines(): Promise<Array<Machines>> {
 }
 
 export async function getMachineCount(): Promise<number> {
-	return db.Machines.count();
+	return db.Machines.filter(
+		(machine) => machine.deletedAt === undefined,
+	).count();
 }
 
 export async function getMachineNameById(
@@ -22,11 +24,11 @@ export async function getMachineNameById(
 }
 
 export async function getAllMachineNames(): Promise<Array<Machines["name"]>> {
-	return db.Machines.toArray().then((machines) => machines.map((m) => m.name));
+	return getActiveMachines().then((machines) => machines.map((m) => m.name));
 }
 
 export async function getMachineFilters(): Promise<Array<MachineFilters>> {
-	const machines = await db.Machines.toArray();
+	const machines = await getActiveMachines();
 	return machines.map((b) => {
 		return {
 			name: b.name,
@@ -40,7 +42,7 @@ export async function getMachineFilters(): Promise<Array<MachineFilters>> {
 }
 
 export async function getMachineSuggestions(): Promise<MachineSuggestions> {
-	const machines = await db.Machines.toArray();
+	const machines = await getActiveMachines();
 	const extract = (field: keyof Machines) =>
 		machines
 			.map((m) => m[field])
@@ -53,4 +55,10 @@ export async function getMachineSuggestions(): Promise<MachineSuggestions> {
 		grindRanges: uniqueSorted(extract("grindRange")),
 		capacities: uniqueSorted(extract("capacity")),
 	};
+}
+
+async function getActiveMachines() {
+	return db.Machines.filter(
+		(machine) => machine.deletedAt === undefined,
+	).toArray();
 }

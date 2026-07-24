@@ -49,7 +49,7 @@ export default function History() {
 	const minRating = ratingFilter === "all" ? null : ratingFilter;
 	const brews = useHistoryBrews(sortMode, search, minRating);
 	const stats = useHistoryStats();
-	const suggestions = useBrewSuggestions();
+	const suggestions = useBrewSuggestions(true);
 
 	const beanNameMap = useMemo(
 		() => new Map(suggestions.bean.map((bean) => [bean.id, bean.name])),
