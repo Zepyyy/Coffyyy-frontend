@@ -47,7 +47,7 @@ export default function App() {
 											</span>
 											<span
 												className={cn(
-													"absolute left-1/2 bottom-1 transform -translate-x-1/2 w-full h-px bg-foreground transition-opacity duration-150",
+													"absolute left-1/2 bottom-1 transform -translate-x-1/2 w-full border-b border-foreground transition-opacity duration-150",
 													isActive ? "opacity-100" : "opacity-0",
 												)}
 											/>
