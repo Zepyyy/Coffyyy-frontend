@@ -22,7 +22,7 @@ export default function SingleChoiceChips({
 	requiredField?: string;
 }) {
 	const allChips = [
-		...new Set([...options, customInput.trim()].filter(Boolean)),
+		...new Set([...options, selected, customInput.trim()].filter(Boolean)),
 	];
 	return (
 		<div
