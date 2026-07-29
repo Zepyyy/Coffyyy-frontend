@@ -279,7 +279,7 @@ export default function Library() {
 									)}
 								</>
 							) : (
-								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 									{filteredBeans.map((bean) => (
 										<BeanCard
 											key={bean.id ?? `${bean.name}-${bean.brand}`}
@@ -292,7 +292,7 @@ export default function Library() {
 									<AddCard
 										to="/log/bean"
 										label="Add bean"
-										className="min-h-24"
+										className="h-32 min-h-0 self-start"
 									/>
 								</div>
 							)}
@@ -318,14 +318,18 @@ export default function Library() {
 									)}
 								</div>
 							) : (
-								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
 									{filteredMachines.map((machine) => (
 										<MachineCard
 											key={machine.id ?? `${machine.name}-${machine.model}`}
 											machine={machine}
 										/>
 									))}
-									<AddCard to="/log/machine" label="Add machine" />
+									<AddCard
+										to="/log/machine"
+										label="Add machine"
+										className="h-32 self-start"
+									/>
 								</div>
 							)}
 						</div>
