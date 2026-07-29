@@ -6,7 +6,7 @@ A personal passion project for coffee enthusiasts (me). It's a coffee journaling
 
 ## Why does it exist ?
 
-I started this project to get started down the rabbit hole of coffee brewing and learn more about the coffee brewing process. As a complete beginner, I wanted to build something that could help me understand the relationship between my machine's settings and the type of bean I was using. I wanted to create my own personal coffee app, with my vision and design in mind. 
+I started this project to get started down the rabbit hole of coffee brewing and learn more about the coffee brewing process. As a complete beginner, I wanted to build something that could help me understand the relationship between my brewer's settings and the type of bean I was using. I wanted to create my own personal coffee app, with my vision and design in mind. 
 
 ## Features
 
@@ -49,7 +49,7 @@ Stack:
 
 ## Current State
 The backend is in active development and will be connected soon. For the moment, IndexedDB powers the app, so clearing browser storage will remove local data.
-Suggestions in the log forms are generated from previously saved beans and machines.
+Suggestions in the log forms are generated from previously saved beans and brewers.
 - No automated test runner is configured yet.
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
 - Home-screen charts are wired to live brew data and are the most developed of the insight views.
@@ -69,8 +69,8 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - `/log`: bean logging form (default logging entry point)
 - `/log/brew`: multi-step brew form
 - `/log/bean`: bean catalog form
-- `/log/machine`: equipment form
-- `/library`: searchable bean and machine library
+- `/log/machine`: brewer catalog form
+- `/library`: searchable bean and brewer library
 - `/beans/:BeanId`: detail view for a single bean
 - `/history`: brew history view (work in progress)
 - Legacy paths (`/brew`, `/machines`, `/database`, `/stats`, `/workflows/*`) redirect to their current locations
@@ -84,10 +84,10 @@ src/
   contexts/       Theme context
   db/             Dexie database (db.ts) and CRUD helpers (crud/)
   hooks/          Shared hook types plus api/ live-query hooks backed by Dexie
-  lib/api/        Read/query helpers for beans, brews, machines, stats
+  lib/api/        Read/query helpers for beans, brews, brewers, stats
   pages/          Route components (incl. log/ subroutes)
   providers/      App-level providers (theme, etc.)
-  types/          Shared TypeScript models (Bean, Brew, Machine)
+  types/          Shared TypeScript models (Bean, Brew, Brewer)
 ```
 
 `@/` is aliased to `src/`.
@@ -116,5 +116,5 @@ Note: `npm run biome` uses `bunx`, so Bun must be installed even if you use npm 
 The app stores three main records:
 
 - `Beans`: catalog metadata such as brand, origin, process, roast level, and flavor profile
-- `Machines`: equipment metadata such as brand, model, type, grind range, and capacity
-- `Brews`: shot-level logs including bean, machine, weights, grind size, time, flow, date, and rating
+- `Brewers`: equipment metadata such as brand, model, category, grind range, and capacity
+- `Brews`: preparation logs including bean, brew method, optional brewer, method-specific measurements, date, and rating
