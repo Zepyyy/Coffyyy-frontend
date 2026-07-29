@@ -65,6 +65,10 @@ export type BeanBrewParameterSummary = {
 	grindSize: string;
 	beanWeight: number | null;
 	espressoWeight: number | null;
+	yieldWeight: number | null;
+	waterAmount: number | null;
+	brewTime: string | null;
+	heatLevel: HeatLevel | null;
 	extractionTime: string | null;
 	_flow: string | null;
 	ratio: number | null;
@@ -77,6 +81,7 @@ export type BeanBrewParameterSummary = {
 
 export type BeanBrewInsights = {
 	beanId: number;
+	methods: Array<BrewMethod | "Unknown">;
 	target: BeanBrewParameterSummary;
 	average: BeanBrewParameterSummary;
 	best: BeanBrewParameterSummary | null;

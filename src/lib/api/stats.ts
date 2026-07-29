@@ -96,14 +96,28 @@ function buildParameterSummary(
 	brews: Brews[],
 	usesTopRatedBrews: boolean,
 ): BeanBrewParameterSummary {
+	const espressoBrews = brews.filter((brew) => brew.method === "Espresso");
+	const mokaBrews = brews.filter((brew) => brew.method === "Moka Pot");
 	const averageBeanWeight = average(
 		brews.map((brew) => brew.beanWeight ?? null),
 	);
+	const averageEspressoBeanWeight = average(
+		espressoBrews.map((brew) => brew.beanWeight ?? null),
+	);
 	const averageEspressoWeight = average(
-		brews.map((brew) => brew.espressoWeight ?? null),
+		espressoBrews.map((brew) => brew.espressoWeight ?? null),
+	);
+	const averageYieldWeight = average(
+		mokaBrews.map((brew) => brew.yieldWeight ?? null),
+	);
+	const averageWaterAmount = average(
+		mokaBrews.map((brew) => brew.waterAmount ?? null),
 	);
 	const averageExtractionSeconds = average(
-		brews.map((brew) => toNumericValue(brew.extractionTime)),
+		espressoBrews.map((brew) => toNumericValue(brew.extractionTime)),
+	);
+	const averageBrewSeconds = average(
+		mokaBrews.map((brew) => toNumericValue(brew.brewTime)),
 	);
 	const averageTasteScore = average(
 		brews.map((brew) => brew.tasteScore ?? null),
@@ -118,8 +132,8 @@ function buildParameterSummary(
 		brews.map((brew) => brew.grindSize ?? null),
 	);
 	const averageRatio =
-		averageBeanWeight && averageEspressoWeight
-			? averageEspressoWeight / averageBeanWeight
+		averageEspressoBeanWeight && averageEspressoWeight
+			? averageEspressoWeight / averageEspressoBeanWeight
 			: null;
 
 	return {
@@ -129,6 +143,14 @@ function buildParameterSummary(
 			"—",
 		beanWeight: averageBeanWeight,
 		espressoWeight: averageEspressoWeight,
+		yieldWeight: averageYieldWeight,
+		waterAmount: averageWaterAmount,
+		brewTime: formatAverage(averageBrewSeconds, { suffix: "s", decimals: 0 }),
+		heatLevel: (mostCommon(mokaBrews.map((brew) => brew.heatLevel)) ?? null) as
+			| "Low"
+			| "Medium"
+			| "High"
+			| null,
 		extractionTime: formatAverage(averageExtractionSeconds, {
 			suffix: "s",
 			decimals: 0,
@@ -232,6 +254,9 @@ export async function getBeanBrewInsights(
 
 	return {
 		beanId,
+		methods: Array.from(
+			new Set(brews.map((brew) => brew.method ?? "Unknown")),
+		),
 		target: bestTarget ?? averageTarget,
 		average: averageTarget,
 		best: bestTarget,

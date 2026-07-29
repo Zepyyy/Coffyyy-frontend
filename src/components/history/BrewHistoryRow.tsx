@@ -183,7 +183,8 @@ export function BrewHistoryRow({
 							{beanName}
 						</p>
 						<p className="mt-0.5 truncate font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-							{machineName}
+							{brew.method ?? "Method unknown"}
+							{machineName ? ` · Brewer: ${machineName}` : ""}
 						</p>
 					</div>
 					<p className="truncate font-Recursive text-xs text-muted-foreground">
@@ -233,13 +234,13 @@ export function BrewHistoryRow({
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 						<DetailItem
 							icon={<Scale className="size-4" />}
-							label="Dose"
+							label={brew.method === "Moka Pot" ? "Dose / yield" : "Dose / output"}
 							value={
 								brew.beanWeight != null &&
 								(brew.method === "Moka Pot"
 									? brew.yieldWeight != null
 									: brew.espressoWeight != null)
-									? `${brew.beanWeight}g dose -> ${brew.method === "Moka Pot" ? `${brew.yieldWeight}g yield` : `${brew.espressoWeight}g out`}`
+									? `${brew.beanWeight} g dose → ${brew.method === "Moka Pot" ? `${brew.yieldWeight} g yield` : `${brew.espressoWeight} g output`}`
 									: "Not saved"
 							}
 						/>

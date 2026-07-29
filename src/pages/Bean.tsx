@@ -28,8 +28,9 @@ function formatRating(value: number | null) {
 function buildStatRows(
 	average: BeanBrewParameterSummary,
 	best: BeanBrewParameterSummary | null,
+	methods: Array<"Espresso" | "Moka Pot" | "Unknown">,
 ) {
-	return [
+	const rows: Array<[string, string, string]> = [
 		["Grind", average.grindSize, best?.grindSize ?? "—"],
 		[
 			"Dose",
@@ -37,18 +38,27 @@ function buildStatRows(
 			formatWeight(best?.beanWeight ?? null),
 		],
 		[
-			"Espresso",
-			formatWeight(average.espressoWeight),
-			formatWeight(best?.espressoWeight ?? null),
-		],
-		["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
-		["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],
-		[
 			"Rating",
 			formatRating(average._rating),
 			formatRating(best?._rating ?? null),
 		],
-	] as Array<[string, string, string]>;
+	];
+	if (methods.includes("Espresso")) {
+		rows.splice(2, 0,
+			["Espresso output", formatWeight(average.espressoWeight), formatWeight(best?.espressoWeight ?? null)],
+			["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
+			["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],
+		);
+	}
+	if (methods.includes("Moka Pot")) {
+		rows.splice(2, 0,
+			["Moka yield", formatWeight(average.yieldWeight), formatWeight(best?.yieldWeight ?? null)],
+			["Water", average.waterAmount == null ? "—" : `${average.waterAmount.toFixed(1)} ml`, best?.waterAmount == null ? "—" : `${best.waterAmount.toFixed(1)} ml`],
+			["Brew time", average.brewTime ?? "—", best?.brewTime ?? "—"],
+			["Heat", average.heatLevel ?? "—", best?.heatLevel ?? "—"],
+		);
+	}
+	return rows;
 }
 
 export default function Bean() {
@@ -87,7 +97,7 @@ export default function Bean() {
 		...(bean.variety ?? []),
 	].filter(Boolean);
 	const statRows = insights
-		? buildStatRows(insights.average, insights.best)
+		? buildStatRows(insights.average, insights.best, insights.methods)
 		: [];
 
 	return (

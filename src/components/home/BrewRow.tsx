@@ -8,9 +8,21 @@ export default function BrewRow({
 	beanName: string;
 }) {
 	const ratio =
-		brew.beanWeight && brew.espressoWeight
+		brew.method === "Espresso" && brew.beanWeight && brew.espressoWeight
 			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
 			: null;
+	const details =
+		brew.method === "Moka Pot"
+			? [
+					brew.waterAmount != null ? `${brew.waterAmount} ml water` : null,
+					brew.yieldWeight != null ? `${brew.yieldWeight} g yield` : null,
+					brew.brewTime ? `${brew.brewTime} brew` : null,
+				].filter(Boolean)
+			: [
+					brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+					ratio,
+					brew.extractionTime ? `${brew.extractionTime} extraction` : null,
+				].filter(Boolean);
 	const date = new Date(brew.date).toLocaleDateString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -27,9 +39,7 @@ export default function BrewRow({
 						{beanName}
 					</p>
 					<p className="font-Mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-						{[brew.grindSize, ratio, brew.extractionTime]
-							.filter(Boolean)
-							.join(" · ")}
+						{[brew.method ?? "Method unknown", ...details].join(" · ")}
 					</p>
 				</div>
 			</div>
