@@ -10,6 +10,7 @@ export type Brews = {
 	id: number;
 	beanWeight?: number;
 	espressoWeight?: number;
+	yieldWeight?: number;
 	extractionTime?: string;
 	flow?: string;
 	overallRating?: number;
@@ -35,12 +36,13 @@ export type BrewForm = {
 	method: BrewMethod | undefined;
 	beanWeight: number | undefined;
 	espressoWeight: number | undefined;
+	yieldWeight: number | undefined;
 	extractionTime: string;
 	flow: string;
 	waterAmount: number | undefined;
 	heatLevel: HeatLevel | undefined;
 	brewTime: string;
-	grindSize: number;
+	grindSize: number | undefined;
 	date: Date;
 };
 

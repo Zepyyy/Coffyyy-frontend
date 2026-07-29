@@ -131,7 +131,7 @@ export function BrewHistoryRow({
 		brew.method === "Moka Pot"
 			? [
 					brew.waterAmount != null ? `${brew.waterAmount}ml water` : null,
-					brew.espressoWeight != null ? `${brew.espressoWeight}g yield` : null,
+					brew.yieldWeight != null ? `${brew.yieldWeight}g yield` : null,
 				]
 					.filter(Boolean)
 					.join(" · ") || null
@@ -235,8 +235,11 @@ export function BrewHistoryRow({
 							icon={<Scale className="size-4" />}
 							label="Dose"
 							value={
-								brew.beanWeight != null && brew.espressoWeight != null
-									? `${brew.beanWeight}g dose -> ${brew.espressoWeight}g ${brew.method === "Moka Pot" ? "yield" : "out"}`
+								brew.beanWeight != null &&
+								(brew.method === "Moka Pot"
+									? brew.yieldWeight != null
+									: brew.espressoWeight != null)
+									? `${brew.beanWeight}g dose -> ${brew.method === "Moka Pot" ? `${brew.yieldWeight}g yield` : `${brew.espressoWeight}g out`}`
 									: "Not saved"
 							}
 						/>

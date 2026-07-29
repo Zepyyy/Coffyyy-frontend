@@ -28,9 +28,10 @@ const INITIAL: BrewForm = {
 	machineId: undefined,
 	method: undefined,
 	date: new Date(),
-	grindSize: 12,
+	grindSize: undefined,
 	beanWeight: undefined,
 	espressoWeight: undefined,
+	yieldWeight: undefined,
 	waterAmount: undefined,
 	heatLevel: undefined,
 	brewTime: "",
@@ -75,12 +76,32 @@ export default function BrewLog() {
 		setForm((f) => ({ ...f, [field]: value }));
 	}
 
+	function selectMethod(method: BrewForm["method"]) {
+		setForm((current) => ({
+			...current,
+			method,
+			// A method change must never carry fields from the previous method
+			// into the new record. Shared fields remain available to both methods.
+			...(method === "Moka Pot"
+				? { extractionTime: "", flow: "" }
+				: { waterAmount: undefined, heatLevel: undefined, brewTime: "" }),
+		}));
+	}
+
 	async function handleSubmit(e: ChangeEvent) {
 		e.preventDefault();
 		setError("");
 		setStatus("");
 		if (!form.beanId || !form.method) {
 			setError("Select a bean and brew method before saving.");
+			return;
+		}
+		if (
+			form.method === "Moka Pot" &&
+			form.brewTime &&
+			!/^\d+:([0-5]\d)$/.test(form.brewTime)
+		) {
+			setError("Total brew time must use minutes and seconds (mm:ss).");
 			return;
 		}
 
@@ -94,6 +115,7 @@ export default function BrewLog() {
 				beanWeight: form.beanWeight,
 				grindSize: form.grindSize,
 				espressoWeight: form.espressoWeight,
+				yieldWeight: form.method === "Moka Pot" ? form.yieldWeight : undefined,
 				flow: form.flow,
 				extractionTime: form.extractionTime,
 				waterAmount: form.method === "Moka Pot" ? form.waterAmount : undefined,
@@ -263,7 +285,7 @@ export default function BrewLog() {
 												<button
 													key={method}
 													type="button"
-													onClick={() => setField("method", method)}
+													onClick={() => selectMethod(method)}
 													className={cn(
 														"border px-4 py-2 font-Recursive text-sm",
 														form.method === method
@@ -289,8 +311,13 @@ export default function BrewLog() {
 														lastUsed.beanWeight ?? form.beanWeight,
 													);
 													setField(
-														"espressoWeight",
-														lastUsed.espressoWeight ?? form.espressoWeight,
+														form.method === "Moka Pot"
+															? "yieldWeight"
+															: "espressoWeight",
+														form.method === "Moka Pot"
+															? (lastUsed.yieldWeight ?? form.yieldWeight)
+															: (lastUsed.espressoWeight ??
+																	form.espressoWeight),
 													);
 													setField("waterAmount", lastUsed.waterAmount);
 													setField("heatLevel", lastUsed.heatLevel);
@@ -309,7 +336,7 @@ export default function BrewLog() {
 									{form.method && (
 										<>
 											<div className="space-y-2">
-												<FieldLabel required>Grind Size</FieldLabel>
+												<FieldLabel>Grind size</FieldLabel>
 												<div className="flex flex-col gap-4">
 													<button
 														type="button"
@@ -320,6 +347,15 @@ export default function BrewLog() {
 													>
 														{show ? "Hide" : "Custom Grind Size"}
 													</button>
+													{form.grindSize != null && (
+														<button
+															type="button"
+															className="w-fit border border-border px-3 py-1.5 font-Recursive text-sm text-muted-foreground"
+															onClick={() => setField("grindSize", undefined)}
+														>
+															No grind size
+														</button>
+													)}
 
 													{show && (
 														<input
@@ -327,7 +363,7 @@ export default function BrewLog() {
 															className="flex-1 w-fit border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none appearance-none"
 															step="0.01"
 															placeholder="e.g. 18"
-															value={form.grindSize}
+															value={form.grindSize ?? ""}
 															onChange={(e) =>
 																setField("grindSize", Number(e.target.value))
 															}
@@ -341,7 +377,7 @@ export default function BrewLog() {
 																onClick={() =>
 																	setField(
 																		"grindSize",
-																		form.grindSize === lvl ? 12 : lvl,
+																		form.grindSize === lvl ? undefined : lvl,
 																	)
 																}
 																className={cn(
@@ -430,10 +466,10 @@ export default function BrewLog() {
 															type="number"
 															min="0"
 															className="w-full border border-border bg-background px-3 py-1.5"
-															value={form.espressoWeight ?? ""}
+															value={form.yieldWeight ?? ""}
 															onChange={(e) =>
 																setField(
-																	"espressoWeight",
+																	"yieldWeight",
 																	e.target.value === ""
 																		? undefined
 																		: Number(e.target.value),
@@ -573,9 +609,28 @@ export default function BrewLog() {
 											value={selectedMachine?.name ?? "—"}
 										/>
 										<SummaryRow label="Method" value={form.method ?? "—"} />
-										<SummaryRow label="Grind Size" value={form.grindSize} />
+										<SummaryRow
+											label="Grind size"
+											value={form.grindSize ?? "—"}
+										/>
 										{form.method === "Moka Pot" ? (
 											<>
+												<SummaryRow
+													label="Coffee dose"
+													value={
+														form.beanWeight != null
+															? `${form.beanWeight} g`
+															: "—"
+													}
+												/>
+												<SummaryRow
+													label="Yield"
+													value={
+														form.yieldWeight != null
+															? `${form.yieldWeight} g`
+															: "—"
+													}
+												/>
 												<SummaryRow
 													label="Water amount"
 													value={

@@ -24,8 +24,19 @@ async function addBrew(brew: Omit<Brews, "id">) {
 		const brewerId = brew.brewerId ?? brew.machineId;
 		const methodFields =
 			brew.method === "Espresso"
-				? { waterAmount: undefined, heatLevel: undefined, brewTime: undefined }
-				: { extractionTime: undefined, flow: undefined };
+				? {
+						waterAmount: undefined,
+						heatLevel: undefined,
+						brewTime: undefined,
+						yieldWeight: undefined,
+					}
+				: {
+						extractionTime: undefined,
+						flow: undefined,
+						espressoWeight: undefined,
+					};
+		// Keep method-specific values isolated even if a caller passes a stale
+		// value from another form state or a legacy record.
 		return await db.Brews.bulkAdd([
 			{
 				...brew,
