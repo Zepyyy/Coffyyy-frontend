@@ -125,7 +125,7 @@ function buildParameterSummary(
 	return {
 		grindSize:
 			formatAverage(averageGrindNumeric, { decimals: 1 }) ??
-			mostCommon(brews.map((brew) => brew.grindSize.toString())) ??
+			mostCommon(brews.map((brew) => brew.grindSize?.toString()).filter((v): v is string => Boolean(v))) ??
 			"—",
 		beanWeight: averageBeanWeight,
 		espressoWeight: averageEspressoWeight,

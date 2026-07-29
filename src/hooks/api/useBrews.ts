@@ -26,6 +26,7 @@ export const useBrewSuggestions = () => {
 		useLiveQuery(() => brewStatsApi.getBrewSuggestions(), []) ?? {
 			bean: [],
 			machine: [],
+			brewer: [],
 		}
 	);
 };

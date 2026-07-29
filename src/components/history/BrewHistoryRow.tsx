@@ -125,9 +125,12 @@ export function BrewHistoryRow({
 	const taste = axisLabel(brew.tasteScore, "Sour", "Bitter");
 	const strength = axisLabel(brew.strengthScore, "Weak", "Strong");
 	const recipeLine = [
+		brew.method ?? "Method unknown",
 		brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
 		brew.beanWeight != null ? `${brew.beanWeight}g in` : null,
-		brew.espressoWeight != null ? `${brew.espressoWeight}g out` : null,
+		brew.method === "Moka Pot"
+			? [brew.waterAmount != null ? `${brew.waterAmount}ml water` : null, brew.espressoWeight != null ? `${brew.espressoWeight}g yield` : null].filter(Boolean).join(" · ") || null
+			: brew.espressoWeight != null ? `${brew.espressoWeight}g out` : null,
 		ratio ? `1:${ratio}` : null,
 	]
 		.filter(Boolean)
@@ -226,7 +229,7 @@ export function BrewHistoryRow({
 							label="Dose"
 							value={
 								brew.beanWeight != null && brew.espressoWeight != null
-									? `${brew.beanWeight}g -> ${brew.espressoWeight}g`
+									? `${brew.beanWeight}g dose -> ${brew.espressoWeight}g ${brew.method === "Moka Pot" ? "yield" : "out"}`
 									: "Not saved"
 							}
 						/>
@@ -237,14 +240,17 @@ export function BrewHistoryRow({
 						/>
 						<DetailItem
 							icon={<Timer className="size-4" />}
-							label="Extraction"
-							value={brew.extractionTime || "Not saved"}
+							label={brew.method === "Moka Pot" ? "Total brew time" : brew.method ? "Extraction" : "Time"}
+							value={(brew.method === "Moka Pot" ? brew.brewTime : brew.extractionTime) || "Not saved"}
 						/>
-						<DetailItem
+						{brew.method !== "Moka Pot" && brew.method != null && <DetailItem
 							icon={<Waves className="size-4" />}
 							label="Flow"
 							value={brew.flow || "Not saved"}
-						/>
+						/>}
+						{brew.method === "Moka Pot" && (
+							<DetailItem icon={<Gauge className="size-4" />} label="Heat" value={brew.heatLevel || "Not saved"} />
+						)}
 					</div>
 
 					<div className="grid gap-3 sm:grid-cols-2">

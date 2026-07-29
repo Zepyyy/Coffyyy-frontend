@@ -1,4 +1,5 @@
 import { type ChangeEvent, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Link } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
@@ -7,6 +8,7 @@ import OptionChips from "@/components/log/OptionChips";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
+import { getLastUsedBrew } from "@/lib/api/brews";
 import { useBrewSuggestions } from "@/hooks/api/useBrews";
 import {
 	DEFAULT_FLOW,
@@ -18,15 +20,20 @@ import {
 	MIN_ESPRESSO_WEIGHT,
 } from "@/lib/defaults";
 import { clampWeight, cn, parseWeight, STEPS } from "@/lib/utils";
-import type { BrewForm } from "@/types/BrewTypes";
+import { BREW_METHODS, HEAT_LEVELS, type BrewForm } from "@/types/BrewTypes";
 
 const INITIAL: BrewForm = {
 	beanId: undefined,
+	brewerId: undefined,
 	machineId: undefined,
+	method: undefined,
 	date: new Date(),
 	grindSize: 12,
 	beanWeight: 18,
 	espressoWeight: 36,
+	waterAmount: undefined,
+	heatLevel: undefined,
+	brewTime: "",
 	flow: "",
 	extractionTime: "",
 };
@@ -59,6 +66,10 @@ export default function BrewLog() {
 	const [step, setStep] = useState(1);
 
 	const suggestions = useBrewSuggestions();
+	const lastUsed = useLiveQuery(
+		() => getLastUsedBrew(form.beanId, form.method, form.brewerId),
+		[form.beanId, form.method, form.brewerId],
+	);
 
 	function setField<K extends keyof BrewForm>(field: K, value: BrewForm[K]) {
 		setForm((f) => ({ ...f, [field]: value }));
@@ -68,18 +79,27 @@ export default function BrewLog() {
 		e.preventDefault();
 		setError("");
 		setStatus("");
+		if (!form.beanId || !form.method) {
+			setError("Select a bean and brew method before saving.");
+			return;
+		}
 
 		setIsSaving(true);
 		try {
 			const result = await addBrew({
 				beanId: form.beanId,
+				brewerId: form.brewerId ?? form.machineId,
 				machineId: form.machineId,
+				method: form.method,
 				date: form.date,
 				beanWeight: form.beanWeight,
 				grindSize: form.grindSize,
 				espressoWeight: form.espressoWeight,
 				flow: form.flow,
 				extractionTime: form.extractionTime,
+				waterAmount: form.method === "Moka Pot" ? form.waterAmount : undefined,
+				heatLevel: form.method === "Moka Pot" ? form.heatLevel : undefined,
+				brewTime: form.method === "Moka Pot" ? form.brewTime : undefined,
 			});
 			setError(result instanceof Error ? result.message : String(result));
 			setForm(INITIAL);
@@ -232,6 +252,22 @@ export default function BrewLog() {
 							{step === 2 && (
 								<section className="space-y-10">
 									<div className="space-y-2">
+										<FieldLabel required>Brew method</FieldLabel>
+										<div className="flex flex-wrap gap-2">
+											{BREW_METHODS.map((method) => (
+												<button key={method} type="button" onClick={() => setField("method", method)} className={cn("border px-4 py-2 font-Recursive text-sm", form.method === method ? "border-primary bg-primary/10" : "border-border text-muted-foreground")}>{method}</button>
+											))}
+										</div>
+										{lastUsed && <button type="button" className="text-xs text-muted-foreground underline" onClick={() => {
+											setField("grindSize", lastUsed.grindSize ?? form.grindSize);
+											setField("beanWeight", lastUsed.beanWeight ?? form.beanWeight);
+											setField("espressoWeight", lastUsed.espressoWeight ?? form.espressoWeight);
+											setField("waterAmount", lastUsed.waterAmount);
+											setField("heatLevel", lastUsed.heatLevel);
+											setField("brewTime", lastUsed.brewTime ?? "");
+										}}>Last used: apply previous setup</button>}
+									</div>
+									<div className="space-y-2">
 										<FieldLabel required>Grind Size</FieldLabel>
 										<div className="flex flex-col gap-4">
 											<button
@@ -295,9 +331,10 @@ export default function BrewLog() {
 											<span>Coarser</span>
 										</div>
 									</div>
+									{form.method !== "Moka Pot" && <>
 									<div className="flex flex-row items-center justify-start mx-auto gap-15">
 										<div className="flex flex-col items-center">
-											<FieldLabel required>Bean Weight</FieldLabel>
+													<FieldLabel>Bean Weight</FieldLabel>
 											<Dial
 												value={beanWeightValue}
 												onChange={setBeanWeight}
@@ -307,7 +344,7 @@ export default function BrewLog() {
 										</div>
 
 										<div className="flex flex-col items-center">
-											<FieldLabel required>Espresso Weight</FieldLabel>
+													<FieldLabel>Espresso Weight</FieldLabel>
 											<Dial
 												value={espressoWeightValue}
 												onChange={setEspressoWeight}
@@ -324,8 +361,16 @@ export default function BrewLog() {
 											</div>
 										)}
 									</div>
-									<div className="space-y-2">
-										<FieldLabel required>Extraction Time</FieldLabel>
+									</>}
+									{form.method === "Moka Pot" && <div className="grid gap-4 sm:grid-cols-2">
+										<div><FieldLabel>Coffee dose (g)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.beanWeight} onChange={(e) => setField("beanWeight", Number(e.target.value))} /></div>
+										<div><FieldLabel>Yield (g)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.espressoWeight} onChange={(e) => setField("espressoWeight", Number(e.target.value))} /></div>
+										<div><FieldLabel>Water amount (ml)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.waterAmount ?? ""} onChange={(e) => setField("waterAmount", e.target.value === "" ? undefined : Number(e.target.value))} /></div>
+										<div><FieldLabel>Total brew time (mm:ss)</FieldLabel><input className="w-full border border-border bg-background px-3 py-1.5" placeholder="e.g. 04:30" value={form.brewTime} onChange={(e) => setField("brewTime", e.target.value)} /></div>
+										<div><FieldLabel>Heat level</FieldLabel><OptionChips options={[...HEAT_LEVELS]} value={form.heatLevel ?? ""} onChange={(v) => setField("heatLevel", v as typeof form.heatLevel)} /></div>
+									</div>}
+									{form.method !== "Moka Pot" && <div className="space-y-2">
+										<FieldLabel>Extraction Time (mm:ss)</FieldLabel>
 										<input
 											type="number"
 											className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
@@ -345,8 +390,8 @@ export default function BrewLog() {
 												onChange={(v) => setField("flow", v)}
 											/>
 										</div>
-									</div>
-								</section>
+										</div>}
+									</section>
 							)}
 						</div>
 						<div
@@ -356,7 +401,7 @@ export default function BrewLog() {
 								<section className="space-y-4">
 									<SectionTitle>{STEPS[step - 1].title}</SectionTitle>
 									<div className="space-y-1.5">
-										<FieldLabel required>Machine</FieldLabel>
+										<FieldLabel>Brewer</FieldLabel>
 										<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
 											{suggestions.machine.map((machineInfo) => (
 												<QuickMachineCard
@@ -369,12 +414,13 @@ export default function BrewLog() {
 													}}
 													onClick={() => {
 														setField("machineId", machineInfo.id);
+														setField("brewerId", machineInfo.id);
 														setSelectedMachineId(machineInfo.id);
 													}}
 												/>
 											))}
 										</div>
-									</div>
+										</div>
 								</section>
 							)}
 						</div>
@@ -390,28 +436,22 @@ export default function BrewLog() {
 											value={selectedBean?.name ?? "—"}
 										/>
 										<SummaryRow
-											label="Machine"
-											value={selectedMachine?.name ?? "—"}
-										/>
+												label="Brewer"
+												value={selectedMachine?.name ?? "—"}
+											/>
+										<SummaryRow label="Method" value={form.method ?? "—"} />
 										<SummaryRow label="Grind Size" value={form.grindSize} />
-										<SummaryRow
-											label="Bean Weight"
-											value={`${form.beanWeight} g`}
-										/>
-										<SummaryRow
-											label="Espresso Weight"
-											value={`${form.espressoWeight} g`}
-										/>
-										{espressoRatio && (
-											<SummaryRow label="Ratio" value={`1:${espressoRatio}`} />
-										)}
-										<SummaryRow
-											label="Extraction Time"
-											value={
-												form.extractionTime ? `${form.extractionTime}s` : "—"
-											}
-										/>
-										<SummaryRow label="Flow" value={form.flow || "—"} />
+										{form.method === "Moka Pot" ? <>
+											<SummaryRow label="Water amount" value={form.waterAmount != null ? `${form.waterAmount} ml` : "—"} />
+											<SummaryRow label="Heat level" value={form.heatLevel ?? "—"} />
+											<SummaryRow label="Total brew time" value={form.brewTime || "—"} />
+										</> : <>
+											<SummaryRow label="Bean Weight" value={`${form.beanWeight} g`} />
+											<SummaryRow label="Espresso Weight" value={`${form.espressoWeight} g`} />
+											{espressoRatio && <SummaryRow label="Ratio" value={`1:${espressoRatio}`} />}
+											<SummaryRow label="Extraction Time" value={form.extractionTime ? `${form.extractionTime}s` : "—"} />
+											<SummaryRow label="Flow" value={form.flow || "—"} />
+										</>}
 									</div>
 
 									<div className="border-t border-border pt-4 space-y-2">
@@ -420,7 +460,7 @@ export default function BrewLog() {
 										)}
 										<button
 											type="submit"
-											disabled={!form.beanId || isSaving}
+											disabled={!form.beanId || !form.method || isSaving}
 											className="w-full border border-border bg-primary-200/15 py-2.5 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
 										>
 											{isSaving ? "Saving…" : "Save Brew"}

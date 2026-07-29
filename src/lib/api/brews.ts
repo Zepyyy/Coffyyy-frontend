@@ -1,6 +1,6 @@
 import { db } from "@/db/db";
 import type { BeanCardProps } from "@/types/BeanTypes";
-import type { BrewSuggestions, Brews } from "@/types/BrewTypes";
+import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
 import type { MachineCardProps } from "@/types/MachineTypes";
 
 export type HistorySortMode =
@@ -88,9 +88,10 @@ export async function getBrewsForHistoryView(
 		list = list.filter((brew) => {
 			const beanName =
 				brew.beanId != null ? names.beans.get(brew.beanId)?.toLowerCase() : "";
+			const brewerId = brew.brewerId ?? brew.machineId;
 			const machineName =
-				brew.machineId != null
-					? names.machines.get(brew.machineId)?.toLowerCase()
+				brewerId != null
+					? names.machines.get(brewerId)?.toLowerCase()
 					: "";
 			return (
 				Boolean(beanName?.includes(q)) ||
@@ -196,5 +197,23 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 	return {
 		bean: BeanCardProps,
 		machine: MachineCardProps,
+		brewer: MachineCardProps,
 	};
+}
+
+/** Returns the newest relevant setup, preferring a matching brewer. */
+export async function getLastUsedBrew(
+	beanId: number | undefined,
+	method: BrewMethod | undefined,
+	brewerId?: number,
+): Promise<Brews | null> {
+	if (beanId == null || method == null) return null;
+	const brews = await db.Brews.toArray();
+	const matching = brews
+		.filter((brew) => brew.beanId === beanId && brew.method === method)
+		.sort((a, b) => +new Date(b.date) - +new Date(a.date));
+	return matching.find((brew) => brewerId != null && brew.brewerId === brewerId)
+		?? matching.find((brew) => brewerId == null || brew.brewerId == null)
+		?? matching[0]
+		?? null;
 }

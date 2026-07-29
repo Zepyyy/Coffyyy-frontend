@@ -49,4 +49,12 @@ db.version(5).stores({
 		"++id, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
 });
 
+db.version(6).stores({
+	Beans:
+		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+	Machines: "++id, name, type",
+	Brews:
+		"++id, beanId, method, brewerId, overallRating, tasteScore, strengthScore, grindSize, date, beanWeight, espressoWeight, waterAmount, heatLevel, brewTime, flow, extractionTime",
+});
+
 export { db };

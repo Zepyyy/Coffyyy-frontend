@@ -8,6 +8,13 @@ export type Machines = {
 	grindRange: string;
 	capacity: string;
 };
+export const BREWER_CATEGORIES = [
+	"Espresso machine",
+	"Moka pot",
+	"Pour-over",
+	"French press",
+	"AeroPress",
+] as const;
 export type MachineCardProps = {
 	id: number;
 	name: string;

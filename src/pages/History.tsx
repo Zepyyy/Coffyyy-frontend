@@ -65,7 +65,7 @@ export default function History() {
 	const shownCount = brews?.length ?? 0;
 	const topMachineName =
 		stats?.topMachine != null
-			? (machineNameMap.get(stats.topMachine) ?? `Machine #${stats.topMachine}`)
+			? (machineNameMap.get(stats.topMachine) ?? `Brewer #${stats.topMachine}`)
 			: "—";
 
 	function clearFilters() {
@@ -124,7 +124,7 @@ export default function History() {
 									value: stats != null ? String(stats.last7Days) : "…",
 								},
 								{
-									label: "Top machine",
+							label: "Top brewer",
 									value: stats != null ? topMachineName : "…",
 									className: "col-span-2 sm:col-span-4 lg:col-span-1",
 								},
@@ -174,10 +174,10 @@ export default function History() {
 								<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 								<input
 									className="h-10 w-full min-w-0 rounded-sm border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-									placeholder="Search beans or machines"
+								placeholder="Search beans or brewers"
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
-									aria-label="Search brews by bean or machine"
+								aria-label="Search brews by bean or brewer"
 								/>
 							</label>
 							<label className="relative block">
@@ -268,8 +268,8 @@ export default function History() {
 									machineName={
 										brew.machineId != null
 											? (machineNameMap.get(brew.machineId) ??
-												`Machine #${brew.machineId}`)
-											: "No machine saved"
+													`Brewer #${brew.machineId}`)
+											: "No brewer saved"
 									}
 								/>
 							))}

@@ -5,7 +5,7 @@ import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import { addMachine } from "@/db/crud/add";
 import { useMachineSuggestions } from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
-import type { MachineForm } from "@/types/MachineTypes";
+import { BREWER_CATEGORIES, type MachineForm } from "@/types/MachineTypes";
 
 const INITIAL: MachineForm = {
 	name: "",
@@ -18,16 +18,16 @@ const INITIAL: MachineForm = {
 };
 
 const SAVE_MESSAGES = [
-	"Machine logged. Ready to brew.",
+	"Brewer logged. Ready to brew.",
 	"Saved. Your setup just got sharper.",
 	"Catalogued. Dial-in time.",
-	"Machine added to the arsenal.",
+	"Brewer added to the arsenal.",
 	"Saved! Future brew sessions thank you.",
 ];
 
 const REQUIRED_FIELDS: Partial<Record<keyof MachineForm, string>> = {
-	brand: "Enter a brand for this machine.",
-	type: "Enter a type for this machine.",
+			brand: "Enter a brand for this brewer.",
+			type: "Enter a category for this brewer.",
 };
 
 function normalizeOptional(value: string) {
@@ -105,7 +105,7 @@ export default function MachinesLog() {
 								Add equipment
 							</h1>
 							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Register a new machine.
+								Register a new brewer.
 							</p>
 						</div>
 						{import.meta.env.DEV && (
@@ -197,7 +197,7 @@ export default function MachinesLog() {
 								<div className="space-y-1.5">
 									<FieldLabel required>Type</FieldLabel>
 									<SingleChoiceChips
-										options={suggestions.types}
+										options={[...BREWER_CATEGORIES]}
 										selected={form.type}
 										onChange={(v) => setField("type", v)}
 										placeholder="E.g. Espresso"

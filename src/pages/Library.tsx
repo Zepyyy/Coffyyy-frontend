@@ -9,7 +9,7 @@ import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { cn } from "@/lib/utils";
 
-type Tab = "beans" | "machines";
+	type Tab = "beans" | "machines";
 
 export default function Library() {
 	const [tab, setTab] = useState<Tab>("beans");
@@ -201,7 +201,7 @@ export default function Library() {
 								>
 									{t === "beans"
 										? `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`
-										: `Machines${machinesCount > 0 ? ` (${machinesCount})` : ""}`}
+										: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`}
 								</button>
 							))}
 						</div>
@@ -306,14 +306,14 @@ export default function Library() {
 									<p className="text-sm text-muted-foreground">
 										{allMachines.length === 0
 											? "No equipment yet."
-											: "No machines match your search."}
+											: "No brewers match your search."}
 									</p>
 									{allMachines.length === 0 && (
 										<Link
 											to="/log/machine"
 											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
 										>
-											Add your first machine
+										Add your first brewer
 										</Link>
 									)}
 								</div>
@@ -325,7 +325,7 @@ export default function Library() {
 											machine={machine}
 										/>
 									))}
-									<AddCard to="/log/machine" label="Add machine" />
+										<AddCard to="/log/machine" label="Add brewer" />
 								</div>
 							)}
 						</div>

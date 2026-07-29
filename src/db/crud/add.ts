@@ -19,7 +19,12 @@ async function addBean(bean: Omit<Beans, "id">) {
 
 async function addBrew(brew: Omit<Brews, "id">) {
 	try {
-		return await db.Brews.bulkAdd([brew]);
+		if (brew.beanId == null) return new Error("Select a bean before saving.");
+		if (!brew.method) return new Error("Select a brew method before saving.");
+		const methodFields = brew.method === "Espresso"
+			? { waterAmount: undefined, heatLevel: undefined, brewTime: undefined }
+			: { extractionTime: undefined, flow: undefined };
+		return await db.Brews.bulkAdd([{ ...brew, ...methodFields }]);
 	} catch (error) {
 		return error;
 	}
