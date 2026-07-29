@@ -129,9 +129,16 @@ export function BrewHistoryRow({
 		brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
 		brew.beanWeight != null ? `${brew.beanWeight}g in` : null,
 		brew.method === "Moka Pot"
-			? [brew.waterAmount != null ? `${brew.waterAmount}ml water` : null, brew.espressoWeight != null ? `${brew.espressoWeight}g yield` : null].filter(Boolean).join(" · ") || null
-			: brew.espressoWeight != null ? `${brew.espressoWeight}g out` : null,
-		ratio ? `1:${ratio}` : null,
+			? [
+					brew.waterAmount != null ? `${brew.waterAmount}ml water` : null,
+					brew.espressoWeight != null ? `${brew.espressoWeight}g yield` : null,
+				]
+					.filter(Boolean)
+					.join(" · ") || null
+			: brew.espressoWeight != null
+				? `${brew.espressoWeight}g out`
+				: null,
+		brew.method !== "Moka Pot" && ratio ? `1:${ratio}` : null,
 	]
 		.filter(Boolean)
 		.join(" · ");
@@ -240,16 +247,43 @@ export function BrewHistoryRow({
 						/>
 						<DetailItem
 							icon={<Timer className="size-4" />}
-							label={brew.method === "Moka Pot" ? "Total brew time" : brew.method ? "Extraction" : "Time"}
-							value={(brew.method === "Moka Pot" ? brew.brewTime : brew.extractionTime) || "Not saved"}
+							label={
+								brew.method === "Moka Pot"
+									? "Total brew time"
+									: brew.method
+										? "Extraction"
+										: "Time"
+							}
+							value={
+								(brew.method === "Moka Pot"
+									? brew.brewTime
+									: brew.extractionTime) || "Not saved"
+							}
 						/>
-						{brew.method !== "Moka Pot" && brew.method != null && <DetailItem
-							icon={<Waves className="size-4" />}
-							label="Flow"
-							value={brew.flow || "Not saved"}
-						/>}
+						{brew.method !== "Moka Pot" && (
+							<DetailItem
+								icon={<Waves className="size-4" />}
+								label={brew.method ? "Flow" : "Flow (legacy)"}
+								value={brew.flow || "Not saved"}
+							/>
+						)}
 						{brew.method === "Moka Pot" && (
-							<DetailItem icon={<Gauge className="size-4" />} label="Heat" value={brew.heatLevel || "Not saved"} />
+							<>
+								<DetailItem
+									icon={<Waves className="size-4" />}
+									label="Water amount"
+									value={
+										brew.waterAmount != null
+											? `${brew.waterAmount} ml`
+											: "Not saved"
+									}
+								/>
+								<DetailItem
+									icon={<Gauge className="size-4" />}
+									label="Heat"
+									value={brew.heatLevel || "Not saved"}
+								/>
+							</>
 						)}
 					</div>
 

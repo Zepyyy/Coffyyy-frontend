@@ -33,8 +33,8 @@ export type BrewForm = {
 	/** @deprecated use brewerId */
 	machineId?: number;
 	method: BrewMethod | undefined;
-	beanWeight: number;
-	espressoWeight: number;
+	beanWeight: number | undefined;
+	espressoWeight: number | undefined;
 	extractionTime: string;
 	flow: string;
 	waterAmount: number | undefined;

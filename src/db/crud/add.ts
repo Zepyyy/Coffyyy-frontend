@@ -21,10 +21,21 @@ async function addBrew(brew: Omit<Brews, "id">) {
 	try {
 		if (brew.beanId == null) return new Error("Select a bean before saving.");
 		if (!brew.method) return new Error("Select a brew method before saving.");
-		const methodFields = brew.method === "Espresso"
-			? { waterAmount: undefined, heatLevel: undefined, brewTime: undefined }
-			: { extractionTime: undefined, flow: undefined };
-		return await db.Brews.bulkAdd([{ ...brew, ...methodFields }]);
+		const brewerId = brew.brewerId ?? brew.machineId;
+		const methodFields =
+			brew.method === "Espresso"
+				? { waterAmount: undefined, heatLevel: undefined, brewTime: undefined }
+				: { extractionTime: undefined, flow: undefined };
+		return await db.Brews.bulkAdd([
+			{
+				...brew,
+				brewerId,
+				// Do not write the legacy field on new records. It remains readable
+				// in the type for records created before the Brewer migration.
+				machineId: undefined,
+				...methodFields,
+			},
+		]);
 	} catch (error) {
 		return error;
 	}

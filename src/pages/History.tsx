@@ -124,7 +124,7 @@ export default function History() {
 									value: stats != null ? String(stats.last7Days) : "…",
 								},
 								{
-							label: "Top brewer",
+									label: "Top brewer",
 									value: stats != null ? topMachineName : "…",
 									className: "col-span-2 sm:col-span-4 lg:col-span-1",
 								},
@@ -174,10 +174,10 @@ export default function History() {
 								<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 								<input
 									className="h-10 w-full min-w-0 rounded-sm border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-								placeholder="Search beans or brewers"
+									placeholder="Search beans or brewers"
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
-								aria-label="Search brews by bean or brewer"
+									aria-label="Search brews by bean or brewer"
 								/>
 							</label>
 							<label className="relative block">
@@ -266,9 +266,9 @@ export default function History() {
 											: "Unknown bean"
 									}
 									machineName={
-										brew.machineId != null
-											? (machineNameMap.get(brew.machineId) ??
-													`Brewer #${brew.machineId}`)
+										(brew.brewerId ?? brew.machineId) != null
+											? (machineNameMap.get(brew.brewerId ?? brew.machineId!) ??
+												`Brewer #${brew.brewerId ?? brew.machineId}`)
 											: "No brewer saved"
 									}
 								/>

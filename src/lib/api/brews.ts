@@ -90,9 +90,7 @@ export async function getBrewsForHistoryView(
 				brew.beanId != null ? names.beans.get(brew.beanId)?.toLowerCase() : "";
 			const brewerId = brew.brewerId ?? brew.machineId;
 			const machineName =
-				brewerId != null
-					? names.machines.get(brewerId)?.toLowerCase()
-					: "";
+				brewerId != null ? names.machines.get(brewerId)?.toLowerCase() : "";
 			return (
 				Boolean(beanName?.includes(q)) ||
 				Boolean(machineName?.includes(q)) ||
@@ -144,8 +142,9 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 
 	const machineCounts = new Map<number, number>();
 	for (const b of brews) {
-		if (!b.machineId) continue;
-		machineCounts.set(b.machineId, (machineCounts.get(b.machineId) ?? 0) + 1);
+		const brewerId = b.brewerId ?? b.machineId;
+		if (brewerId == null) continue;
+		machineCounts.set(brewerId, (machineCounts.get(brewerId) ?? 0) + 1);
 	}
 	let topMachine: number | null = null;
 	let top = 0;
@@ -212,8 +211,14 @@ export async function getLastUsedBrew(
 	const matching = brews
 		.filter((brew) => brew.beanId === beanId && brew.method === method)
 		.sort((a, b) => +new Date(b.date) - +new Date(a.date));
-	return matching.find((brew) => brewerId != null && brew.brewerId === brewerId)
-		?? matching.find((brew) => brewerId == null || brew.brewerId == null)
-		?? matching[0]
-		?? null;
+	if (brewerId != null) {
+		const brewerMatch = matching.find(
+			(brew) => (brew.brewerId ?? brew.machineId) === brewerId,
+		);
+		if (brewerMatch) return brewerMatch;
+	}
+
+	// The brewer is optional: once a brewer-specific match is unavailable,
+	// prefer the newest brew for the same bean and method regardless of brewer.
+	return matching[0] ?? null;
 }

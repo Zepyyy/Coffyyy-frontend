@@ -1,5 +1,5 @@
-import { type ChangeEvent, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
+import { type ChangeEvent, useState } from "react";
 import { Link } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
@@ -8,8 +8,8 @@ import OptionChips from "@/components/log/OptionChips";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
-import { getLastUsedBrew } from "@/lib/api/brews";
 import { useBrewSuggestions } from "@/hooks/api/useBrews";
+import { getLastUsedBrew } from "@/lib/api/brews";
 import {
 	DEFAULT_FLOW,
 	DIAL_DEFAULT_BEAN_WEIGHT,
@@ -20,7 +20,7 @@ import {
 	MIN_ESPRESSO_WEIGHT,
 } from "@/lib/defaults";
 import { clampWeight, cn, parseWeight, STEPS } from "@/lib/utils";
-import { BREW_METHODS, HEAT_LEVELS, type BrewForm } from "@/types/BrewTypes";
+import { BREW_METHODS, type BrewForm, HEAT_LEVELS } from "@/types/BrewTypes";
 
 const INITIAL: BrewForm = {
 	beanId: undefined,
@@ -29,8 +29,8 @@ const INITIAL: BrewForm = {
 	method: undefined,
 	date: new Date(),
 	grindSize: 12,
-	beanWeight: 18,
-	espressoWeight: 36,
+	beanWeight: undefined,
+	espressoWeight: undefined,
 	waterAmount: undefined,
 	heatLevel: undefined,
 	brewTime: "",
@@ -88,8 +88,7 @@ export default function BrewLog() {
 		try {
 			const result = await addBrew({
 				beanId: form.beanId,
-				brewerId: form.brewerId ?? form.machineId,
-				machineId: form.machineId,
+				brewerId: form.brewerId,
 				method: form.method,
 				date: form.date,
 				beanWeight: form.beanWeight,
@@ -101,9 +100,14 @@ export default function BrewLog() {
 				heatLevel: form.method === "Moka Pot" ? form.heatLevel : undefined,
 				brewTime: form.method === "Moka Pot" ? form.brewTime : undefined,
 			});
-			setError(result instanceof Error ? result.message : String(result));
+			if (result instanceof Error) {
+				setError(result.message);
+				return;
+			}
 			setForm(INITIAL);
-			setStatus("Done.");
+			setSelectedBeanId(null);
+			setSelectedMachineId(null);
+			setStatus("Brew saved.");
 		} catch {
 			setStatus("Save failed.");
 		} finally {
@@ -129,20 +133,21 @@ export default function BrewLog() {
 	};
 
 	const beanWeightValue = parseWeight({
-		value: form.beanWeight,
+		value: form.beanWeight ?? Number.NaN,
 		default_weight: DIAL_DEFAULT_BEAN_WEIGHT,
 		min: MIN_BEAN_WEIGHT,
 		max: MAX_BEAN_WEIGHT,
 	});
 	const espressoWeightValue = parseWeight({
-		value: form.espressoWeight,
+		value: form.espressoWeight ?? Number.NaN,
 		default_weight: DIAL_DEFAULT_ESPRESSO_WEIGHT,
 		min: MIN_ESPRESSO_WEIGHT,
 		max: MAX_ESPRESSO_WEIGHT,
 	});
-	const espressoRatio = form.beanWeight
-		? (form.espressoWeight / form.beanWeight).toFixed(1)
-		: null;
+	const espressoRatio =
+		form.beanWeight && form.espressoWeight
+			? (form.espressoWeight / form.beanWeight).toFixed(1)
+			: null;
 
 	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
 	const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
@@ -153,8 +158,8 @@ export default function BrewLog() {
 	const isEmpty = suggestions.bean.length === 0;
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
-	const selectedMachine = suggestions.machine.find(
-		(m) => m.id === form.machineId,
+	const selectedMachine = suggestions.brewer.find(
+		(m) => m.id === form.brewerId,
 	);
 
 	return (
@@ -255,143 +260,257 @@ export default function BrewLog() {
 										<FieldLabel required>Brew method</FieldLabel>
 										<div className="flex flex-wrap gap-2">
 											{BREW_METHODS.map((method) => (
-												<button key={method} type="button" onClick={() => setField("method", method)} className={cn("border px-4 py-2 font-Recursive text-sm", form.method === method ? "border-primary bg-primary/10" : "border-border text-muted-foreground")}>{method}</button>
+												<button
+													key={method}
+													type="button"
+													onClick={() => setField("method", method)}
+													className={cn(
+														"border px-4 py-2 font-Recursive text-sm",
+														form.method === method
+															? "border-primary bg-primary/10"
+															: "border-border text-muted-foreground",
+													)}
+												>
+													{method}
+												</button>
 											))}
 										</div>
-										{lastUsed && <button type="button" className="text-xs text-muted-foreground underline" onClick={() => {
-											setField("grindSize", lastUsed.grindSize ?? form.grindSize);
-											setField("beanWeight", lastUsed.beanWeight ?? form.beanWeight);
-											setField("espressoWeight", lastUsed.espressoWeight ?? form.espressoWeight);
-											setField("waterAmount", lastUsed.waterAmount);
-											setField("heatLevel", lastUsed.heatLevel);
-											setField("brewTime", lastUsed.brewTime ?? "");
-										}}>Last used: apply previous setup</button>}
-									</div>
-									<div className="space-y-2">
-										<FieldLabel required>Grind Size</FieldLabel>
-										<div className="flex flex-col gap-4">
+										{lastUsed && (
 											<button
 												type="button"
-												className={
-													"flex w-fit items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
-												}
-												onClick={() => setShow(!show)}
+												className="text-xs text-muted-foreground underline"
+												onClick={() => {
+													setField(
+														"grindSize",
+														lastUsed.grindSize ?? form.grindSize,
+													);
+													setField(
+														"beanWeight",
+														lastUsed.beanWeight ?? form.beanWeight,
+													);
+													setField(
+														"espressoWeight",
+														lastUsed.espressoWeight ?? form.espressoWeight,
+													);
+													setField("waterAmount", lastUsed.waterAmount);
+													setField("heatLevel", lastUsed.heatLevel);
+													setField("brewTime", lastUsed.brewTime ?? "");
+													setField(
+														"extractionTime",
+														lastUsed.extractionTime ?? "",
+													);
+													setField("flow", lastUsed.flow ?? "");
+												}}
 											>
-												{show ? "Hide" : "Custom Grind Size"}
+												Last used: apply previous setup
 											</button>
-
-											{show && (
-												<input
-													type="number"
-													className="flex-1 w-fit border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none appearance-none"
-													step="0.01"
-													placeholder="e.g. 18"
-													value={form.grindSize}
-													onChange={(e) =>
-														setField("grindSize", Number(e.target.value))
-													}
-												/>
-											)}
-											<div className="flex flex-wrap gap-1.5">
-												{GRIND_SIZES.map((lvl) => (
-													<button
-														key={lvl}
-														type="button"
-														onClick={() =>
-															setField(
-																"grindSize",
-																form.grindSize === lvl ? 12 : lvl,
-															)
-														}
-														className={cn(
-															"flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
-															form.grindSize === lvl
-																? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
-																: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
-														)}
-													>
-														{lvl}
-													</button>
-												))}
-											</div>
-										</div>
-
-										<div
-											className="h-1 w-full"
-											style={{
-												background:
-													"linear-gradient(to right, var(--primary-100), var(--primary))",
-											}}
-										/>
-										<div className="w-full flex items-center justify-around gap-4 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-											<span>Finer</span>
-											<span>Fine</span>
-											<span>Medium</span>
-											<span>Coarse</span>
-											<span>Coarser</span>
-										</div>
-									</div>
-									{form.method !== "Moka Pot" && <>
-									<div className="flex flex-row items-center justify-start mx-auto gap-15">
-										<div className="flex flex-col items-center">
-													<FieldLabel>Bean Weight</FieldLabel>
-											<Dial
-												value={beanWeightValue}
-												onChange={setBeanWeight}
-												min={MIN_BEAN_WEIGHT}
-												max={MAX_BEAN_WEIGHT}
-											/>
-										</div>
-
-										<div className="flex flex-col items-center">
-													<FieldLabel>Espresso Weight</FieldLabel>
-											<Dial
-												value={espressoWeightValue}
-												onChange={setEspressoWeight}
-												min={MIN_ESPRESSO_WEIGHT}
-												max={MAX_ESPRESSO_WEIGHT}
-											/>
-										</div>
-										{espressoRatio && (
-											<div className="text-7xl min-w-fit text-center font-Lora font-bold text-primary-700/90 relative border border-border border-dashed px-6 py-3.5">
-												1:{espressoRatio}
-												<span className="absolute -bottom-5 left-2 text-xs font-Mono font-medium tracking-widest uppercase select-none">
-													ratio
-												</span>
-											</div>
 										)}
 									</div>
-									</>}
-									{form.method === "Moka Pot" && <div className="grid gap-4 sm:grid-cols-2">
-										<div><FieldLabel>Coffee dose (g)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.beanWeight} onChange={(e) => setField("beanWeight", Number(e.target.value))} /></div>
-										<div><FieldLabel>Yield (g)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.espressoWeight} onChange={(e) => setField("espressoWeight", Number(e.target.value))} /></div>
-										<div><FieldLabel>Water amount (ml)</FieldLabel><input type="number" min="0" className="w-full border border-border bg-background px-3 py-1.5" value={form.waterAmount ?? ""} onChange={(e) => setField("waterAmount", e.target.value === "" ? undefined : Number(e.target.value))} /></div>
-										<div><FieldLabel>Total brew time (mm:ss)</FieldLabel><input className="w-full border border-border bg-background px-3 py-1.5" placeholder="e.g. 04:30" value={form.brewTime} onChange={(e) => setField("brewTime", e.target.value)} /></div>
-										<div><FieldLabel>Heat level</FieldLabel><OptionChips options={[...HEAT_LEVELS]} value={form.heatLevel ?? ""} onChange={(v) => setField("heatLevel", v as typeof form.heatLevel)} /></div>
-									</div>}
-									{form.method !== "Moka Pot" && <div className="space-y-2">
-										<FieldLabel>Extraction Time (mm:ss)</FieldLabel>
-										<input
-											type="number"
-											className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
-											step="0.01"
-											placeholder="e.g. 28"
-											value={form.extractionTime}
-											onChange={(e) =>
-												setField("extractionTime", e.target.value)
-											}
-										/>
+									{form.method && (
+										<>
+											<div className="space-y-2">
+												<FieldLabel required>Grind Size</FieldLabel>
+												<div className="flex flex-col gap-4">
+													<button
+														type="button"
+														className={
+															"flex w-fit items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
+														}
+														onClick={() => setShow(!show)}
+													>
+														{show ? "Hide" : "Custom Grind Size"}
+													</button>
 
-										<div className="space-y-2">
-											<FieldLabel required>Flow</FieldLabel>
-											<OptionChips
-												options={DEFAULT_FLOW}
-												value={form.flow}
-												onChange={(v) => setField("flow", v)}
-											/>
-										</div>
-										</div>}
-									</section>
+													{show && (
+														<input
+															type="number"
+															className="flex-1 w-fit border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none appearance-none"
+															step="0.01"
+															placeholder="e.g. 18"
+															value={form.grindSize}
+															onChange={(e) =>
+																setField("grindSize", Number(e.target.value))
+															}
+														/>
+													)}
+													<div className="flex flex-wrap gap-1.5">
+														{GRIND_SIZES.map((lvl) => (
+															<button
+																key={lvl}
+																type="button"
+																onClick={() =>
+																	setField(
+																		"grindSize",
+																		form.grindSize === lvl ? 12 : lvl,
+																	)
+																}
+																className={cn(
+																	"flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
+																	form.grindSize === lvl
+																		? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
+																		: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
+																)}
+															>
+																{lvl}
+															</button>
+														))}
+													</div>
+												</div>
+
+												<div
+													className="h-1 w-full"
+													style={{
+														background:
+															"linear-gradient(to right, var(--primary-100), var(--primary))",
+													}}
+												/>
+												<div className="w-full flex items-center justify-around gap-4 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+													<span>Finer</span>
+													<span>Fine</span>
+													<span>Medium</span>
+													<span>Coarse</span>
+													<span>Coarser</span>
+												</div>
+											</div>
+											{form.method !== "Moka Pot" && (
+												<>
+													<div className="flex flex-row items-center justify-start mx-auto gap-15">
+														<div className="flex flex-col items-center">
+															<FieldLabel>Coffee dose (g)</FieldLabel>
+															<Dial
+																value={beanWeightValue}
+																onChange={setBeanWeight}
+																min={MIN_BEAN_WEIGHT}
+																max={MAX_BEAN_WEIGHT}
+															/>
+														</div>
+
+														<div className="flex flex-col items-center">
+															<FieldLabel>Espresso yield (g)</FieldLabel>
+															<Dial
+																value={espressoWeightValue}
+																onChange={setEspressoWeight}
+																min={MIN_ESPRESSO_WEIGHT}
+																max={MAX_ESPRESSO_WEIGHT}
+															/>
+														</div>
+														{espressoRatio && (
+															<div className="text-7xl min-w-fit text-center font-Lora font-bold text-primary-700/90 relative border border-border border-dashed px-6 py-3.5">
+																1:{espressoRatio}
+																<span className="absolute -bottom-5 left-2 text-xs font-Mono font-medium tracking-widest uppercase select-none">
+																	ratio
+																</span>
+															</div>
+														)}
+													</div>
+												</>
+											)}
+											{form.method === "Moka Pot" && (
+												<div className="grid gap-4 sm:grid-cols-2">
+													<div>
+														<FieldLabel>Coffee dose (g)</FieldLabel>
+														<input
+															type="number"
+															min="0"
+															className="w-full border border-border bg-background px-3 py-1.5"
+															value={form.beanWeight ?? ""}
+															onChange={(e) =>
+																setField(
+																	"beanWeight",
+																	e.target.value === ""
+																		? undefined
+																		: Number(e.target.value),
+																)
+															}
+														/>
+													</div>
+													<div>
+														<FieldLabel>Yield (g)</FieldLabel>
+														<input
+															type="number"
+															min="0"
+															className="w-full border border-border bg-background px-3 py-1.5"
+															value={form.espressoWeight ?? ""}
+															onChange={(e) =>
+																setField(
+																	"espressoWeight",
+																	e.target.value === ""
+																		? undefined
+																		: Number(e.target.value),
+																)
+															}
+														/>
+													</div>
+													<div>
+														<FieldLabel>Water amount (ml)</FieldLabel>
+														<input
+															type="number"
+															min="0"
+															className="w-full border border-border bg-background px-3 py-1.5"
+															value={form.waterAmount ?? ""}
+															onChange={(e) =>
+																setField(
+																	"waterAmount",
+																	e.target.value === ""
+																		? undefined
+																		: Number(e.target.value),
+																)
+															}
+														/>
+													</div>
+													<div>
+														<FieldLabel>Total brew time (mm:ss)</FieldLabel>
+														<input
+															className="w-full border border-border bg-background px-3 py-1.5"
+															placeholder="e.g. 04:30"
+															value={form.brewTime}
+															onChange={(e) =>
+																setField("brewTime", e.target.value)
+															}
+														/>
+													</div>
+													<div>
+														<FieldLabel>Heat level</FieldLabel>
+														<OptionChips
+															options={[...HEAT_LEVELS]}
+															value={form.heatLevel ?? ""}
+															onChange={(v) =>
+																setField(
+																	"heatLevel",
+																	v as typeof form.heatLevel,
+																)
+															}
+														/>
+													</div>
+												</div>
+											)}
+											{form.method !== "Moka Pot" && (
+												<div className="space-y-2">
+													<FieldLabel>Extraction time (mm:ss)</FieldLabel>
+													<input
+														type="text"
+														className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+														step="0.01"
+														placeholder="e.g. 28"
+														value={form.extractionTime}
+														onChange={(e) =>
+															setField("extractionTime", e.target.value)
+														}
+													/>
+
+													<div className="space-y-2">
+														<FieldLabel>Flow</FieldLabel>
+														<OptionChips
+															options={DEFAULT_FLOW}
+															value={form.flow}
+															onChange={(v) => setField("flow", v)}
+														/>
+													</div>
+												</div>
+											)}
+										</>
+									)}
+								</section>
 							)}
 						</div>
 						<div
@@ -402,8 +521,23 @@ export default function BrewLog() {
 									<SectionTitle>{STEPS[step - 1].title}</SectionTitle>
 									<div className="space-y-1.5">
 										<FieldLabel>Brewer</FieldLabel>
-										<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-											{suggestions.machine.map((machineInfo) => (
+										<div className="flex flex-wrap gap-2">
+											<button
+												type="button"
+												onClick={() => {
+													setField("brewerId", undefined);
+													setSelectedMachineId(null);
+												}}
+												className={cn(
+													"border px-3 py-2 font-Recursive text-sm",
+													form.brewerId == null
+														? "border-primary bg-primary/10"
+														: "border-border text-muted-foreground",
+												)}
+											>
+												No brewer
+											</button>
+											{suggestions.brewer.map((machineInfo) => (
 												<QuickMachineCard
 													key={machineInfo.id}
 													selected={selectedMachineId === machineInfo.id}
@@ -413,14 +547,13 @@ export default function BrewLog() {
 														type: machineInfo.type,
 													}}
 													onClick={() => {
-														setField("machineId", machineInfo.id);
 														setField("brewerId", machineInfo.id);
 														setSelectedMachineId(machineInfo.id);
 													}}
 												/>
 											))}
 										</div>
-										</div>
+									</div>
 								</section>
 							)}
 						</div>
@@ -436,22 +569,61 @@ export default function BrewLog() {
 											value={selectedBean?.name ?? "—"}
 										/>
 										<SummaryRow
-												label="Brewer"
-												value={selectedMachine?.name ?? "—"}
-											/>
+											label="Brewer"
+											value={selectedMachine?.name ?? "—"}
+										/>
 										<SummaryRow label="Method" value={form.method ?? "—"} />
 										<SummaryRow label="Grind Size" value={form.grindSize} />
-										{form.method === "Moka Pot" ? <>
-											<SummaryRow label="Water amount" value={form.waterAmount != null ? `${form.waterAmount} ml` : "—"} />
-											<SummaryRow label="Heat level" value={form.heatLevel ?? "—"} />
-											<SummaryRow label="Total brew time" value={form.brewTime || "—"} />
-										</> : <>
-											<SummaryRow label="Bean Weight" value={`${form.beanWeight} g`} />
-											<SummaryRow label="Espresso Weight" value={`${form.espressoWeight} g`} />
-											{espressoRatio && <SummaryRow label="Ratio" value={`1:${espressoRatio}`} />}
-											<SummaryRow label="Extraction Time" value={form.extractionTime ? `${form.extractionTime}s` : "—"} />
-											<SummaryRow label="Flow" value={form.flow || "—"} />
-										</>}
+										{form.method === "Moka Pot" ? (
+											<>
+												<SummaryRow
+													label="Water amount"
+													value={
+														form.waterAmount != null
+															? `${form.waterAmount} ml`
+															: "—"
+													}
+												/>
+												<SummaryRow
+													label="Heat level"
+													value={form.heatLevel ?? "—"}
+												/>
+												<SummaryRow
+													label="Total brew time"
+													value={form.brewTime || "—"}
+												/>
+											</>
+										) : (
+											<>
+												<SummaryRow
+													label="Coffee dose"
+													value={
+														form.beanWeight != null
+															? `${form.beanWeight} g`
+															: "—"
+													}
+												/>
+												<SummaryRow
+													label="Espresso yield"
+													value={
+														form.espressoWeight != null
+															? `${form.espressoWeight} g`
+															: "—"
+													}
+												/>
+												{espressoRatio && (
+													<SummaryRow
+														label="Ratio"
+														value={`1:${espressoRatio}`}
+													/>
+												)}
+												<SummaryRow
+													label="Extraction time"
+													value={form.extractionTime || "—"}
+												/>
+												<SummaryRow label="Flow" value={form.flow || "—"} />
+											</>
+										)}
 									</div>
 
 									<div className="border-t border-border pt-4 space-y-2">
