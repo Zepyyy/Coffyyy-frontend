@@ -315,7 +315,9 @@ export default function BrewLog() {
 															? "yieldWeight"
 															: "espressoWeight",
 														form.method === "Moka Pot"
-															? (lastUsed.yieldWeight ?? form.yieldWeight)
+															? (lastUsed.yieldWeight ??
+																	lastUsed.espressoWeight ??
+																	form.yieldWeight)
 															: (lastUsed.espressoWeight ??
 																	form.espressoWeight),
 													);
