@@ -6,8 +6,13 @@ export const useBean = (beanId: number | undefined) => {
 		useLiveQuery(() => beanStatsApi.getBean(beanId), [beanId]) ?? undefined
 	);
 };
-export const useAllBeans = () => {
-	return useLiveQuery(() => beanStatsApi.getAllBeans(), []) ?? [];
+export const useAllBeans = (includeArchived = false) => {
+	return (
+		useLiveQuery(
+			() => beanStatsApi.getAllBeans(includeArchived),
+			[includeArchived],
+		) ?? []
+	);
 };
 
 export const useAllBeanNames = () => {

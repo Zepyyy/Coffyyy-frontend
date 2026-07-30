@@ -4,6 +4,8 @@ import BeanCard from "@/components/library/BeanCard";
 import CollectionTools, {
 	type CollectionFilter,
 } from "@/components/library/CollectionTools";
+import { archiveBeanById } from "@/db/crud/delete";
+import { updateBeanById } from "@/db/crud/update";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { filterBeanCollection } from "@/lib/beanLibrary";
@@ -30,6 +32,8 @@ function optionsFor(values: string[]) {
 
 export default function BeansLibrary() {
 	const beans = useAllBeans();
+	const [includeArchived, setIncludeArchived] = useState(false);
+	const allBeans = useAllBeans(includeArchived);
 	const [search, setSearch] = useState("");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [origins, setOrigins] = useState<string[]>([]);
@@ -37,10 +41,10 @@ export default function BeansLibrary() {
 
 	const beanIds = useMemo(
 		() =>
-			beans
+			allBeans
 				.map((bean) => bean.id)
 				.filter((id): id is number => typeof id === "number"),
-		[beans],
+		[allBeans],
 	);
 	const dialInStates = useBeanDialInStates(beanIds);
 	const dialInByBeanId = useMemo(
@@ -48,16 +52,24 @@ export default function BeansLibrary() {
 		[dialInStates],
 	);
 	const originOptions = useMemo(
-		() => optionsFor(beans.flatMap((bean) => bean.origin ?? [])),
-		[beans],
+		() => optionsFor(allBeans.flatMap((bean) => bean.origin ?? [])),
+		[allBeans],
 	);
 	const brandOptions = useMemo(
-		() => optionsFor(beans.map((bean) => bean.brand)),
-		[beans],
+		() => optionsFor(allBeans.map((bean) => bean.brand)),
+		[allBeans],
 	);
 	const filteredBeans = useMemo(() => {
-		return filterBeanCollection(beans, { search, origins, brands });
-	}, [beans, brands, origins, search]);
+		return filterBeanCollection(allBeans, { search, origins, brands });
+	}, [allBeans, brands, origins, search]);
+
+	async function togglePinned(id: number, pinned: boolean) {
+		await updateBeanById({ pinned }, id);
+	}
+
+	async function restoreBean(id: number) {
+		await archiveBeanById(id, false);
+	}
 
 	const filters: CollectionFilter[] = [
 		{
@@ -99,14 +111,15 @@ export default function BeansLibrary() {
 				filters={filters}
 				filtersOpen={filtersOpen}
 				setFiltersOpen={setFiltersOpen}
+				archiveToggle={{ includeArchived, setIncludeArchived }}
 			/>
 			{filteredBeans.length === 0 ? (
 				<div className="space-y-3 border border-dashed border-border p-12 text-center">
 					<p className="font-News text-2xl text-foreground/60">
-						{beans.length === 0 ? "No beans yet" : "No beans match"}
+						{allBeans.length === 0 ? "No beans yet" : "No beans match"}
 					</p>
 					<p className="font-Recursive text-sm text-muted-foreground">
-						{beans.length === 0
+						{allBeans.length === 0
 							? "Add your first bean to start building the collection."
 							: "Try a different search or remove a filter."}
 					</p>
@@ -126,8 +139,20 @@ export default function BeansLibrary() {
 							key={bean.id}
 							bean={bean}
 							dialInState={dialInByBeanId.get(bean.id)}
+							pinned={bean.archived ? false : bean.pinned}
+							onTogglePinned={
+								bean.archived
+									? undefined
+									: () => togglePinned(bean.id, !bean.pinned)
+							}
+							onRestore={bean.archived ? () => restoreBean(bean.id) : undefined}
+							hasBrewHistory={
+								(dialInByBeanId.get(bean.id)?.totalBrews ?? 0) > 0
+							}
 							to={beanLibraryPath(bean.id)}
-							startBrewTo={brewLogPath({ beanId: bean.id })}
+							startBrewTo={
+								bean.archived ? undefined : brewLogPath({ beanId: bean.id })
+							}
 						/>
 					))}
 				</div>

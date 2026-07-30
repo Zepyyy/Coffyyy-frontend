@@ -21,6 +21,8 @@ export type Beans = {
 	designation: "Pure Origin" | "Blend" | "";
 	flavors: string[];
 	finished: boolean;
+	archived?: boolean;
+	pinned?: boolean;
 };
 export type BeanCardProps = {
 	id: number;

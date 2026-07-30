@@ -1,8 +1,16 @@
-import { ArrowLeft, CheckCircle } from "lucide-react";
-import { Link, useParams } from "react-router";
+import {
+	Archive,
+	ArchiveRestore,
+	ArrowLeft,
+	CheckCircle,
+	Trash2,
+} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { useState } from "react";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
+import { archiveBeanById, deleteBeanById } from "@/db/crud/delete";
 import { useBean } from "@/hooks/api/useBeans";
 import { useAllBrewers } from "@/hooks/api/useBrewers";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
@@ -45,16 +53,38 @@ function buildStatRows(
 		],
 	];
 	if (methods.includes("Espresso")) {
-		rows.splice(2, 0,
-			["Espresso output", formatWeight(average.espressoWeight), formatWeight(best?.espressoWeight ?? null)],
-			["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
+		rows.splice(
+			2,
+			0,
+			[
+				"Espresso output",
+				formatWeight(average.espressoWeight),
+				formatWeight(best?.espressoWeight ?? null),
+			],
+			[
+				"Extraction",
+				average.extractionTime ?? "—",
+				best?.extractionTime ?? "—",
+			],
 			["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],
 		);
 	}
 	if (methods.includes("Moka Pot")) {
-		rows.splice(2, 0,
-			["Moka yield", formatWeight(average.yieldWeight), formatWeight(best?.yieldWeight ?? null)],
-			["Water", average.waterAmount == null ? "—" : `${average.waterAmount.toFixed(1)} ml`, best?.waterAmount == null ? "—" : `${best.waterAmount.toFixed(1)} ml`],
+		rows.splice(
+			2,
+			0,
+			[
+				"Moka yield",
+				formatWeight(average.yieldWeight),
+				formatWeight(best?.yieldWeight ?? null),
+			],
+			[
+				"Water",
+				average.waterAmount == null
+					? "—"
+					: `${average.waterAmount.toFixed(1)} ml`,
+				best?.waterAmount == null ? "—" : `${best.waterAmount.toFixed(1)} ml`,
+			],
 			["Brew time", average.brewTime ?? "—", best?.brewTime ?? "—"],
 			["Heat", average.heatLevel ?? "—", best?.heatLevel ?? "—"],
 		);
@@ -65,12 +95,16 @@ function buildStatRows(
 export default function Bean() {
 	const { BeanId } = useParams();
 	const beanId = Number(BeanId);
+	const navigate = useNavigate();
 
-	const allBrewers = useAllBrewers();
+	const allBrewers = useAllBrewers(true);
 	const bean = useBean(beanId);
 	const brewCount = useBrewCountForBeanId(beanId);
 	const insights = useBeanBrewInsights(beanId);
 	const brews = useBrewsForBeanId(beanId);
+	const [confirmArchive, setConfirmArchive] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [isUpdatingLifecycle, setIsUpdatingLifecycle] = useState(false);
 
 	const brewerNameById = new Map(
 		allBrewers.map((brewer) => [brewer.id, brewer.name]),
@@ -102,6 +136,27 @@ export default function Bean() {
 	const statRows = insights
 		? buildStatRows(insights.average, insights.best, insights.methods)
 		: [];
+
+	async function updateLifecycle(archived: boolean) {
+		setIsUpdatingLifecycle(true);
+		try {
+			await archiveBeanById(beanId, archived);
+			setConfirmArchive(false);
+		} finally {
+			setIsUpdatingLifecycle(false);
+		}
+	}
+
+	async function deleteBean() {
+		if ((brews?.length ?? 0) > 0) return;
+		setIsUpdatingLifecycle(true);
+		try {
+			const result = await deleteBeanById(beanId);
+			if (result === true) navigate("/library/beans");
+		} finally {
+			setIsUpdatingLifecycle(false);
+		}
+	}
 
 	return (
 		<div className="mx-auto w-full max-w-3xl space-y-6">
@@ -136,12 +191,83 @@ export default function Bean() {
 					<div className={`mt-3 ${swatch.secondaryText}`}>
 						<RoastDots level={bean.roastLevel} />
 					</div>
-					<Link
-						to={brewLogPath({ beanId })}
-						className="mt-4 inline-block border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
-					>
-						Start brew
-					</Link>
+					{bean.archived && (
+						<p className="mt-4 border border-primary/20 bg-background/30 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.14em]">
+							Archived · hidden from the collection and Brew selector
+						</p>
+					)}
+					<div className="mt-4 flex flex-wrap items-center gap-2">
+						{!bean.archived && (
+							<Link
+								to={brewLogPath({ beanId })}
+								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+							>
+								Start brew
+							</Link>
+						)}
+						{bean.archived ? (
+							<button
+								type="button"
+								disabled={isUpdatingLifecycle}
+								onClick={() => updateLifecycle(false)}
+								className="inline-flex items-center gap-1.5 border border-foreground/20 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] disabled:opacity-50"
+							>
+								<ArchiveRestore className="size-3" />
+								Restore bean
+							</button>
+						) : confirmArchive ? (
+							<div className="flex items-center gap-2 font-Mono text-[10px] uppercase tracking-[0.12em]">
+								<span className="text-muted-foreground">
+									Archive this bean?
+								</span>
+								<button
+									type="button"
+									disabled={isUpdatingLifecycle}
+									onClick={() => updateLifecycle(true)}
+									className="border border-destructive px-3 py-2 text-destructive disabled:opacity-50"
+								>
+									Archive
+								</button>
+								<button type="button" onClick={() => setConfirmArchive(false)}>
+									Cancel
+								</button>
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={() => setConfirmArchive(true)}
+								className="inline-flex items-center gap-1.5 border border-foreground/20 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground hover:border-destructive hover:text-destructive"
+							>
+								<Archive className="size-3" />
+								Archive bean
+							</button>
+						)}
+						{brews?.length === 0 &&
+							(confirmDelete ? (
+								<div className="flex items-center gap-2 font-Mono text-[10px] uppercase tracking-[0.12em]">
+									<span>Delete permanently?</span>
+									<button
+										type="button"
+										disabled={isUpdatingLifecycle}
+										onClick={deleteBean}
+										className="text-destructive disabled:opacity-50"
+									>
+										Delete
+									</button>
+									<button type="button" onClick={() => setConfirmDelete(false)}>
+										Cancel
+									</button>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={() => setConfirmDelete(true)}
+									className="inline-flex items-center gap-1.5 border border-foreground/20 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground hover:border-destructive hover:text-destructive"
+								>
+									<Trash2 className="size-3" /> Delete
+								</button>
+							))}
+					</div>
 				</div>
 
 				{detailChips.length > 0 && (
@@ -274,12 +400,14 @@ export default function Bean() {
 						<p className="font-Recursive text-sm text-muted-foreground">
 							Log your first brew with this bean.
 						</p>
-						<Link
-							to={brewLogPath({ beanId })}
-							className="mt-2 inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
-						>
-							Log a brew
-						</Link>
+						{!bean.archived && (
+							<Link
+								to={brewLogPath({ beanId })}
+								className="mt-2 inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
+							>
+								Log a brew
+							</Link>
+						)}
 					</div>
 				)}
 
@@ -291,8 +419,8 @@ export default function Bean() {
 								brew={brew}
 								beanName={bean.name}
 								brewerName={
-								brew.brewerId != null
-									? brewerNameById.get(brew.brewerId)
+									brew.brewerId != null
+										? brewerNameById.get(brew.brewerId)
 										: undefined
 								}
 							/>

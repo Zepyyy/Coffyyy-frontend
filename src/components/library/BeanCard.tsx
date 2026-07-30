@@ -7,6 +7,8 @@ import {
 	FireExtinguisher,
 	Flower,
 	Leaf,
+	ArchiveRestore,
+	Pin,
 	type LucideIcon,
 	Salad,
 } from "lucide-react";
@@ -72,11 +74,19 @@ export default function BeanCard({
 	dialInState,
 	to,
 	startBrewTo,
+	pinned = false,
+	onTogglePinned,
+	onRestore,
+	hasBrewHistory = false,
 }: {
 	bean: Beans;
 	dialInState?: BeanDialInState;
 	to?: string;
 	startBrewTo?: string;
+	pinned?: boolean;
+	onTogglePinned?: () => void;
+	onRestore?: () => void;
+	hasBrewHistory?: boolean;
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
@@ -98,6 +108,16 @@ export default function BeanCard({
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
+				{onTogglePinned && !bean.archived && (
+					<button
+						type="button"
+						onClick={onTogglePinned}
+						aria-label={pinned ? "Unpin bean" : "Pin bean"}
+						className={`absolute left-3 top-3 border border-current/20 p-1.5 transition-colors hover:border-current ${colorSwatch[bean.dominantNote]?.text}`}
+					>
+						<Pin className={`size-3.5 ${pinned ? "fill-current" : ""}`} />
+					</button>
+				)}
 
 				<div
 					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${colorSwatch[bean.dominantNote]?.secondaryText}`}
@@ -166,41 +186,54 @@ export default function BeanCard({
 						View details
 					</Link>
 				)}
-				{startBrewTo && (
-					<Link
-						to={startBrewTo}
-						className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
-					>
-						Start brew
-					</Link>
-				)}
-				{confirmDelete ? (
-					<div className="flex items-center gap-2 text-sm">
-						<span className="text-xs text-muted-foreground">Sure?</span>
+				{bean.archived
+					? onRestore && (
+							<button
+								type="button"
+								onClick={onRestore}
+								className="inline-flex items-center gap-1.5 border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+							>
+								<ArchiveRestore className="size-3" />
+								Restore
+							</button>
+						)
+					: startBrewTo && (
+							<Link
+								to={startBrewTo}
+								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+							>
+								Start brew
+							</Link>
+						)}
+				{!hasBrewHistory &&
+					!bean.archived &&
+					(confirmDelete ? (
+						<div className="flex items-center gap-2 text-sm">
+							<span className="text-xs text-muted-foreground">Sure?</span>
+							<button
+								type="button"
+								onClick={() => setConfirmDelete(false)}
+								className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								onClick={() => deleteBeanById(bean.id)}
+								className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+							>
+								Delete
+							</button>
+						</div>
+					) : (
 						<button
 							type="button"
-							onClick={() => setConfirmDelete(false)}
-							className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
-						>
-							Cancel
-						</button>
-						<button
-							type="button"
-							onClick={() => deleteBeanById(bean.id)}
-							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+							onClick={() => setConfirmDelete(true)}
+							className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
 						>
 							Delete
 						</button>
-					</div>
-				) : (
-					<button
-						type="button"
-						onClick={() => setConfirmDelete(true)}
-						className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
-					>
-						Delete
-					</button>
-				)}
+					))}
 			</div>
 		</div>
 	);

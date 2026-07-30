@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { filterBeanCollection } from "./beanLibrary.ts";
+import { filterBeanCollection, orderBeans } from "./beanLibrary.ts";
 
 const beans = [
 	{
@@ -24,6 +24,23 @@ const beans = [
 		origin: ["Ethiopia"],
 		dominantNote: "Nutty",
 	},
+	{
+		id: 4,
+		name: "Pinned bean",
+		brand: "Small Batch",
+		origin: ["Brazil"],
+		dominantNote: "Sweet",
+		pinned: true,
+	},
+	{
+		id: 5,
+		name: "Archived bean",
+		brand: "Old Batch",
+		origin: ["Peru"],
+		dominantNote: "Roasted",
+		pinned: true,
+		archived: true,
+	},
 ];
 
 test("Bean collection search and filters combine and keep alphabetical order", () => {
@@ -38,7 +55,7 @@ test("Bean collection search and filters combine and keep alphabetical order", (
 
 	assert.deepEqual(
 		filterBeanCollection(beans, {}).map((bean) => bean.name),
-		["Alba", "Mora", "Zola"],
+		["Pinned bean", "Alba", "Mora", "Zola", "Archived bean"],
 	);
 });
 
@@ -50,5 +67,12 @@ test("Bean collection filters match searchable identity fields", () => {
 	assert.deepEqual(
 		filterBeanCollection(beans, { origins: ["Kenya"] }).map((bean) => bean.id),
 		[1],
+	);
+});
+
+test("pinned active Beans appear first and archived pinned state stays suppressed", () => {
+	assert.deepEqual(
+		orderBeans(beans).map((bean) => bean.id),
+		[4, 1, 3, 2, 5],
 	);
 });

@@ -1,9 +1,11 @@
 import { db } from "@/db/db";
+import { orderBeans } from "@/lib/beanLibrary";
 import { orderBrewers } from "@/lib/brewerLibrary";
 import { findLastUsedBrew } from "@/lib/brewMethods";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewerCardProps } from "@/types/BrewerTypes";
 import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
+import { getAllBeans } from "./beans";
 import { getAllBrewers } from "./brewers";
 
 export type HistorySortMode =
@@ -186,22 +188,19 @@ export async function getBrewsForBrewerId(
 }
 
 export async function getBrewSuggestions(): Promise<BrewSuggestions> {
-	const beans = await db.Beans.toArray().then((b) =>
-		b.map((b) => ({
-			id: b.id,
-			name: b.name,
-			origin: b.origin,
-			dominantNote: b.dominantNote,
-			process: b.process,
-			roastLevel: b.roastLevel,
-		})),
-	);
-	const brewers = orderBrewers(await getAllBrewers())
-		.map((brewer) => ({
-			id: brewer.id,
-			name: brewer.name,
-			type: brewer.type,
-		}));
+	const beans = orderBeans(await getAllBeans()).map((b) => ({
+		id: b.id,
+		name: b.name,
+		origin: b.origin,
+		dominantNote: b.dominantNote,
+		process: b.process,
+		roastLevel: b.roastLevel,
+	}));
+	const brewers = orderBrewers(await getAllBrewers()).map((brewer) => ({
+		id: brewer.id,
+		name: brewer.name,
+		type: brewer.type,
+	}));
 	const beanCards = beans as Array<BeanCardProps>;
 	const brewerCards = brewers as Array<BrewerCardProps>;
 

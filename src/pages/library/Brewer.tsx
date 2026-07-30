@@ -1,7 +1,14 @@
-import { Archive, ArchiveRestore, ArrowLeft, Coffee, Pencil } from "lucide-react";
-import { Link, useParams } from "react-router";
+import {
+	Archive,
+	ArchiveRestore,
+	ArrowLeft,
+	Coffee,
+	Pencil,
+	Trash2,
+} from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
 import { useState } from "react";
-import { archiveBrewerById } from "@/db/crud/delete";
+import { archiveBrewerById, deleteBrewerById } from "@/db/crud/delete";
 import { formatShortDate } from "@/lib/dates";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import { useAllBeans } from "@/hooks/api/useBeans";
@@ -12,11 +19,13 @@ import { brewLogPath } from "@/lib/libraryRoutes";
 export default function BrewerDetail() {
 	const { brewerId } = useParams();
 	const id = Number(brewerId);
+	const navigate = useNavigate();
 	const brewer = useBrewer(id);
-	const beans = useAllBeans();
+	const beans = useAllBeans(true);
 	const brews = useBrewsForBrewerId(id);
 	const usage = useBrewerUsage().get(id);
 	const [confirmArchive, setConfirmArchive] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [isUpdatingLifecycle, setIsUpdatingLifecycle] = useState(false);
 	const beanNameById = new Map(beans.map((bean) => [bean.id, bean.name]));
 	const lastUsed = usage?.lastUsed;
@@ -27,6 +36,17 @@ export default function BrewerDetail() {
 		try {
 			await archiveBrewerById(id, archived);
 			setConfirmArchive(false);
+		} finally {
+			setIsUpdatingLifecycle(false);
+		}
+	}
+
+	async function deleteBrewer() {
+		if ((brews?.length ?? 0) > 0) return;
+		setIsUpdatingLifecycle(true);
+		try {
+			const result = await deleteBrewerById(id);
+			if (result === true) navigate("/library/brewers");
 		} finally {
 			setIsUpdatingLifecycle(false);
 		}
@@ -151,6 +171,31 @@ export default function BrewerDetail() {
 							Archive brewer
 						</button>
 					)}
+					{brews?.length === 0 &&
+						(confirmDelete ? (
+							<div className="flex items-center gap-2 font-Mono text-[10px] uppercase tracking-[0.12em]">
+								<span>Delete permanently?</span>
+								<button
+									type="button"
+									disabled={isUpdatingLifecycle}
+									onClick={deleteBrewer}
+									className="text-destructive disabled:opacity-50"
+								>
+									Delete
+								</button>
+								<button type="button" onClick={() => setConfirmDelete(false)}>
+									Cancel
+								</button>
+							</div>
+						) : (
+							<button
+								type="button"
+								onClick={() => setConfirmDelete(true)}
+								className="inline-flex items-center gap-1.5 border border-foreground/20 px-4 py-2.5 font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground hover:border-destructive hover:text-destructive"
+							>
+								<Trash2 className="size-3" /> Delete
+							</button>
+						))}
 				</div>
 			</header>
 
@@ -166,7 +211,9 @@ export default function BrewerDetail() {
 					/>
 					<UsageStat
 						label="Methods"
-						value={methods.length > 0 ? methods.join(" · ") : "No method history"}
+						value={
+							methods.length > 0 ? methods.join(" · ") : "No method history"
+						}
 					/>
 				</div>
 			</section>

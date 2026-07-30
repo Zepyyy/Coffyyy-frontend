@@ -10,16 +10,20 @@ export async function getBean(
 	return bean;
 }
 
-export async function getAllBeans(): Promise<Array<Beans>> {
-	return db.Beans.toArray();
+export async function getAllBeans(
+	includeArchived = false,
+): Promise<Array<Beans>> {
+	return includeArchived
+		? db.Beans.toArray()
+		: db.Beans.filter((bean) => !bean.archived).toArray();
 }
 
 export async function getBeanCount(): Promise<number> {
-	return db.Beans.count();
+	return db.Beans.filter((bean) => !bean.archived).count();
 }
 
 export async function getAllBeanNames(): Promise<Array<Beans["name"]>> {
-	return db.Beans.toArray().then((beans) => beans.map((b) => b.name));
+	return getAllBeans().then((beans) => beans.map((b) => b.name));
 }
 
 export async function getBeanDominantNote(
@@ -31,7 +35,7 @@ export async function getBeanDominantNote(
 }
 
 export async function getBeanFilters(): Promise<Array<BeanFilters>> {
-	const beans = await db.Beans.toArray();
+	const beans = await getAllBeans();
 	return beans.map((b) => {
 		return {
 			origin: b.origin,
@@ -43,7 +47,7 @@ export async function getBeanFilters(): Promise<Array<BeanFilters>> {
 }
 
 export async function getBeanSuggestions(): Promise<BeanSuggestions> {
-	const beans = await db.Beans.toArray();
+	const beans = await getAllBeans();
 	console.log(beans);
 	const extract = (field: keyof Beans) =>
 		beans
