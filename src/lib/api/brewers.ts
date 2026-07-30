@@ -4,14 +4,50 @@ import type {
 	BrewerSuggestions,
 	Brewers,
 } from "@/types/BrewerTypes";
+import type { BrewMethod } from "@/types/BrewTypes";
 import { uniqueSorted } from "./utils";
 
 export async function getAllBrewers(): Promise<Array<Brewers>> {
 	return db.Brewers.toArray();
 }
 
+export async function getBrewer(
+	brewerId: number | undefined,
+): Promise<Brewers | undefined> {
+	if (brewerId == null || !Number.isInteger(brewerId) || brewerId < 1) {
+		return undefined;
+	}
+	return db.Brewers.get(brewerId);
+}
+
 export async function getBrewerCount(): Promise<number> {
 	return db.Brewers.count();
+}
+
+export type BrewerUsage = {
+	lastUsed: string;
+	brewCount: number;
+	methods: BrewMethod[];
+};
+
+export async function getBrewerUsage(): Promise<Map<number, BrewerUsage>> {
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
+	const usage = new Map<number, BrewerUsage>();
+
+	for (const brew of brews) {
+		if (brew.brewerId == null) continue;
+		const current = usage.get(brew.brewerId);
+		usage.set(brew.brewerId, {
+			lastUsed: current?.lastUsed ?? new Date(brew.date).toISOString(),
+			brewCount: (current?.brewCount ?? 0) + 1,
+			methods:
+				brew.method && !current?.methods.includes(brew.method)
+					? [...(current?.methods ?? []), brew.method]
+					: (current?.methods ?? []),
+		});
+	}
+
+	return usage;
 }
 
 export async function getBrewerNameById(

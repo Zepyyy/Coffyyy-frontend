@@ -4,12 +4,13 @@ import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useBean } from "@/hooks/api/useBeans";
-import { useBrewsForBeanId } from "@/hooks/api/useBrews";
 import { useAllBrewers } from "@/hooks/api/useBrewers";
+import { useBrewsForBeanId } from "@/hooks/api/useBrews";
 import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
+import { brewLogPath } from "@/lib/libraryRoutes";
 import { colorSwatch } from "@/lib/utils";
 import type { BeanBrewParameterSummary } from "@/types/BrewTypes";
 
@@ -105,7 +106,7 @@ export default function Bean() {
 	return (
 		<div className="mx-auto w-full max-w-3xl space-y-6">
 			<Link
-				to={`/home?bean=${beanId}`}
+				to="/library/beans"
 				className="inline-flex items-center gap-1.5 font-Mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft size={13} />
@@ -268,7 +269,7 @@ export default function Bean() {
 							Log your first brew with this bean.
 						</p>
 						<Link
-							to="/log/brew"
+							to={brewLogPath({ beanId })}
 							className="mt-2 inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
 						>
 							Log a brew

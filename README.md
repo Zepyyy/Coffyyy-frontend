@@ -50,8 +50,8 @@ Stack:
 ## Current State
 The backend is in active development and will be connected soon. For the moment, IndexedDB powers the app, so clearing browser storage will remove local data.
 Suggestions in the log forms are generated from previously saved beans and brewers.
-- No automated test runner is configured yet.
-- The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
+- `npm run test` runs the focused domain and route-contract tests.
+- The `History` page is an early scaffold, not a finished screen.
 - Home-screen charts are wired to live brew data and are the most developed of the insight views.
 
 ## Roadmap
@@ -70,8 +70,11 @@ Suggestions in the log forms are generated from previously saved beans and brewe
 - `/log/brew`: multi-step brew form
 - `/log/bean`: bean catalog form
 - `/log/brewer`: brewer catalog form
-- `/library`: searchable bean and brewer library
-- `/beans/:BeanId`: detail view for a single bean
+- `/library`: redirects to the Bean collection
+- `/library/beans`: searchable Bean library
+- `/library/beans/:beanId`: detail view for a single Bean
+- `/library/brewers`: searchable Brewer library
+- `/library/brewers/:brewerId`: detail view for a single Brewer
 - `/history`: brew history view (work in progress)
 - Legacy paths (`/brew`, `/brewers`, `/database`, `/stats`, `/workflows/*`) redirect to their current locations
 - Anything unmatched falls through to a catch-all (404) page

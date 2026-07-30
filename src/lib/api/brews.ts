@@ -1,7 +1,7 @@
 import { db } from "@/db/db";
 import type { BeanCardProps } from "@/types/BeanTypes";
-import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
 import type { BrewerCardProps } from "@/types/BrewerTypes";
+import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
 
 export type HistorySortMode =
 	| "newest"
@@ -169,6 +169,16 @@ export async function getBrewsForBeanId(
 ): Promise<Brews[]> {
 	if (!beanId) return [];
 	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
+}
+
+export async function getBrewsForBrewerId(
+	brewerId: number | undefined,
+): Promise<Brews[]> {
+	if (!brewerId) return [];
+	const brews = await db.Brews.filter(
+		(brew) => brew.brewerId === brewerId,
+	).toArray();
 	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 

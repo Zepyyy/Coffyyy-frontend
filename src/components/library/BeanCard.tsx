@@ -11,6 +11,7 @@ import {
 	Salad,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import { deleteBeanById } from "@/db/crud/delete";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
@@ -69,9 +70,13 @@ interface Parameter {
 export default function BeanCard({
 	bean,
 	dialInState,
+	to,
+	startBrewTo,
 }: {
 	bean: Beans;
 	dialInState?: BeanDialInState;
+	to?: string;
+	startBrewTo?: string;
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
@@ -152,7 +157,23 @@ export default function BeanCard({
 					</div>
 				</div>
 			</article>
-			<div className="mt-auto flex justify-end pt-4">
+			<div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
+				{to && (
+					<Link
+						to={to}
+						className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground underline decoration-dotted underline-offset-4 hover:text-foreground"
+					>
+						View details
+					</Link>
+				)}
+				{startBrewTo && (
+					<Link
+						to={startBrewTo}
+						className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+					>
+						Start brew
+					</Link>
+				)}
 				{confirmDelete ? (
 					<div className="flex items-center gap-2 text-sm">
 						<span className="text-xs text-muted-foreground">Sure?</span>

@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { type ChangeEvent, useState } from "react";
-import { Link } from "react-router";
+import { type ChangeEvent, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
 import FieldLabel from "@/components/log/FieldLabel";
@@ -62,6 +62,9 @@ export default function BrewLog() {
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
+	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
+	const [selectedBrewerId, setSelectedBrewerId] = useState<number | null>(null);
+	const [searchParams] = useSearchParams();
 
 	const [step, setStep] = useState(1);
 
@@ -170,18 +173,24 @@ export default function BrewLog() {
 			? (form.espressoWeight / form.beanWeight).toFixed(1)
 			: null;
 
-	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
-	const [selectedBrewerId, setSelectedBrewerId] = useState<number | null>(
-		null,
-	);
+	useEffect(() => {
+		const beanId = Number(searchParams.get("beanId"));
+		const brewerId = Number(searchParams.get("brewerId"));
+		if (Number.isInteger(beanId) && beanId > 0) {
+			setField("beanId", beanId);
+			setSelectedBeanId(beanId);
+		}
+		if (Number.isInteger(brewerId) && brewerId > 0) {
+			setField("brewerId", brewerId);
+			setSelectedBrewerId(brewerId);
+		}
+	}, [searchParams]);
 
 	const [show, setShow] = useState(false);
 	const isEmpty = suggestions.bean.length === 0;
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
-	const selectedBrewer = suggestions.brewer.find(
-		(m) => m.id === form.brewerId,
-	);
+	const selectedBrewer = suggestions.brewer.find((m) => m.id === form.brewerId);
 
 	return (
 		<div className="mx-auto w-full">

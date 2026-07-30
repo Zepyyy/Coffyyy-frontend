@@ -37,3 +37,10 @@ export const useLatestUnratedBrew = () => {
 export const useBrewsForBeanId = (beanId: number | undefined) => {
 	return useLiveQuery(() => brewStatsApi.getBrewsForBeanId(beanId), [beanId]);
 };
+
+export const useBrewsForBrewerId = (brewerId: number | undefined) => {
+	return useLiveQuery(
+		() => brewStatsApi.getBrewsForBrewerId(brewerId),
+		[brewerId],
+	);
+};
