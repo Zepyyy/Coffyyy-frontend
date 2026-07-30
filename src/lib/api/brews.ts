@@ -1,8 +1,10 @@
 import { db } from "@/db/db";
+import { orderBrewers } from "@/lib/brewerLibrary";
 import { findLastUsedBrew } from "@/lib/brewMethods";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewerCardProps } from "@/types/BrewerTypes";
 import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
+import { getAllBrewers } from "./brewers";
 
 export type HistorySortMode =
 	| "newest"
@@ -194,13 +196,12 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 			roastLevel: b.roastLevel,
 		})),
 	);
-	const brewers = await db.Brewers.toArray().then((b) =>
-		b.map((brewer) => ({
+	const brewers = orderBrewers(await getAllBrewers())
+		.map((brewer) => ({
 			id: brewer.id,
 			name: brewer.name,
 			type: brewer.type,
-		})),
-	);
+		}));
 	const beanCards = beans as Array<BeanCardProps>;
 	const brewerCards = brewers as Array<BrewerCardProps>;
 

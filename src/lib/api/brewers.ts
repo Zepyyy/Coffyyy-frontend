@@ -4,11 +4,15 @@ import type {
 	BrewerSuggestions,
 	Brewers,
 } from "@/types/BrewerTypes";
-import type { BrewMethod } from "@/types/BrewTypes";
+import { summarizeBrewerUsage, type BrewerUsage } from "@/lib/brewerUsage";
 import { uniqueSorted } from "./utils";
 
-export async function getAllBrewers(): Promise<Array<Brewers>> {
-	return db.Brewers.toArray();
+export async function getAllBrewers(
+	includeArchived = false,
+): Promise<Array<Brewers>> {
+	return includeArchived
+		? db.Brewers.toArray()
+		: db.Brewers.filter((brewer) => !brewer.archived).toArray();
 }
 
 export async function getBrewer(
@@ -21,33 +25,11 @@ export async function getBrewer(
 }
 
 export async function getBrewerCount(): Promise<number> {
-	return db.Brewers.count();
+	return db.Brewers.filter((brewer) => !brewer.archived).count();
 }
 
-export type BrewerUsage = {
-	lastUsed: string;
-	brewCount: number;
-	methods: BrewMethod[];
-};
-
 export async function getBrewerUsage(): Promise<Map<number, BrewerUsage>> {
-	const brews = await db.Brews.orderBy("date").reverse().toArray();
-	const usage = new Map<number, BrewerUsage>();
-
-	for (const brew of brews) {
-		if (brew.brewerId == null) continue;
-		const current = usage.get(brew.brewerId);
-		usage.set(brew.brewerId, {
-			lastUsed: current?.lastUsed ?? new Date(brew.date).toISOString(),
-			brewCount: (current?.brewCount ?? 0) + 1,
-			methods:
-				brew.method && !current?.methods.includes(brew.method)
-					? [...(current?.methods ?? []), brew.method]
-					: (current?.methods ?? []),
-		});
-	}
-
-	return usage;
+	return summarizeBrewerUsage(await db.Brews.toArray());
 }
 
 export async function getBrewerNameById(
@@ -58,13 +40,11 @@ export async function getBrewerNameById(
 }
 
 export async function getAllBrewerNames(): Promise<Array<Brewers["name"]>> {
-	return db.Brewers.toArray().then((brewers) =>
-		brewers.map((brewer) => brewer.name),
-	);
+	return getAllBrewers().then((brewers) => brewers.map((brewer) => brewer.name));
 }
 
 export async function getBrewerFilters(): Promise<Array<BrewerFilters>> {
-	const brewers = await db.Brewers.toArray();
+	const brewers = await getAllBrewers();
 	return brewers.map((b) => {
 		return {
 			name: b.name,
@@ -78,7 +58,7 @@ export async function getBrewerFilters(): Promise<Array<BrewerFilters>> {
 }
 
 export async function getBrewerSuggestions(): Promise<BrewerSuggestions> {
-	const brewers = await db.Brewers.toArray();
+	const brewers = await getAllBrewers();
 	const extract = (field: keyof Brewers) =>
 		brewers
 			.map((brewer) => brewer[field])

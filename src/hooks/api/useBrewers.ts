@@ -1,8 +1,13 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import * as brewerStatsApi from "../../lib/api/brewers";
 
-export const useAllBrewers = () => {
-	return useLiveQuery(() => brewerStatsApi.getAllBrewers(), []) ?? [];
+export const useAllBrewers = (includeArchived = false) => {
+	return (
+		useLiveQuery(
+			() => brewerStatsApi.getAllBrewers(includeArchived),
+			[includeArchived],
+		) ?? []
+	);
 };
 
 export const useBrewer = (brewerId: number | undefined) => {

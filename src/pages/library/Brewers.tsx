@@ -4,7 +4,10 @@ import BrewerCard from "@/components/library/BrewerCard";
 import CollectionTools, {
 	type CollectionFilter,
 } from "@/components/library/CollectionTools";
+import { archiveBrewerById } from "@/db/crud/delete";
+import { updateBrewerById } from "@/db/crud/update";
 import { useAllBrewers, useBrewerUsage } from "@/hooks/api/useBrewers";
+import { filterBrewerCollection } from "@/lib/brewerLibrary";
 import { brewerLibraryPath, brewLogPath } from "@/lib/libraryRoutes";
 
 function toggle(value: string, setter: Dispatch<SetStateAction<string[]>>) {
@@ -29,40 +32,33 @@ function optionsFor(values: string[]) {
 export default function BrewersLibrary() {
 	const brewers = useAllBrewers();
 	const usage = useBrewerUsage();
+	const [includeArchived, setIncludeArchived] = useState(false);
+	const allBrewers = useAllBrewers(includeArchived);
 	const [search, setSearch] = useState("");
 	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [categories, setCategories] = useState<string[]>([]);
 	const [brands, setBrands] = useState<string[]>([]);
 
 	const categoryOptions = useMemo(
-		() => optionsFor(brewers.map((brewer) => brewer.type)),
-		[brewers],
+		() => optionsFor(allBrewers.map((brewer) => brewer.type)),
+		[allBrewers],
 	);
 	const brandOptions = useMemo(
-		() => optionsFor(brewers.map((brewer) => brewer.brand)),
-		[brewers],
+		() => optionsFor(allBrewers.map((brewer) => brewer.brand)),
+		[allBrewers],
 	);
-	const filteredBrewers = useMemo(() => {
-		const query = search.trim().toLowerCase();
-		return brewers
-			.filter((brewer) => {
-				const searchable = [
-					brewer.name,
-					brewer.brand,
-					brewer.model,
-					brewer.type,
-				]
-					.join(" ")
-					.toLowerCase();
-				return (
-					(!query || searchable.includes(query)) &&
-					(categories.length === 0 ||
-						categories.includes(brewer.type.trim())) &&
-					(brands.length === 0 || brands.includes(brewer.brand.trim()))
-				);
-			})
-			.sort((a, b) => a.name.localeCompare(b.name));
-	}, [brewers, brands, categories, search]);
+	const filteredBrewers = useMemo(
+		() => filterBrewerCollection(allBrewers, { search, categories, brands }),
+		[allBrewers, brands, categories, search],
+	);
+
+	async function togglePinned(id: number, pinned: boolean) {
+		await updateBrewerById({ pinned }, id);
+	}
+
+	async function restoreBrewer(id: number) {
+		await archiveBrewerById(id, false);
+	}
 
 	const filters: CollectionFilter[] = [
 		{
@@ -104,14 +100,15 @@ export default function BrewersLibrary() {
 				filters={filters}
 				filtersOpen={filtersOpen}
 				setFiltersOpen={setFiltersOpen}
+				archiveToggle={{ includeArchived, setIncludeArchived }}
 			/>
 			{filteredBrewers.length === 0 ? (
 				<div className="space-y-3 border border-dashed border-border p-12 text-center">
 					<p className="font-News text-2xl text-foreground/60">
-						{brewers.length === 0 ? "No brewers yet" : "No brewers match"}
+						{allBrewers.length === 0 ? "No brewers yet" : "No brewers match"}
 					</p>
 					<p className="font-Recursive text-sm text-muted-foreground">
-						{brewers.length === 0
+						{allBrewers.length === 0
 							? "Add your first brewer to start building the collection."
 							: "Try a different search or remove a filter."}
 					</p>
@@ -133,6 +130,15 @@ export default function BrewersLibrary() {
 							lastUsed={usage.get(brewer.id)?.lastUsed}
 							brewCount={usage.get(brewer.id)?.brewCount}
 							methods={usage.get(brewer.id)?.methods}
+							pinned={brewer.archived ? false : brewer.pinned}
+							onTogglePinned={
+								brewer.archived
+									? undefined
+									: () => togglePinned(brewer.id, !brewer.pinned)
+							}
+							onRestore={
+								brewer.archived ? () => restoreBrewer(brewer.id) : undefined
+							}
 							to={brewerLibraryPath(brewer.id)}
 							startBrewTo={brewLogPath({ brewerId: brewer.id })}
 						/>

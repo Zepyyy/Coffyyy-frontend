@@ -8,6 +8,11 @@ export type CollectionFilter = {
 	onToggle: (value: string) => void;
 };
 
+export type CollectionArchiveToggle = {
+	includeArchived: boolean;
+	setIncludeArchived: (include: boolean) => void;
+};
+
 export default function CollectionTools({
 	search,
 	setSearch,
@@ -15,6 +20,7 @@ export default function CollectionTools({
 	filters,
 	setFiltersOpen,
 	filtersOpen,
+	archiveToggle,
 }: {
 	search: string;
 	setSearch: (value: string) => void;
@@ -22,10 +28,21 @@ export default function CollectionTools({
 	filters: CollectionFilter[];
 	setFiltersOpen: (open: boolean) => void;
 	filtersOpen: boolean;
+	archiveToggle?: CollectionArchiveToggle;
 }) {
 	const activeFilters = filters.flatMap((filter) =>
 		filter.selected.map((value) => ({ ...filter, value })),
 	);
+	if (archiveToggle?.includeArchived) {
+		activeFilters.push({
+			key: "archived",
+			label: "Lifecycle",
+			options: [],
+			selected: [],
+			onToggle: () => archiveToggle.setIncludeArchived(false),
+			value: "Archived included",
+		});
+	}
 
 	return (
 		<div className="space-y-3">
@@ -48,6 +65,18 @@ export default function CollectionTools({
 					<Filter className="size-3.5" />
 					Filters{activeFilters.length > 0 ? ` (${activeFilters.length})` : ""}
 				</button>
+				{archiveToggle && (
+					<button
+						type="button"
+						onClick={() =>
+							archiveToggle.setIncludeArchived(!archiveToggle.includeArchived)
+						}
+						className={`inline-flex h-10 items-center justify-center border px-4 font-Mono text-[10px] uppercase tracking-[0.14em] transition-colors ${archiveToggle.includeArchived ? "border-foreground bg-foreground text-background" : "border-border/70 text-muted-foreground hover:border-foreground hover:text-foreground"}`}
+						aria-pressed={archiveToggle.includeArchived}
+					>
+						{archiveToggle.includeArchived ? "Showing archived" : "Include archived"}
+					</button>
+				)}
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">

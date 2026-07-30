@@ -12,21 +12,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { deleteBrewById } from "@/db/crud/delete";
+import { formatShortDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
-
-function formatDate(date: Date | string | undefined): string {
-	if (!date) return "—";
-	try {
-		return new Date(date).toLocaleDateString(undefined, {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		});
-	} catch {
-		return String(date);
-	}
-}
 
 function formatTime(date: Date | string | undefined): string {
 	if (!date) return "";
@@ -120,7 +108,7 @@ export function BrewHistoryRow({
 			? (brew.espressoWeight / brew.beanWeight).toFixed(1)
 			: null;
 
-	const date = formatDate(brew.date);
+	const date = formatShortDate(brew.date, true);
 	const time = formatTime(brew.date);
 	const taste = axisLabel(brew.tasteScore, "Sour", "Bitter");
 	const strength = axisLabel(brew.strengthScore, "Weak", "Strong");

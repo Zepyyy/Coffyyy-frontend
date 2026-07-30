@@ -42,7 +42,9 @@ async function addBrewer(brewer: Omit<Brewers, "id">) {
 			.equals(brewer.name)
 			.first();
 		if (!existingBrewer) {
-			return await db.Brewers.bulkAdd([brewer]);
+			return await db.Brewers.bulkAdd([
+				{ ...brewer, archived: false, pinned: false },
+			]);
 		} else {
 			return new Error(`Brewer with name ${brewer.name} already exists`);
 		}

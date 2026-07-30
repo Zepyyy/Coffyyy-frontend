@@ -1,5 +1,6 @@
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
+import type { Brewers } from "@/types/BrewerTypes";
 import { db } from "../db";
 
 async function updateBeanByName(bean: Partial<Beans>, name: string) {
@@ -34,4 +35,18 @@ async function updateBrewById(brew: Partial<Brews>, id: number) {
 	}
 }
 
-export { updateBeanById, updateBeanByName, updateBrewById, updateBrewByName };
+async function updateBrewerById(brewer: Partial<Brewers>, id: number) {
+	try {
+		return await db.Brewers.where({ id }).modify({ ...brewer });
+	} catch (error) {
+		return error;
+	}
+}
+
+export {
+	updateBeanById,
+	updateBeanByName,
+	updateBrewById,
+	updateBrewByName,
+	updateBrewerById,
+};

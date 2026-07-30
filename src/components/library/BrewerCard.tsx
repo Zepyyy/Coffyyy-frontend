@@ -1,16 +1,13 @@
-import { useState } from "react";
 import { Link } from "react-router";
-import { deleteBrewerById } from "@/db/crud/delete";
+import { Pin } from "lucide-react";
+import { formatShortDate } from "@/lib/dates";
 import type { Brewers } from "@/types/BrewerTypes";
 import { Separator } from "../ui/separator";
 import Tag from "../ui/tag";
 
 function formatLastUsed(value: Date | string | undefined) {
 	if (!value) return "Never used";
-	return `Last used ${new Date(value).toLocaleDateString(undefined, {
-		day: "numeric",
-		month: "short",
-	})}`;
+	return `Last used ${formatShortDate(value)}`;
 }
 
 export default function BrewerCard({
@@ -20,6 +17,9 @@ export default function BrewerCard({
 	methods = [],
 	to,
 	startBrewTo,
+	pinned = false,
+	onTogglePinned,
+	onRestore,
 }: {
 	brewer: Brewers;
 	lastUsed?: Date | string;
@@ -27,18 +27,29 @@ export default function BrewerCard({
 	methods?: string[];
 	to?: string;
 	startBrewTo?: string;
+	pinned?: boolean;
+	onTogglePinned?: () => void;
+	onRestore?: () => void;
 }) {
-	const [confirmDelete, setConfirmDelete] = useState(false);
-
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			<article className="p-6 relative">
 				<div className="text-2xl font-News font-semibold">
-					{brewer.name || "Unnamed bean"}
+					{brewer.name || "Unnamed brewer"}
 				</div>
 				<div className="text-md font-Bricolage font-light dark:text-tag-primary-200 tracking-widest">
 					{brewer.brand} {brewer.model ? ` · ${brewer.model}` : ""}
 				</div>
+				{onTogglePinned && !brewer.archived && (
+					<button
+						type="button"
+						onClick={onTogglePinned}
+						aria-label={pinned ? "Unpin brewer" : "Pin brewer"}
+						className="absolute right-3 bottom-3 border border-foreground/15 p-1.5 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+					>
+						<Pin className={`size-3.5 ${pinned ? "fill-current text-primary" : ""}`} />
+					</button>
+				)}
 				<Tag
 					text={brewer.type}
 					size="sm"
@@ -58,12 +69,12 @@ export default function BrewerCard({
 						{brewer.type || "—"}
 					</div>
 				</div>
-				<div>
+				<div className="border border-primary/20 bg-primary/5 p-2">
 					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
 						Brew method
 					</div>
-					<div className="text-foreground font-medium font-Recursive text-sm">
-						{methods.length > 0 ? methods.join(" · ") : "No brew history"}
+					<div className="font-Recursive text-sm font-medium text-primary-800 dark:text-primary-200">
+						{methods.length > 0 ? methods.join(" · ") : "No method history"}
 					</div>
 				</div>
 				<div>
@@ -89,7 +100,17 @@ export default function BrewerCard({
 							View details
 						</Link>
 					)}
-					{startBrewTo && (
+					{brewer.archived ? (
+						onRestore && (
+							<button
+								type="button"
+								onClick={onRestore}
+								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+							>
+								Restore
+							</button>
+						)
+					) : startBrewTo && (
 						<Link
 							to={startBrewTo}
 							className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
@@ -98,35 +119,6 @@ export default function BrewerCard({
 						</Link>
 					)}
 				</div>
-				{confirmDelete ? (
-					<div className="flex items-center gap-2">
-						<span className="text-xs text-muted-foreground">Sure?</span>
-						<button
-							type="button"
-							onClick={() => {
-								if (typeof brewer.id === "number") deleteBrewerById(brewer.id);
-							}}
-							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
-						>
-							Delete
-						</button>
-						<button
-							type="button"
-							onClick={() => setConfirmDelete(false)}
-							className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
-						>
-							Cancel
-						</button>
-					</div>
-				) : (
-					<button
-						type="button"
-						onClick={() => setConfirmDelete(true)}
-						className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
-					>
-						Delete
-					</button>
-				)}
 			</div>
 		</div>
 	);

@@ -1,9 +1,11 @@
-import { type ChangeEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import { addBrewer } from "@/db/crud/add";
-import { useBrewerSuggestions } from "@/hooks/api/useBrewers";
+import { updateBrewerById } from "@/db/crud/update";
+import { useBrewer, useBrewerSuggestions } from "@/hooks/api/useBrewers";
 import { validateRequiredFields } from "@/lib/formValidation";
 import { BREWER_CATEGORIES, type BrewerForm } from "@/types/BrewerTypes";
 
@@ -36,6 +38,13 @@ function normalizeOptional(value: string) {
 }
 
 export default function BrewersLog() {
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const requestedId = Number(searchParams.get("brewerId"));
+	const editingBrewerId =
+		Number.isInteger(requestedId) && requestedId > 0 ? requestedId : undefined;
+	const existingBrewer = useBrewer(editingBrewerId);
+	const isEditing = editingBrewerId !== undefined;
 	const [form, setForm] = useState<BrewerForm>(INITIAL);
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +59,19 @@ export default function BrewersLog() {
 		Partial<Record<keyof BrewerForm, string>>
 	>({});
 
+	useEffect(() => {
+		if (!existingBrewer) return;
+		setForm({
+			name: existingBrewer.name,
+			brand: existingBrewer.brand,
+			model: existingBrewer.model,
+			type: existingBrewer.type,
+			grindRange: existingBrewer.grindRange,
+			capacity: existingBrewer.capacity,
+			purchaseDate: existingBrewer.purchaseDate,
+		});
+	}, [existingBrewer]);
+
 	function setField<K extends keyof BrewerForm>(
 		field: K,
 		value: BrewerForm[K],
@@ -61,7 +83,7 @@ export default function BrewersLog() {
 		setField(field, value.trim());
 	}
 
-	async function handleSubmit(e: ChangeEvent) {
+	async function handleSubmit(e: FormEvent<HTMLFormElement>) {
 		e.preventDefault();
 		setError("");
 		setStatus("");
@@ -74,7 +96,7 @@ export default function BrewersLog() {
 
 		setIsSaving(true);
 		try {
-			const result = await addBrewer({
+			const payload = {
 				name: normalizeOptional(form.name) ?? "",
 				brand: normalizeOptional(form.brand) ?? "",
 				model: normalizeOptional(form.model) ?? "",
@@ -82,8 +104,18 @@ export default function BrewersLog() {
 				grindRange: normalizeOptional(form.grindRange) ?? "",
 				capacity: normalizeOptional(form.capacity) ?? "",
 				purchaseDate: normalizeOptional(form.purchaseDate) ?? "",
-			});
-			setError(result instanceof Error ? result.message : String(result));
+			};
+			const result = isEditing
+				? await updateBrewerById(payload, editingBrewerId)
+				: await addBrewer(payload);
+			if (result instanceof Error) {
+				setError(result.message);
+				return;
+			}
+			if (isEditing) {
+				navigate(`/library/brewers/${editingBrewerId}`);
+				return;
+			}
 			setForm(INITIAL);
 			setStatus(
 				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
@@ -102,10 +134,12 @@ export default function BrewersLog() {
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
 							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
-								Add brewer
+								{isEditing ? "Edit brewer" : "Add brewer"}
 							</h1>
 							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Register a new brewer.
+								{isEditing
+									? "Keep this equipment record current."
+									: "Register a new brewer."}
 							</p>
 						</div>
 						{import.meta.env.DEV && (
@@ -249,7 +283,7 @@ export default function BrewersLog() {
 								disabled={!form.name.trim() || isSaving}
 								className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
 							>
-								{isSaving ? "Saving…" : "Save Brewer"}
+								{isSaving ? "Saving…" : isEditing ? "Save changes" : "Save Brewer"}
 							</button>
 						</div>
 					</form>

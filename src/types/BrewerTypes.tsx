@@ -7,6 +7,8 @@ export type Brewers = {
 	model: string;
 	grindRange: string;
 	capacity: string;
+	archived?: boolean;
+	pinned?: boolean;
 };
 export const BREWER_CATEGORIES = [
 	"Espresso machine",
