@@ -24,6 +24,12 @@ export function beanLibraryPath(beanId: number | string) {
 	return `${LIBRARY_PATHS.beans}/${beanId}`;
 }
 
+export function parseBeanIdParam(value: string | undefined) {
+	if (value == null || value.trim() === "") return undefined;
+	const beanId = Number(value);
+	return Number.isInteger(beanId) && beanId > 0 ? beanId : undefined;
+}
+
 export function brewerLibraryPath(brewerId: number | string) {
 	return `${LIBRARY_PATHS.brewers}/${brewerId}`;
 }

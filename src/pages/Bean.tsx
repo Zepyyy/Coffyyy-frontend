@@ -12,7 +12,7 @@ import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
-import { brewLogPath } from "@/lib/libraryRoutes";
+import { brewLogPath, parseBeanIdParam } from "@/lib/libraryRoutes";
 import { colorSwatch } from "@/lib/utils";
 import type { BeanBrewParameterSummary } from "@/types/BrewTypes";
 
@@ -87,8 +87,8 @@ function buildStatRows(
 }
 
 export default function Bean() {
-	const { BeanId } = useParams();
-	const beanId = Number(BeanId);
+	const { beanId: beanIdParam } = useParams();
+	const beanId = parseBeanIdParam(beanIdParam);
 	const navigate = useNavigate();
 
 	const allBrewers = useAllBrewers(true);
@@ -104,13 +104,14 @@ export default function Bean() {
 		allBrewers.map((brewer) => [brewer.id, brewer.name]),
 	);
 
-	if (!bean) {
+	if (beanId == null || !bean) {
 		return (
 			<div className="flex h-64 items-center justify-center">
 				<p className="font-Recursive text-muted-foreground">Loading…</p>
 			</div>
 		);
 	}
+	const resolvedBeanId = beanId;
 
 	const swatch = colorSwatch[bean.dominantNote] ?? colorSwatch.default;
 
@@ -134,7 +135,7 @@ export default function Bean() {
 	async function updateLifecycle(archived: boolean) {
 		setIsUpdatingLifecycle(true);
 		try {
-			await archiveBeanById(beanId, archived);
+			await archiveBeanById(resolvedBeanId, archived);
 			setConfirmArchive(false);
 		} finally {
 			setIsUpdatingLifecycle(false);
@@ -145,7 +146,7 @@ export default function Bean() {
 		if ((brews?.length ?? 0) > 0) return;
 		setIsUpdatingLifecycle(true);
 		try {
-			const result = await deleteBeanById(beanId);
+			const result = await deleteBeanById(resolvedBeanId);
 			if (result === true) navigate("/library/beans");
 		} finally {
 			setIsUpdatingLifecycle(false);

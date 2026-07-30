@@ -7,6 +7,7 @@ import {
 	beanLibraryPath,
 	brewerLibraryPath,
 	brewLogPath,
+	parseBeanIdParam,
 } from "./libraryRoutes.ts";
 
 test("library paths keep collections and details nested", () => {
@@ -29,4 +30,10 @@ test("brew links preserve optional library context", () => {
 		"/log/brew?beanId=12&brewerId=4",
 	);
 	assert.equal(brewLogPath(), "/log/brew");
+});
+
+test("bean detail route params become valid database ids", () => {
+	assert.equal(parseBeanIdParam("12"), 12);
+	assert.equal(parseBeanIdParam(undefined), undefined);
+	assert.equal(parseBeanIdParam("not-a-number"), undefined);
 });
