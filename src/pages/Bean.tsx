@@ -136,6 +136,12 @@ export default function Bean() {
 					<div className={`mt-3 ${swatch.secondaryText}`}>
 						<RoastDots level={bean.roastLevel} />
 					</div>
+					<Link
+						to={brewLogPath({ beanId })}
+						className="mt-4 inline-block border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+					>
+						Start brew
+					</Link>
 				</div>
 
 				{detailChips.length > 0 && (

@@ -6,6 +6,7 @@ import CollectionTools, {
 } from "@/components/library/CollectionTools";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
+import { filterBeanCollection } from "@/lib/beanLibrary";
 import { beanLibraryPath, brewLogPath } from "@/lib/libraryRoutes";
 
 function toggle(value: string, setter: Dispatch<SetStateAction<string[]>>) {
@@ -55,27 +56,7 @@ export default function BeansLibrary() {
 		[beans],
 	);
 	const filteredBeans = useMemo(() => {
-		const query = search.trim().toLowerCase();
-		return beans
-			.filter((bean) => {
-				const searchable = [
-					bean.name,
-					bean.brand,
-					bean.dominantNote,
-					...(bean.origin ?? []),
-				]
-					.join(" ")
-					.toLowerCase();
-				return (
-					(!query || searchable.includes(query)) &&
-					(origins.length === 0 ||
-						(bean.origin ?? []).some((origin) =>
-							origins.includes(origin.trim()),
-						)) &&
-					(brands.length === 0 || brands.includes(bean.brand.trim()))
-				);
-			})
-			.sort((a, b) => a.name.localeCompare(b.name));
+		return filterBeanCollection(beans, { search, origins, brands });
 	}, [beans, brands, origins, search]);
 
 	const filters: CollectionFilter[] = [
