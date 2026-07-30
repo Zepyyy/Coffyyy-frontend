@@ -47,15 +47,6 @@ export type BrewSuggestions = {
 	brewer: Array<BrewerCardProps>;
 };
 
-export type BeanDialInState = {
-	beanId: number;
-	isDialedIn: boolean;
-	totalBrews: number;
-	topRatedBrews: number;
-	lastRating: number | null;
-	stableGrind: boolean;
-};
-
 export type BeanBrewParameterSummary = {
 	grindSize: string;
 	beanWeight: number | null;
@@ -81,7 +72,6 @@ export type BeanBrewInsights = {
 	average: BeanBrewParameterSummary;
 	best: BeanBrewParameterSummary | null;
 	_lastBrew: Brews | null;
-	_dialIn: BeanDialInState;
 	recentBrewScores: Array<{
 		taste: number | null;
 		strength: number | null;

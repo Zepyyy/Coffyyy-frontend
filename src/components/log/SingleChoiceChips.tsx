@@ -55,27 +55,27 @@ export default function SingleChoiceChips({
 				))}
 			</div>
 			{allowCustom && (
-			<div className="flex gap-2">
-				<input
-					className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
-					placeholder={placeholder}
-					value={customInput ?? ""}
-					onChange={(e) => onCustomChange?.(e.target.value)}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === ",") {
-							e.preventDefault();
-						onCustomAdd?.();
-						}
-					}}
-					onBlur={() => {
-						const val = customInput?.trim() ?? "";
-					if (val) {
-							onChange(val);
-							onCustomChange?.("");
-						}
-					}}
-				/>
-			</div>
+				<div className="flex gap-2">
+					<input
+						className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+						placeholder={placeholder}
+						value={customInput ?? ""}
+						onChange={(e) => onCustomChange?.(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === ",") {
+								e.preventDefault();
+								onCustomAdd?.();
+							}
+						}}
+						onBlur={() => {
+							const val = customInput?.trim() ?? "";
+							if (val) {
+								onChange(val);
+								onCustomChange?.("");
+							}
+						}}
+					/>
+				</div>
 			)}
 			{requiredField && (
 				<p className="text-xs text-destructive">{requiredField}</p>

@@ -1,13 +1,14 @@
 import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Link } from "react-router";
 import BeanCard from "@/components/library/BeanCard";
 import CollectionTools, {
 	type CollectionFilter,
 } from "@/components/library/CollectionTools";
 import { archiveBeanById } from "@/db/crud/delete";
+import { db } from "@/db/db";
 import { updateBeanById } from "@/db/crud/update";
 import { useAllBeans } from "@/hooks/api/useBeans";
-import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { filterBeanCollection } from "@/lib/beanLibrary";
 import { beanLibraryPath, brewLogPath } from "@/lib/libraryRoutes";
 
@@ -39,18 +40,16 @@ export default function BeansLibrary() {
 	const [origins, setOrigins] = useState<string[]>([]);
 	const [brands, setBrands] = useState<string[]>([]);
 
-	const beanIds = useMemo(
-		() =>
-			allBeans
-				.map((bean) => bean.id)
-				.filter((id): id is number => typeof id === "number"),
-		[allBeans],
-	);
-	const dialInStates = useBeanDialInStates(beanIds);
-	const dialInByBeanId = useMemo(
-		() => new Map(dialInStates.map((state) => [state.beanId, state])),
-		[dialInStates],
-	);
+	const beanIdsWithBrewHistory =
+		useLiveQuery(
+			async () =>
+				new Set(
+					(await db.Brews.toArray())
+						.map((brew) => brew.beanId)
+						.filter((id): id is number => typeof id === "number"),
+				),
+			[],
+		) ?? new Set<number>();
 	const originOptions = useMemo(
 		() => optionsFor(allBeans.flatMap((bean) => bean.origin ?? [])),
 		[allBeans],
@@ -138,7 +137,6 @@ export default function BeansLibrary() {
 						<BeanCard
 							key={bean.id}
 							bean={bean}
-							dialInState={dialInByBeanId.get(bean.id)}
 							pinned={bean.archived ? false : bean.pinned}
 							onTogglePinned={
 								bean.archived
@@ -146,9 +144,7 @@ export default function BeansLibrary() {
 									: () => togglePinned(bean.id, !bean.pinned)
 							}
 							onRestore={bean.archived ? () => restoreBean(bean.id) : undefined}
-							hasBrewHistory={
-								(dialInByBeanId.get(bean.id)?.totalBrews ?? 0) > 0
-							}
+							hasBrewHistory={beanIdsWithBrewHistory.has(bean.id)}
 							to={beanLibraryPath(bean.id)}
 							startBrewTo={
 								bean.archived ? undefined : brewLogPath({ beanId: bean.id })

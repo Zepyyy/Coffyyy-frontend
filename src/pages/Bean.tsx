@@ -1,10 +1,4 @@
-import {
-	Archive,
-	ArchiveRestore,
-	ArrowLeft,
-	CheckCircle,
-	Trash2,
-} from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useState } from "react";
 import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
@@ -330,12 +324,6 @@ export default function Bean() {
 									: "rated brews"}
 							</p>
 						</div>
-						{insights._dialIn.isDialedIn && (
-							<span className="inline-flex items-center gap-1.5 font-Mono text-[10px] uppercase tracking-widest text-primary">
-								<CheckCircle size={12} />
-								Dialed in
-							</span>
-						)}
 					</div>
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 						{statRows.map(([label, averageValue, bestValue]) => (

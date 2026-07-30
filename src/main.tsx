@@ -35,11 +35,17 @@ createRoot(document.getElementById("root")!).render(
 							<Route index element={<LibraryIndexRedirect />} />
 							<Route path={LIBRARY_ROUTE_SEGMENTS.beans}>
 								<Route index element={<BeansLibrary />} />
-								<Route path={LIBRARY_ROUTE_SEGMENTS.beanDetail} element={<Bean />} />
+								<Route
+									path={LIBRARY_ROUTE_SEGMENTS.beanDetail}
+									element={<Bean />}
+								/>
 							</Route>
 							<Route path={LIBRARY_ROUTE_SEGMENTS.brewers}>
 								<Route index element={<BrewersLibrary />} />
-								<Route path={LIBRARY_ROUTE_SEGMENTS.brewerDetail} element={<BrewerDetail />} />
+								<Route
+									path={LIBRARY_ROUTE_SEGMENTS.brewerDetail}
+									element={<BrewerDetail />}
+								/>
 							</Route>
 						</Route>
 						<Route path="prototype/library" element={<LibraryPrototype />} />

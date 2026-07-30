@@ -47,7 +47,9 @@ export default function BrewerCard({
 						aria-label={pinned ? "Unpin brewer" : "Pin brewer"}
 						className="absolute right-3 bottom-3 border border-foreground/15 p-1.5 text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
 					>
-						<Pin className={`size-3.5 ${pinned ? "fill-current text-primary" : ""}`} />
+						<Pin
+							className={`size-3.5 ${pinned ? "fill-current text-primary" : ""}`}
+						/>
 					</button>
 				)}
 				<Tag
@@ -100,24 +102,24 @@ export default function BrewerCard({
 							View details
 						</Link>
 					)}
-					{brewer.archived ? (
-						onRestore && (
-							<button
-								type="button"
-								onClick={onRestore}
-								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
-							>
-								Restore
-							</button>
-						)
-					) : startBrewTo && (
-						<Link
-							to={startBrewTo}
-							className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
-						>
-							Start brew
-						</Link>
-					)}
+					{brewer.archived
+						? onRestore && (
+								<button
+									type="button"
+									onClick={onRestore}
+									className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+								>
+									Restore
+								</button>
+							)
+						: startBrewTo && (
+								<Link
+									to={startBrewTo}
+									className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+								>
+									Start brew
+								</Link>
+							)}
 				</div>
 			</div>
 		</div>

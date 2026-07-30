@@ -181,11 +181,7 @@ function validateCounts(counts: DatabaseSeedCounts) {
 
 export async function clearDatabase() {
 	await db.transaction("rw", db.Beans, db.Brewers, db.Brews, async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Brewers.clear(),
-		]);
+		await Promise.all([db.Brews.clear(), db.Beans.clear(), db.Brewers.clear()]);
 	});
 }
 
@@ -195,11 +191,7 @@ export async function resetDatabaseWithSeed(
 	validateCounts(counts);
 
 	return db.transaction("rw", db.Beans, db.Brewers, db.Brews, async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Brewers.clear(),
-		]);
+		await Promise.all([db.Brews.clear(), db.Beans.clear(), db.Brewers.clear()]);
 
 		const beanIds: number[] = [];
 		for (let index = 0; index < counts.beans; index += 1) {

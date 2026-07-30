@@ -22,7 +22,6 @@ const INITIAL: BrewerForm = {
 const SAVE_MESSAGES = [
 	"Brewer logged. Ready to brew.",
 	"Saved. Your setup just got sharper.",
-	"Catalogued. Dial-in time.",
 	"Brewer added to the arsenal.",
 	"Saved! Future brew sessions thank you.",
 ];
@@ -234,9 +233,9 @@ export default function BrewersLog() {
 										options={[...BREWER_CATEGORIES]}
 										selected={form.type}
 										onChange={(v) => setField("type", v)}
-												placeholder="E.g. Espresso"
-												allowCustom={false}
-												customInput={customType}
+										placeholder="E.g. Espresso"
+										allowCustom={false}
+										customInput={customType}
 										onCustomChange={setCustomType}
 										onCustomAdd={() => selectCustom("type", customType)}
 										requiredField={fieldErrors.type}
@@ -283,7 +282,11 @@ export default function BrewersLog() {
 								disabled={!form.name.trim() || isSaving}
 								className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
 							>
-								{isSaving ? "Saving…" : isEditing ? "Save changes" : "Save Brewer"}
+								{isSaving
+									? "Saving…"
+									: isEditing
+										? "Save changes"
+										: "Save Brewer"}
 							</button>
 						</div>
 					</form>

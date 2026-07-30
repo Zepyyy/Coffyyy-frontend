@@ -74,7 +74,9 @@ export default function CollectionTools({
 						className={`inline-flex h-10 items-center justify-center border px-4 font-Mono text-[10px] uppercase tracking-[0.14em] transition-colors ${archiveToggle.includeArchived ? "border-foreground bg-foreground text-background" : "border-border/70 text-muted-foreground hover:border-foreground hover:text-foreground"}`}
 						aria-pressed={archiveToggle.includeArchived}
 					>
-						{archiveToggle.includeArchived ? "Showing archived" : "Include archived"}
+						{archiveToggle.includeArchived
+							? "Showing archived"
+							: "Include archived"}
 					</button>
 				)}
 			</div>

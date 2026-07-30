@@ -11,13 +11,12 @@ const db = new Dexie("CoffyyyBrewer") as Dexie & {
 	Brews: EntityTable<Brews, "id">;
 };
 
-db.version(1)
-	.stores({
-		Beans:
-			"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
-		Brewers: "++id, name, type",
-		Brews:
-			"++id, beanId, method, brewerId, overallRating, tasteScore, strengthScore, grindSize, date, beanWeight, espressoWeight, waterAmount, heatLevel, brewTime, flow, extractionTime",
-	});
+db.version(1).stores({
+	Beans:
+		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+	Brewers: "++id, name, type",
+	Brews:
+		"++id, beanId, method, brewerId, overallRating, tasteScore, strengthScore, grindSize, date, beanWeight, espressoWeight, waterAmount, heatLevel, brewTime, flow, extractionTime",
+});
 
 export { db };

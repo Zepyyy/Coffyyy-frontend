@@ -56,8 +56,7 @@ export default function History() {
 		[suggestions.bean],
 	);
 	const brewerNameMap = useMemo(
-		() =>
-			new Map(suggestions.brewer.map((brewer) => [brewer.id, brewer.name])),
+		() => new Map(suggestions.brewer.map((brewer) => [brewer.id, brewer.name])),
 		[suggestions.brewer],
 	);
 
@@ -83,7 +82,7 @@ export default function History() {
 								History
 							</h1>
 							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Brews, ratings, and dial-in notes
+								Brews, ratings
 							</p>
 						</div>
 						<Link
@@ -268,7 +267,7 @@ export default function History() {
 									brewerName={
 										brew.brewerId != null
 											? (brewerNameMap.get(brew.brewerId) ??
-													`Brewer #${brew.brewerId}`)
+												`Brewer #${brew.brewerId}`)
 											: "No brewer saved"
 									}
 								/>

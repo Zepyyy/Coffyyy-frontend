@@ -1,14 +1,11 @@
 import { db } from "@/db/db";
 import type {
-	BeanBrewParameterSummary,
-	BeanBrewInsights,
-	BeanDialInState,
 	Brews,
+	BeanBrewInsights,
+	BeanBrewParameterSummary,
 } from "@/types/BrewTypes";
 
 const TOP_RATED_THRESHOLD = 4;
-const MIN_BREWS_FOR_DIALED_IN = 3;
-const MAX_GRIND_SPREAD = 1;
 
 function sortByNewest(a: Brews, b: Brews) {
 	return +new Date(b.date) - +new Date(a.date);
@@ -139,7 +136,11 @@ function buildParameterSummary(
 	return {
 		grindSize:
 			formatAverage(averageGrindNumeric, { decimals: 1 }) ??
-			mostCommon(brews.map((brew) => brew.grindSize?.toString()).filter((v): v is string => Boolean(v))) ??
+			mostCommon(
+				brews
+					.map((brew) => brew.grindSize?.toString())
+					.filter((v): v is string => Boolean(v)),
+			) ??
 			"—",
 		beanWeight: averageBeanWeight,
 		espressoWeight: averageEspressoWeight,
@@ -162,39 +163,6 @@ function buildParameterSummary(
 		_rating: averageRating,
 		_basedOnCount: brews.length,
 		usesTopRatedBrews,
-	};
-}
-
-function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
-	const topRatedBrews = brews.filter(
-		(brew) => (brew.overallRating ?? 0) >= TOP_RATED_THRESHOLD,
-	);
-	const recentTopRatedBrews = topRatedBrews.slice(0, 3);
-	const numericGrinds = recentTopRatedBrews
-		.map((brew) => brew.grindSize)
-		.filter((value): value is number => value != null);
-
-	const stableNumericGrind =
-		numericGrinds.length >= 2 &&
-		Math.max(...numericGrinds) - Math.min(...numericGrinds) <= MAX_GRIND_SPREAD;
-	const stableTextGrind =
-		numericGrinds.length === 0 &&
-		recentTopRatedBrews.length >= 2 &&
-		new Set(recentTopRatedBrews.map((brew) => brew.grindSize)).size === 1;
-	const stableGrind = stableNumericGrind || stableTextGrind;
-	const lastRating = brews[0]?.overallRating ?? null;
-
-	return {
-		beanId,
-		isDialedIn:
-			brews.length >= MIN_BREWS_FOR_DIALED_IN &&
-			recentTopRatedBrews.length >= 2 &&
-			stableGrind &&
-			(lastRating ?? 0) >= TOP_RATED_THRESHOLD,
-		totalBrews: brews.length,
-		topRatedBrews: topRatedBrews.length,
-		lastRating,
-		stableGrind,
 	};
 }
 
@@ -241,7 +209,6 @@ export async function getBeanBrewInsights(
 			? buildParameterSummary(bestSourceBrews, topRatedBrews.length > 0)
 			: null;
 
-	const _dialIn = buildDialInState(beanId, brews);
 	const _lastBrew = brews[0] ?? null;
 
 	const recentBrewScores = [...brews].reverse().map((brew) => ({
@@ -254,14 +221,11 @@ export async function getBeanBrewInsights(
 
 	return {
 		beanId,
-		methods: Array.from(
-			new Set(brews.map((brew) => brew.method ?? "Unknown")),
-		),
+		methods: Array.from(new Set(brews.map((brew) => brew.method ?? "Unknown"))),
 		target: bestTarget ?? averageTarget,
 		average: averageTarget,
 		best: bestTarget,
 		_lastBrew,
-		_dialIn,
 		recentBrewScores,
 	};
 }
@@ -271,30 +235,4 @@ export async function getBrewCountForBeanId(
 ): Promise<number> {
 	if (!beanId) return 0;
 	return db.Brews.filter((b) => b.beanId === beanId).count();
-}
-
-export async function getBeanDialInStates(
-	beanIds?: number[],
-): Promise<BeanDialInState[]> {
-	const brews = await db.Brews.toArray();
-	const relevantIds = new Set(
-		beanIds?.filter((beanId): beanId is number => typeof beanId === "number") ??
-			[],
-	);
-	const brewsByBean = new Map<number, Brews[]>();
-
-	for (const brew of brews) {
-		if (brew.beanId == null) continue;
-		if (relevantIds.size > 0 && !relevantIds.has(brew.beanId)) continue;
-
-		const existing = brewsByBean.get(brew.beanId) ?? [];
-		existing.push(brew);
-		brewsByBean.set(brew.beanId, existing);
-	}
-
-	return [...brewsByBean.entries()]
-		.map(([beanId, beanBrews]) =>
-			buildDialInState(beanId, beanBrews.sort(sortByNewest)),
-		)
-		.sort((a, b) => a.beanId - b.beanId);
 }

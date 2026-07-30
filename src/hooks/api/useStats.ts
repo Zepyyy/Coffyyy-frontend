@@ -16,12 +16,3 @@ export const useBrewCountForBeanId = (beanId: number | undefined) => {
 		useLiveQuery(() => statsApi.getBrewCountForBeanId(beanId), [beanId]) ?? 0
 	);
 };
-
-export const useBeanDialInStates = (beanIds: number[]) => {
-	return (
-		useLiveQuery(
-			() => statsApi.getBeanDialInStates(beanIds),
-			[beanIds.join(",")],
-		) ?? []
-	);
-};

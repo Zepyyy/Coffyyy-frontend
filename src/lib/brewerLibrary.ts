@@ -41,12 +41,14 @@ export function filterBrewerCollection<T extends SearchableBrewer>(
 	);
 }
 
-export function orderBrewers<T extends OrderedBrewer>(brewers: readonly T[]): T[] {
+export function orderBrewers<T extends OrderedBrewer>(
+	brewers: readonly T[],
+): T[] {
 	return [...brewers].sort(
-			(a, b) =>
-				Number(Boolean(a.archived)) - Number(Boolean(b.archived)) ||
-				Number(Boolean(!b.archived && b.pinned)) -
-					Number(Boolean(!a.archived && a.pinned)) ||
-				a.name.localeCompare(b.name),
-		);
+		(a, b) =>
+			Number(Boolean(a.archived)) - Number(Boolean(b.archived)) ||
+			Number(Boolean(!b.archived && b.pinned)) -
+				Number(Boolean(!a.archived && a.pinned)) ||
+			a.name.localeCompare(b.name),
+	);
 }

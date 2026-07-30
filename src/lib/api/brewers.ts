@@ -40,7 +40,9 @@ export async function getBrewerNameById(
 }
 
 export async function getAllBrewerNames(): Promise<Array<Brewers["name"]>> {
-	return getAllBrewers().then((brewers) => brewers.map((brewer) => brewer.name));
+	return getAllBrewers().then((brewers) =>
+		brewers.map((brewer) => brewer.name),
+	);
 }
 
 export async function getBrewerFilters(): Promise<Array<BrewerFilters>> {

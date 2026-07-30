@@ -17,7 +17,6 @@ import { Link } from "react-router";
 import { deleteBeanById } from "@/db/crud/delete";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
-import type { BeanDialInState } from "@/types/BrewTypes";
 import RoastDots from "../home/RoastDots";
 import { Separator } from "../ui/separator";
 
@@ -71,7 +70,6 @@ interface Parameter {
 
 export default function BeanCard({
 	bean,
-	dialInState,
 	to,
 	startBrewTo,
 	pinned = false,
@@ -80,7 +78,6 @@ export default function BeanCard({
 	hasBrewHistory = false,
 }: {
 	bean: Beans;
-	dialInState?: BeanDialInState;
 	to?: string;
 	startBrewTo?: string;
 	pinned?: boolean;
@@ -124,13 +121,6 @@ export default function BeanCard({
 				>
 					{bean.origin.join(", ")} · {bean.brand}
 				</div>
-				{dialInState?.isDialedIn && (
-					<div
-						className={`mt-3 absolute bottom-1 right-1 items-center border px-2 py-1 font-Mono text-[9px] uppercase tracking-[0.16em] ${colorSwatch[bean.dominantNote]?.text} border-current/20 bg-background/40`}
-					>
-						Dialed In
-					</div>
-				)}
 				{/* Background text effect */}
 				<div
 					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${colorSwatch[bean.dominantNote]?.text}`}
