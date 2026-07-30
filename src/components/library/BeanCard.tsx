@@ -105,16 +105,6 @@ export default function BeanCard({
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
-				{onTogglePinned && !bean.archived && (
-					<button
-						type="button"
-						onClick={onTogglePinned}
-						aria-label={pinned ? "Unpin bean" : "Pin bean"}
-						className={`absolute left-3 top-3 border border-current/20 p-1.5 transition-colors hover:border-current ${colorSwatch[bean.dominantNote]?.text}`}
-					>
-						<Pin className={`size-3.5 ${pinned ? "fill-current" : ""}`} />
-					</button>
-				)}
 
 				<div
 					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${colorSwatch[bean.dominantNote]?.secondaryText}`}
@@ -135,7 +125,7 @@ export default function BeanCard({
 			</article>
 			<Separator />
 
-			<article className="flex flex-1 flex-col gap-6 py-4 px-4">
+			<article className="relative flex flex-1 flex-col gap-6 py-4 px-4">
 				{parameters.map(
 					(param) =>
 						(param.values?.length ?? 0) > 0 && (
@@ -155,6 +145,16 @@ export default function BeanCard({
 								</div>
 							</div>
 						),
+				)}
+				{onTogglePinned && !bean.archived && (
+					<button
+						type="button"
+						onClick={onTogglePinned}
+						aria-label={pinned ? "Unpin bean" : "Pin bean"}
+						className={`absolute right-3 top-3 border border-current/20 p-1.5 transition-colors hover:border-current ${colorSwatch[bean.dominantNote]?.text}`}
+					>
+						<Pin className={`size-3.5 ${pinned ? "fill-current" : ""}`} />
+					</button>
 				)}
 				<div className="flex flex-col gap-2">
 					<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
