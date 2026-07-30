@@ -1,5 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import * as beanStatsApi from "@/lib/api/beans";
+import { db } from "@/db/db";
+import { summarizeBeanUsage } from "@/lib/beanUsage";
 
 export const useBean = (beanId: number | undefined) => {
 	return (
@@ -12,6 +14,13 @@ export const useAllBeans = (includeArchived = false) => {
 			() => beanStatsApi.getAllBeans(includeArchived),
 			[includeArchived],
 		) ?? []
+	);
+};
+
+export const useBeanUsage = () => {
+	return (
+		useLiveQuery(async () => summarizeBeanUsage(await db.Brews.toArray()), []) ??
+		new Map()
 	);
 };
 

@@ -21,6 +21,12 @@ function toNumericValue(
 		return null;
 	}
 
+	const durationMatch = value.match(/^(\d+):([0-5]\d)$/);
+	if (durationMatch) {
+		const seconds = Number(durationMatch[1]) * 60 + Number(durationMatch[2]);
+		return Number.isFinite(seconds) ? seconds : null;
+	}
+
 	const match = value.match(/-?\d+(\.\d+)?/);
 	if (!match) {
 		return null;
@@ -28,6 +34,12 @@ function toNumericValue(
 
 	const parsed = Number(match[0]);
 	return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatDurationAverage(value: number | null): string | null {
+	if (value == null) return null;
+	const rounded = Math.max(0, Math.round(value));
+	return `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, "0")}`;
 }
 
 function average(values: Array<number | null>): number | null {
@@ -146,16 +158,13 @@ function buildParameterSummary(
 		espressoWeight: averageEspressoWeight,
 		yieldWeight: averageYieldWeight,
 		waterAmount: averageWaterAmount,
-		brewTime: formatAverage(averageBrewSeconds, { suffix: "s", decimals: 0 }),
+		brewTime: formatDurationAverage(averageBrewSeconds),
 		heatLevel: (mostCommon(mokaBrews.map((brew) => brew.heatLevel)) ?? null) as
 			| "Low"
 			| "Medium"
 			| "High"
 			| null,
-		extractionTime: formatAverage(averageExtractionSeconds, {
-			suffix: "s",
-			decimals: 0,
-		}),
+		extractionTime: formatDurationAverage(averageExtractionSeconds),
 		_flow: mostCommon(brews.map((brew) => brew.flow)) ?? "—",
 		ratio: averageRatio,
 		_tasteScore: averageTasteScore,

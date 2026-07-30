@@ -8,7 +8,7 @@ import CollectionTools, {
 import { archiveBeanById } from "@/db/crud/delete";
 import { db } from "@/db/db";
 import { updateBeanById } from "@/db/crud/update";
-import { useAllBeans } from "@/hooks/api/useBeans";
+import { useAllBeans, useBeanUsage } from "@/hooks/api/useBeans";
 import { filterBeanCollection } from "@/lib/beanLibrary";
 import { beanLibraryPath, brewLogPath } from "@/lib/libraryRoutes";
 
@@ -33,6 +33,7 @@ function optionsFor(values: string[]) {
 
 export default function BeansLibrary() {
 	const beans = useAllBeans();
+	const usage = useBeanUsage();
 	const [includeArchived, setIncludeArchived] = useState(false);
 	const allBeans = useAllBeans(includeArchived);
 	const [search, setSearch] = useState("");
@@ -145,6 +146,9 @@ export default function BeansLibrary() {
 							}
 							onRestore={bean.archived ? () => restoreBean(bean.id) : undefined}
 							hasBrewHistory={beanIdsWithBrewHistory.has(bean.id)}
+							lastUsed={usage.get(bean.id)?.lastUsed}
+							lastMethod={usage.get(bean.id)?.lastMethod}
+							brewCount={usage.get(bean.id)?.brewCount}
 							to={beanLibraryPath(bean.id)}
 							startBrewTo={
 								bean.archived ? undefined : brewLogPath({ beanId: bean.id })

@@ -17,6 +17,7 @@ import { Link } from "react-router";
 import { deleteBeanById } from "@/db/crud/delete";
 import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
+import { formatShortDate } from "@/lib/dates";
 import RoastDots from "../home/RoastDots";
 import { Separator } from "../ui/separator";
 
@@ -76,6 +77,9 @@ export default function BeanCard({
 	onTogglePinned,
 	onRestore,
 	hasBrewHistory = false,
+	lastUsed,
+	lastMethod,
+	brewCount = 0,
 }: {
 	bean: Beans;
 	to?: string;
@@ -84,6 +88,9 @@ export default function BeanCard({
 	onTogglePinned?: () => void;
 	onRestore?: () => void;
 	hasBrewHistory?: boolean;
+	lastUsed?: Date | string;
+	lastMethod?: string;
+	brewCount?: number;
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
@@ -164,6 +171,29 @@ export default function BeanCard({
 						{bean.roastLevel !== undefined && (
 							<RoastDots level={bean.roastLevel} />
 						)}
+					</div>
+				</div>
+				<div className="grid grid-cols-2 gap-3 border-t border-border pt-4">
+					<div>
+						<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+							Last brew
+						</span>
+						<p className="font-Recursive text-sm text-foreground">
+							{lastUsed ? formatShortDate(lastUsed) : "Never used"}
+						</p>
+						{lastMethod && (
+							<p className="font-Mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+								{lastMethod}
+							</p>
+						)}
+					</div>
+					<div>
+						<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+							History
+						</span>
+						<p className="font-Recursive text-sm text-foreground">
+							{brewCount} brew{brewCount === 1 ? "" : "s"}
+						</p>
 					</div>
 				</div>
 			</article>
