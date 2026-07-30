@@ -1,25 +1,25 @@
 import { useState } from "react";
-import { deleteMachineById } from "@/db/crud/delete";
-import type { Machines } from "@/types/MachineTypes";
+import { deleteBrewerById } from "@/db/crud/delete";
+import type { Brewers } from "@/types/BrewerTypes";
 import { Separator } from "../ui/separator";
 import Tag from "../ui/tag";
 
-export default function MachineCard({ machine }: { machine: Machines }) {
+export default function BrewerCard({ brewer }: { brewer: Brewers }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			<article className="p-6 relative">
 				<div className="text-2xl font-News font-semibold">
-					{machine.name || "Unnamed bean"}
+					{brewer.name || "Unnamed bean"}
 				</div>
 				<div className="text-md font-Bricolage font-light dark:text-tag-primary-200 tracking-widest">
-					{machine.brand} {machine.model ? ` · ${machine.model}` : ""}
+					{brewer.brand} {brewer.model ? ` · ${brewer.model}` : ""}
 				</div>
 				<Tag
-					text={machine.type}
+					text={brewer.type}
 					size="sm"
-					variant={machine.type === "Espresso" ? "blue" : "purple"}
+					variant={brewer.type === "Espresso" ? "blue" : "purple"}
 					className="absolute top-0 right-3 border-t-0 border-dashed rounded-t-none pt-2"
 				/>
 			</article>
@@ -32,7 +32,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 						grindRange
 					</div>
 					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.grindRange}
+						{brewer.grindRange}
 					</div>
 				</div>
 				<div>
@@ -40,7 +40,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 						Capacity
 					</div>
 					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.capacity}
+						{brewer.capacity}
 					</div>
 				</div>
 				<div>
@@ -48,7 +48,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 						Bought
 					</div>
 					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.purchaseDate}
+						{brewer.purchaseDate}
 					</div>
 				</div>
 			</article>
@@ -60,8 +60,8 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 						<button
 							type="button"
 							onClick={() => {
-								if (typeof machine.id === "number")
-									deleteMachineById(machine.id);
+								if (typeof brewer.id === "number")
+									deleteBrewerById(brewer.id);
 							}}
 							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
 						>

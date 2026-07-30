@@ -2,12 +2,12 @@ import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addMachine } from "@/db/crud/add";
-import { useMachineSuggestions } from "@/hooks/api/useMachines";
+import { addBrewer } from "@/db/crud/add";
+import { useBrewerSuggestions } from "@/hooks/api/useBrewers";
 import { validateRequiredFields } from "@/lib/formValidation";
-import { BREWER_CATEGORIES, type MachineForm } from "@/types/MachineTypes";
+import { BREWER_CATEGORIES, type BrewerForm } from "@/types/BrewerTypes";
 
-const INITIAL: MachineForm = {
+const INITIAL: BrewerForm = {
 	name: "",
 	brand: "",
 	model: "",
@@ -25,9 +25,9 @@ const SAVE_MESSAGES = [
 	"Saved! Future brew sessions thank you.",
 ];
 
-const REQUIRED_FIELDS: Partial<Record<keyof MachineForm, string>> = {
-			brand: "Enter a brand for this brewer.",
-			type: "Enter a category for this brewer.",
+const REQUIRED_FIELDS: Partial<Record<keyof BrewerForm, string>> = {
+	brand: "Enter a brand for this brewer.",
+	type: "Enter a category for this brewer.",
 };
 
 function normalizeOptional(value: string) {
@@ -35,29 +35,29 @@ function normalizeOptional(value: string) {
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
-export default function MachinesLog() {
-	const [form, setForm] = useState<MachineForm>(INITIAL);
+export default function BrewersLog() {
+	const [form, setForm] = useState<BrewerForm>(INITIAL);
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
-	const suggestions = useMachineSuggestions();
+	const suggestions = useBrewerSuggestions();
 
 	const [customBrand, setCustomBrand] = useState("");
 	const [customModel, setCustomModel] = useState("");
 	const [customType, setCustomType] = useState("");
 	const [customCapacity, setCustomCapacity] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<
-		Partial<Record<keyof MachineForm, string>>
+		Partial<Record<keyof BrewerForm, string>>
 	>({});
 
-	function setField<K extends keyof MachineForm>(
+	function setField<K extends keyof BrewerForm>(
 		field: K,
-		value: MachineForm[K],
+		value: BrewerForm[K],
 	) {
 		setForm((f) => ({ ...f, [field]: value }));
 	}
 
-	function selectCustom(field: keyof MachineForm, value: string) {
+	function selectCustom(field: keyof BrewerForm, value: string) {
 		setField(field, value.trim());
 	}
 
@@ -74,7 +74,7 @@ export default function MachinesLog() {
 
 		setIsSaving(true);
 		try {
-			const result = await addMachine({
+			const result = await addBrewer({
 				name: normalizeOptional(form.name) ?? "",
 				brand: normalizeOptional(form.brand) ?? "",
 				model: normalizeOptional(form.model) ?? "",
@@ -102,7 +102,7 @@ export default function MachinesLog() {
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-5 border-primary-200 pl-5">
 							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
-								Add equipment
+								Add brewer
 							</h1>
 							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
 								Register a new brewer.
@@ -200,8 +200,9 @@ export default function MachinesLog() {
 										options={[...BREWER_CATEGORIES]}
 										selected={form.type}
 										onChange={(v) => setField("type", v)}
-										placeholder="E.g. Espresso"
-										customInput={customType}
+												placeholder="E.g. Espresso"
+												allowCustom={false}
+												customInput={customType}
 										onCustomChange={setCustomType}
 										onCustomAdd={() => selectCustom("type", customType)}
 										requiredField={fieldErrors.type}
@@ -248,7 +249,7 @@ export default function MachinesLog() {
 								disabled={!form.name.trim() || isSaving}
 								className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
 							>
-								{isSaving ? "Saving…" : "Save Equipment"}
+								{isSaving ? "Saving…" : "Save Brewer"}
 							</button>
 						</div>
 					</form>

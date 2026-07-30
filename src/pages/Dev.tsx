@@ -19,7 +19,7 @@ const IDLE: RequestState = { status: "idle", data: null, label: "" };
 
 type ModalState = {
 	isOpen: boolean;
-	type: "bean" | "brew" | "machine";
+	type: "bean" | "brew" | "brewer";
 	mode: "POST" | "PATCH" | "DELETE";
 	id?: string;
 };
@@ -86,29 +86,29 @@ const ENDPOINTS: { section: string; items: Endpoint[] }[] = [
 		],
 	},
 	{
-		section: "Machines",
+		section: "Brewers",
 		items: [
 			{
-				label: "GET /machine",
+				label: "GET /brewer",
 				method: "GET",
-				run: () => api.get("/machine").then((r) => r.data),
+				run: () => api.get("/brewer").then((r) => r.data),
 			},
 			{
-				label: "POST /machine",
+				label: "POST /brewer",
 				method: "POST",
-				run: (body?: unknown) => api.post("/machine", body).then((r) => r.data),
+				run: (body?: unknown) => api.post("/brewer", body).then((r) => r.data),
 			},
 			{
-				label: "PATCH /machine/:id",
+				label: "PATCH /brewer/:id",
 				method: "PATCH",
 				run: (body?: unknown, id?: string) =>
-					api.patch(`/machine/${id}`, body).then((r) => r.data),
+					api.patch(`/brewer/${id}`, body).then((r) => r.data),
 			},
 			{
-				label: "DELETE /machine/:id",
+				label: "DELETE /brewer/:id",
 				method: "DELETE",
 				run: (_?: unknown, id?: string) =>
-					api.delete(`/machine/${id}`).then((r) => r.data),
+					api.delete(`/brewer/${id}`).then((r) => r.data),
 			},
 		],
 	},
@@ -202,8 +202,8 @@ export default function Dev() {
 		if (endpoint.method !== "GET" && !modal.isOpen) {
 			const type = endpoint.label.includes("brew")
 				? "brew"
-				: endpoint.label.includes("machine")
-					? "machine"
+				: endpoint.label.includes("brewer")
+					? "brewer"
 					: "bean";
 			const mode = endpoint.method as ModalState["mode"];
 			openModal(type, mode);

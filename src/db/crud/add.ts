@@ -1,6 +1,7 @@
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
-import type { Machines } from "@/types/MachineTypes";
+import type { Brewers } from "@/types/BrewerTypes";
+import { isolateMethodMeasurements } from "@/lib/brewMethods";
 import { db } from "../db";
 
 async function addBean(bean: Omit<Beans, "id">) {
@@ -21,30 +22,12 @@ async function addBrew(brew: Omit<Brews, "id">) {
 	try {
 		if (brew.beanId == null) return new Error("Select a bean before saving.");
 		if (!brew.method) return new Error("Select a brew method before saving.");
-		const brewerId = brew.brewerId ?? brew.machineId;
-		const methodFields =
-			brew.method === "Espresso"
-				? {
-						waterAmount: undefined,
-						heatLevel: undefined,
-						brewTime: undefined,
-						yieldWeight: undefined,
-					}
-				: {
-						extractionTime: undefined,
-						flow: undefined,
-						espressoWeight: undefined,
-					};
 		// Keep method-specific values isolated even if a caller passes a stale
-		// value from another form state or a legacy record.
+		// value from another form state.
 		return await db.Brews.bulkAdd([
 			{
 				...brew,
-				brewerId,
-				// Do not write the legacy field on new records. It remains readable
-				// in the type for records created before the Brewer migration.
-				machineId: undefined,
-				...methodFields,
+				...isolateMethodMeasurements(brew.method, brew),
 			},
 		]);
 	} catch (error) {
@@ -52,20 +35,20 @@ async function addBrew(brew: Omit<Brews, "id">) {
 	}
 }
 
-async function addMachine(machine: Omit<Machines, "id">) {
+async function addBrewer(brewer: Omit<Brewers, "id">) {
 	try {
 		// Check if a bean with the same name already exists
-		const existingMachine = await db.Machines.where("name")
-			.equals(machine.name)
+		const existingBrewer = await db.Brewers.where("name")
+			.equals(brewer.name)
 			.first();
-		if (!existingMachine) {
-			return await db.Machines.bulkAdd([machine]);
+		if (!existingBrewer) {
+			return await db.Brewers.bulkAdd([brewer]);
 		} else {
-			return new Error(`Machine with name ${machine.name} already exists`);
+			return new Error(`Brewer with name ${brewer.name} already exists`);
 		}
 	} catch (error) {
 		return error;
 	}
 }
 
-export { addBean, addBrew, addMachine };
+export { addBean, addBrew, addBrewer };

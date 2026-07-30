@@ -8,6 +8,7 @@ export default function SingleChoiceChips({
 	customInput,
 	onCustomChange,
 	onCustomAdd,
+	allowCustom = true,
 	placeholder,
 	requiredField,
 }: {
@@ -15,15 +16,16 @@ export default function SingleChoiceChips({
 	unknown?: string;
 	selected: string;
 	onChange: (v: string) => void;
-	customInput: string;
-	onCustomChange: (v: string) => void;
-	onCustomAdd: () => void;
+	customInput?: string;
+	onCustomChange?: (v: string) => void;
+	onCustomAdd?: () => void;
+	allowCustom?: boolean;
 	placeholder: string;
 	requiredField?: string;
 }) {
-	const allChips = [
-		...new Set([...options, customInput.trim()].filter(Boolean)),
-	];
+	const allChips = allowCustom
+		? [...new Set([...options, customInput?.trim() ?? ""].filter(Boolean))]
+		: options;
 	return (
 		<div
 			className={cn(
@@ -52,27 +54,29 @@ export default function SingleChoiceChips({
 					</button>
 				))}
 			</div>
+			{allowCustom && (
 			<div className="flex gap-2">
 				<input
 					className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
 					placeholder={placeholder}
-					value={customInput}
-					onChange={(e) => onCustomChange(e.target.value)}
+					value={customInput ?? ""}
+					onChange={(e) => onCustomChange?.(e.target.value)}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === ",") {
 							e.preventDefault();
-							onCustomAdd();
+						onCustomAdd?.();
 						}
 					}}
 					onBlur={() => {
-						const val = customInput.trim();
-						if (val) {
+						const val = customInput?.trim() ?? "";
+					if (val) {
 							onChange(val);
-							onCustomChange("");
+							onCustomChange?.("");
 						}
 					}}
 				/>
 			</div>
+			)}
 			{requiredField && (
 				<p className="text-xs text-destructive">{requiredField}</p>
 			)}

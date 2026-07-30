@@ -1,7 +1,7 @@
 import { db } from "@/db/db";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
-import type { MachineCardProps } from "@/types/MachineTypes";
+import type { BrewerCardProps } from "@/types/BrewerTypes";
 
 export type HistorySortMode =
 	| "newest"
@@ -16,7 +16,7 @@ export type HistorySidebarStats = {
 	uniqueBeans: number;
 	avgRating: number | null;
 	last7Days: number;
-	topMachine: number | null;
+	topBrewer: number | null;
 };
 
 function sortBrews(list: Brews[], sort: HistorySortMode): Brews[] {
@@ -48,14 +48,14 @@ function sortBrews(list: Brews[], sort: HistorySortMode): Brews[] {
 }
 
 async function getBrewNameMaps() {
-	const [beans, machines] = await Promise.all([
+	const [beans, brewers] = await Promise.all([
 		db.Beans.toArray(),
-		db.Machines.toArray(),
+		db.Brewers.toArray(),
 	]);
 
 	return {
 		beans: new Map(beans.map((bean) => [bean.id, bean.name])),
-		machines: new Map(machines.map((machine) => [machine.id, machine.name])),
+		brewers: new Map(brewers.map((brewer) => [brewer.id, brewer.name])),
 	};
 }
 
@@ -88,14 +88,14 @@ export async function getBrewsForHistoryView(
 		list = list.filter((brew) => {
 			const beanName =
 				brew.beanId != null ? names.beans.get(brew.beanId)?.toLowerCase() : "";
-			const brewerId = brew.brewerId ?? brew.machineId;
-			const machineName =
-				brewerId != null ? names.machines.get(brewerId)?.toLowerCase() : "";
+			const brewerId = brew.brewerId;
+			const brewerName =
+				brewerId != null ? names.brewers.get(brewerId)?.toLowerCase() : "";
 			return (
 				Boolean(beanName?.includes(q)) ||
-				Boolean(machineName?.includes(q)) ||
+				Boolean(brewerName?.includes(q)) ||
 				Boolean(brew.beanId?.toString().includes(q)) ||
-				Boolean(brew.machineId?.toString().includes(q))
+				Boolean(brew.brewerId?.toString().includes(q))
 			);
 		});
 	}
@@ -122,7 +122,7 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 			uniqueBeans: 0,
 			avgRating: null,
 			last7Days: 0,
-			topMachine: null,
+			topBrewer: null,
 		};
 	}
 	const beans = new Set(
@@ -140,18 +140,18 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 		(b) => now - +new Date(b.date) <= weekMs,
 	).length;
 
-	const machineCounts = new Map<number, number>();
+	const brewerCounts = new Map<number, number>();
 	for (const b of brews) {
-		const brewerId = b.brewerId ?? b.machineId;
+		const brewerId = b.brewerId;
 		if (brewerId == null) continue;
-		machineCounts.set(brewerId, (machineCounts.get(brewerId) ?? 0) + 1);
+		brewerCounts.set(brewerId, (brewerCounts.get(brewerId) ?? 0) + 1);
 	}
-	let topMachine: number | null = null;
+	let topBrewer: number | null = null;
 	let top = 0;
-	for (const [name, count] of machineCounts) {
+	for (const [name, count] of brewerCounts) {
 		if (count > top) {
 			top = count;
-			topMachine = name;
+			topBrewer = name;
 		}
 	}
 
@@ -160,7 +160,7 @@ export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
 		uniqueBeans: beans.size,
 		avgRating: avg,
 		last7Days,
-		topMachine,
+		topBrewer,
 	};
 }
 
@@ -183,20 +183,19 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 			roastLevel: b.roastLevel,
 		})),
 	);
-	const machines = await db.Machines.toArray().then((b) =>
-		b.map((b) => ({
-			id: b.id,
-			name: b.name,
-			type: b.type,
+	const brewers = await db.Brewers.toArray().then((b) =>
+		b.map((brewer) => ({
+			id: brewer.id,
+			name: brewer.name,
+			type: brewer.type,
 		})),
 	);
-	const BeanCardProps = beans as Array<BeanCardProps>;
-	const MachineCardProps = machines as Array<MachineCardProps>;
+	const beanCards = beans as Array<BeanCardProps>;
+	const brewerCards = brewers as Array<BrewerCardProps>;
 
 	return {
-		bean: BeanCardProps,
-		machine: MachineCardProps,
-		brewer: MachineCardProps,
+		bean: beanCards,
+		brewer: brewerCards,
 	};
 }
 
@@ -213,7 +212,7 @@ export async function getLastUsedBrew(
 		.sort((a, b) => +new Date(b.date) - +new Date(a.date));
 	if (brewerId != null) {
 		const brewerMatch = matching.find(
-			(brew) => (brew.brewerId ?? brew.machineId) === brewerId,
+			(brew) => brew.brewerId === brewerId,
 		);
 		if (brewerMatch) return brewerMatch;
 	}

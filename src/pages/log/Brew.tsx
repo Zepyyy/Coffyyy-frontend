@@ -5,7 +5,7 @@ import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
 import FieldLabel from "@/components/log/FieldLabel";
 import OptionChips from "@/components/log/OptionChips";
-import QuickMachineCard from "@/components/log/QuickMachineCard";
+import QuickBrewerCard from "@/components/log/QuickBrewerCard";
 import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
 import { useBrewSuggestions } from "@/hooks/api/useBrews";
@@ -25,7 +25,6 @@ import { BREW_METHODS, type BrewForm, HEAT_LEVELS } from "@/types/BrewTypes";
 const INITIAL: BrewForm = {
 	beanId: undefined,
 	brewerId: undefined,
-	machineId: undefined,
 	method: undefined,
 	date: new Date(),
 	grindSize: undefined,
@@ -128,7 +127,7 @@ export default function BrewLog() {
 			}
 			setForm(INITIAL);
 			setSelectedBeanId(null);
-			setSelectedMachineId(null);
+			setSelectedBrewerId(null);
 			setStatus("Brew saved.");
 		} catch {
 			setStatus("Save failed.");
@@ -172,7 +171,7 @@ export default function BrewLog() {
 			: null;
 
 	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
-	const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
+	const [selectedBrewerId, setSelectedBrewerId] = useState<number | null>(
 		null,
 	);
 
@@ -180,7 +179,7 @@ export default function BrewLog() {
 	const isEmpty = suggestions.bean.length === 0;
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
-	const selectedMachine = suggestions.brewer.find(
+	const selectedBrewer = suggestions.brewer.find(
 		(m) => m.id === form.brewerId,
 	);
 
@@ -564,7 +563,7 @@ export default function BrewLog() {
 												type="button"
 												onClick={() => {
 													setField("brewerId", undefined);
-													setSelectedMachineId(null);
+													setSelectedBrewerId(null);
 												}}
 												className={cn(
 													"border px-3 py-2 font-Recursive text-sm",
@@ -575,18 +574,18 @@ export default function BrewLog() {
 											>
 												No brewer
 											</button>
-											{suggestions.brewer.map((machineInfo) => (
-												<QuickMachineCard
-													key={machineInfo.id}
-													selected={selectedMachineId === machineInfo.id}
-													machine={{
-														id: machineInfo.id,
-														name: machineInfo.name,
-														type: machineInfo.type,
+											{suggestions.brewer.map((brewerInfo) => (
+												<QuickBrewerCard
+													key={brewerInfo.id}
+													selected={selectedBrewerId === brewerInfo.id}
+													brewer={{
+														id: brewerInfo.id,
+														name: brewerInfo.name,
+														type: brewerInfo.type,
 													}}
 													onClick={() => {
-														setField("brewerId", machineInfo.id);
-														setSelectedMachineId(machineInfo.id);
+														setField("brewerId", brewerInfo.id);
+														setSelectedBrewerId(brewerInfo.id);
 													}}
 												/>
 											))}
@@ -608,7 +607,7 @@ export default function BrewLog() {
 										/>
 										<SummaryRow
 											label="Brewer"
-											value={selectedMachine?.name ?? "—"}
+											value={selectedBrewer?.name ?? "—"}
 										/>
 										<SummaryRow label="Method" value={form.method ?? "—"} />
 										<SummaryRow

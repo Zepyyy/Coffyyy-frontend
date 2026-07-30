@@ -1,11 +1,11 @@
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
-import type { Machines } from "@/types/MachineTypes";
+import type { Brewers } from "@/types/BrewerTypes";
 import { db } from "@/db/db";
 
 export type DatabaseSeedCounts = {
 	beans: number;
-	machines: number;
+	brewers: number;
 	brews: number;
 };
 
@@ -62,13 +62,13 @@ const TASTING_NOTES = [
 	"jasmine",
 	"dried fruit",
 ];
-const MACHINE_SPECS = [
-	{ brand: "La Marzocco", model: "Linea Mini", type: "Espresso" },
-	{ brand: "Sage", model: "Barista Pro", type: "Espresso" },
-	{ brand: "Flair", model: "58+", type: "Manual espresso" },
-	{ brand: "Gaggia", model: "Classic Evo", type: "Espresso" },
-	{ brand: "Hario", model: "V60", type: "Pour over" },
-	{ brand: "Cafelat", model: "Robot", type: "Manual espresso" },
+const BREWER_SPECS = [
+	{ brand: "La Marzocco", model: "Linea Mini", type: "Espresso machine" },
+	{ brand: "Sage", model: "Barista Pro", type: "Espresso machine" },
+	{ brand: "Flair", model: "58+", type: "Espresso machine" },
+	{ brand: "Gaggia", model: "Classic Evo", type: "Espresso machine" },
+	{ brand: "Hario", model: "V60", type: "Pour-over" },
+	{ brand: "Cafelat", model: "Robot", type: "Espresso machine" },
 ];
 const FLOWS = ["Perfect", "Even", "Uneven", "Struggling"];
 
@@ -116,8 +116,8 @@ function createBean(index: number): Omit<Beans, "id"> {
 	};
 }
 
-function createMachine(index: number): Omit<Machines, "id"> {
-	const spec = MACHINE_SPECS[index % MACHINE_SPECS.length];
+function createBrewer(index: number): Omit<Brewers, "id"> {
+	const spec = BREWER_SPECS[index % BREWER_SPECS.length];
 
 	return {
 		name: `${spec.model} ${index + 1}`,
@@ -133,7 +133,7 @@ function createMachine(index: number): Omit<Machines, "id"> {
 function createBrew(
 	index: number,
 	beanId: number,
-	machineId: number,
+	brewerId: number,
 ): Omit<Brews, "id"> {
 	const isUnrated = index % 11 === 0;
 	const beanWeight = randomInt(17, 21);
@@ -141,7 +141,8 @@ function createBrew(
 
 	return {
 		beanId,
-		machineId,
+		brewerId,
+		method: "Espresso",
 		date: dateWithinLastMonths(),
 		overallRating: isUnrated ? undefined : randomInt(2, 5),
 		tasteScore: isUnrated ? undefined : randomInt(-3, 4),
@@ -150,7 +151,7 @@ function createBrew(
 		beanWeight,
 		espressoWeight,
 		flow: pick(FLOWS),
-		extractionTime: `${randomInt(25, 40)}s`,
+		extractionTime: `00:${String(randomInt(25, 40)).padStart(2, "0")}`,
 	};
 }
 
@@ -163,11 +164,11 @@ function validateCounts(counts: DatabaseSeedCounts) {
 		throw new Error("Beans count must be an integer from 1 to 50");
 	}
 	if (
-		!Number.isInteger(counts.machines) ||
-		counts.machines < 1 ||
-		counts.machines > 12
+		!Number.isInteger(counts.brewers) ||
+		counts.brewers < 1 ||
+		counts.brewers > 12
 	) {
-		throw new Error("Machines count must be an integer from 1 to 12");
+		throw new Error("Brewers count must be an integer from 1 to 12");
 	}
 	if (
 		!Number.isInteger(counts.brews) ||
@@ -179,11 +180,11 @@ function validateCounts(counts: DatabaseSeedCounts) {
 }
 
 export async function clearDatabase() {
-	await db.transaction("rw", db.Beans, db.Machines, db.Brews, async () => {
+	await db.transaction("rw", db.Beans, db.Brewers, db.Brews, async () => {
 		await Promise.all([
 			db.Brews.clear(),
 			db.Beans.clear(),
-			db.Machines.clear(),
+			db.Brewers.clear(),
 		]);
 	});
 }
@@ -193,11 +194,11 @@ export async function resetDatabaseWithSeed(
 ): Promise<DatabaseSeedSummary> {
 	validateCounts(counts);
 
-	return db.transaction("rw", db.Beans, db.Machines, db.Brews, async () => {
+	return db.transaction("rw", db.Beans, db.Brewers, db.Brews, async () => {
 		await Promise.all([
 			db.Brews.clear(),
 			db.Beans.clear(),
-			db.Machines.clear(),
+			db.Brewers.clear(),
 		]);
 
 		const beanIds: number[] = [];
@@ -205,9 +206,9 @@ export async function resetDatabaseWithSeed(
 			beanIds.push(await db.Beans.add(createBean(index)));
 		}
 
-		const machineIds: number[] = [];
-		for (let index = 0; index < counts.machines; index += 1) {
-			machineIds.push(await db.Machines.add(createMachine(index)));
+		const brewerIds: number[] = [];
+		for (let index = 0; index < counts.brewers; index += 1) {
+			brewerIds.push(await db.Brewers.add(createBrewer(index)));
 		}
 
 		for (let index = 0; index < counts.brews; index += 1) {
@@ -215,7 +216,7 @@ export async function resetDatabaseWithSeed(
 				createBrew(
 					index,
 					beanIds[index % beanIds.length],
-					machineIds[index % machineIds.length],
+					brewerIds[index % brewerIds.length],
 				),
 			);
 		}

@@ -168,8 +168,8 @@ export const STEPS: Step[] = [
 	{
 		step: 3,
 		title: "Setup",
-		information: ["Machine"],
-		description: "Which machine did you use?",
+		information: ["Brewer"],
+		description: "Which brewer did you use?",
 	},
 	{
 		step: 4,

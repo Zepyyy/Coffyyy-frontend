@@ -69,11 +69,11 @@ Suggestions in the log forms are generated from previously saved beans and brewe
 - `/log`: bean logging form (default logging entry point)
 - `/log/brew`: multi-step brew form
 - `/log/bean`: bean catalog form
-- `/log/machine`: brewer catalog form
+- `/log/brewer`: brewer catalog form
 - `/library`: searchable bean and brewer library
 - `/beans/:BeanId`: detail view for a single bean
 - `/history`: brew history view (work in progress)
-- Legacy paths (`/brew`, `/machines`, `/database`, `/stats`, `/workflows/*`) redirect to their current locations
+- Legacy paths (`/brew`, `/brewers`, `/database`, `/stats`, `/workflows/*`) redirect to their current locations
 - Anything unmatched falls through to a catch-all (404) page
 
 ## Project Structure

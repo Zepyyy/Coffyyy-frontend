@@ -3,13 +3,13 @@ import { Link } from "react-router";
 import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
-import MachineCard from "@/components/library/MachineCard";
+import BrewerCard from "@/components/library/BrewerCard";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
-import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
+import { useAllBrewers, useBrewerCount } from "@/hooks/api/useBrewers";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { cn } from "@/lib/utils";
 
-	type Tab = "beans" | "machines";
+	type Tab = "beans" | "brewers";
 
 export default function Library() {
 	const [tab, setTab] = useState<Tab>("beans");
@@ -20,9 +20,9 @@ export default function Library() {
 	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
 	const beansCount = useBeanCount();
-	const machinesCount = useMachineCount();
+	const brewersCount = useBrewerCount();
 	const allBeans = useAllBeans();
-	const allMachines = useAllMachines();
+	const allBrewers = useAllBrewers();
 
 	const beanIds = useMemo(
 		() =>
@@ -61,23 +61,23 @@ export default function Library() {
 
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of allMachines) {
-			const type = machine.type?.trim();
+		for (const brewer of allBrewers) {
+			const type = brewer.type?.trim();
 			if (!type) continue;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [allMachines]);
+	}, [allBrewers]);
 
 	const brandsCounts = useMemo(() => {
 		const counts = new Map<string, number>();
-		for (const machine of allMachines) {
-			const brand = machine.brand?.trim();
+		for (const brewer of allBrewers) {
+			const brand = brewer.brand?.trim();
 			if (!brand) continue;
 			counts.set(brand, (counts.get(brand) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [allMachines]);
+	}, [allBrewers]);
 
 	const toggleSelection = (
 		value: string,
@@ -112,25 +112,25 @@ export default function Library() {
 		});
 	}, [search, selectedCountries, selectedBrand, allBeans]);
 
-	const filteredMachines = useMemo(() => {
+	const filteredBrewers = useMemo(() => {
 		const q = search.trim().toLowerCase();
-		return allMachines.filter((m) => {
+		return allBrewers.filter((brewer) => {
 			const matchesSearch =
 				!q ||
-				[m.name, m.brand, m.model, m.type]
+				[brewer.name, brewer.brand, brewer.model, brewer.type]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
 					.includes(q);
 			const matchesType =
 				selectedTypes.length === 0 ||
-				(m.type != null && selectedTypes.includes(m.type.trim()));
+				(brewer.type != null && selectedTypes.includes(brewer.type.trim()));
 			const matchesBrand =
 				selectedBrands.length === 0 ||
-				(m.brand != null && selectedBrands.includes(m.brand.trim()));
+				(brewer.brand != null && selectedBrands.includes(brewer.brand.trim()));
 			return matchesSearch && matchesType && matchesBrand;
 		});
-	}, [search, selectedBrands, selectedTypes, allMachines]);
+	}, [search, selectedBrands, selectedTypes, allBrewers]);
 
 	const beanCountryOptions = useMemo(
 		() =>
@@ -152,7 +152,7 @@ export default function Library() {
 		[brandCounts, selectedBrand],
 	);
 
-	const machineTypeOptions = useMemo(
+	const brewerTypeOptions = useMemo(
 		() =>
 			typeCounts.map(([label, count]) => ({
 				label,
@@ -162,7 +162,7 @@ export default function Library() {
 		[selectedTypes, typeCounts],
 	);
 
-	const machineBrandOptions = useMemo(
+	const brewerBrandOptions = useMemo(
 		() =>
 			brandsCounts.map(([label, count]) => ({
 				label,
@@ -187,7 +187,7 @@ export default function Library() {
 						</div>
 
 						<div className="flex w-full items-center gap-1 bg-background/15 p-1">
-							{(["beans", "machines"] as Tab[]).map((t) => (
+							{(["beans", "brewers"] as Tab[]).map((t) => (
 								<button
 									key={t}
 									type="button"
@@ -201,7 +201,7 @@ export default function Library() {
 								>
 									{t === "beans"
 										? `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`
-										: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`}
+										: `Brewers${brewersCount > 0 ? ` (${brewersCount})` : ""}`}
 								</button>
 							))}
 						</div>
@@ -235,14 +235,14 @@ export default function Library() {
 								<>
 									<FilterCard
 										title="Type"
-										options={machineTypeOptions}
+										options={brewerTypeOptions}
 										onToggle={(value) =>
 											toggleSelection(value, setSelectedTypes)
 										}
 									/>
 									<FilterCard
 										title="Brand"
-										options={machineBrandOptions}
+										options={brewerBrandOptions}
 										onToggle={(value) =>
 											toggleSelection(value, setSelectedBrands)
 										}
@@ -299,18 +299,18 @@ export default function Library() {
 						</div>
 					)}
 
-					{tab === "machines" && (
+					{tab === "brewers" && (
 						<div>
-							{filteredMachines.length === 0 ? (
+							{filteredBrewers.length === 0 ? (
 								<div className="rounded-xl border border-dashed border-border p-8 text-center">
 									<p className="text-sm text-muted-foreground">
-										{allMachines.length === 0
+										{allBrewers.length === 0
 											? "No equipment yet."
 											: "No brewers match your search."}
 									</p>
-									{allMachines.length === 0 && (
+									{allBrewers.length === 0 && (
 										<Link
-											to="/log/machine"
+											to="/log/brewer"
 											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
 										>
 										Add your first brewer
@@ -319,13 +319,13 @@ export default function Library() {
 								</div>
 							) : (
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-									{filteredMachines.map((machine) => (
-										<MachineCard
-											key={machine.id ?? `${machine.name}-${machine.model}`}
-											machine={machine}
+									{filteredBrewers.map((brewer) => (
+										<BrewerCard
+											key={brewer.id ?? `${brewer.name}-${brewer.model}`}
+											brewer={brewer}
 										/>
 									))}
-										<AddCard to="/log/machine" label="Add brewer" />
+										<AddCard to="/log/brewer" label="Add brewer" />
 								</div>
 							)}
 						</div>

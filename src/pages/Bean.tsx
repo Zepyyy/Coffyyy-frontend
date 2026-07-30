@@ -5,7 +5,7 @@ import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useBean } from "@/hooks/api/useBeans";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
-import { useAllMachines } from "@/hooks/api/useMachines";
+import { useAllBrewers } from "@/hooks/api/useBrewers";
 import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
@@ -65,13 +65,15 @@ export default function Bean() {
 	const { BeanId } = useParams();
 	const beanId = Number(BeanId);
 
-	const allMachines = useAllMachines();
+	const allBrewers = useAllBrewers();
 	const bean = useBean(beanId);
 	const brewCount = useBrewCountForBeanId(beanId);
 	const insights = useBeanBrewInsights(beanId);
 	const brews = useBrewsForBeanId(beanId);
 
-	const machineNameById = new Map(allMachines.map((m) => [m.id, m.name]));
+	const brewerNameById = new Map(
+		allBrewers.map((brewer) => [brewer.id, brewer.name]),
+	);
 
 	if (!bean) {
 		return (
@@ -281,9 +283,9 @@ export default function Bean() {
 								key={brew.id}
 								brew={brew}
 								beanName={bean.name}
-								machineName={
-									(brew.brewerId ?? brew.machineId) != null
-										? machineNameById.get(brew.brewerId ?? brew.machineId!)
+								brewerName={
+								brew.brewerId != null
+									? brewerNameById.get(brew.brewerId)
 										: undefined
 								}
 							/>

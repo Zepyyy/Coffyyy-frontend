@@ -1,60 +1,23 @@
 import { Dexie, type EntityTable } from "dexie";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
-import type { Machines } from "@/types/MachineTypes";
+import type { Brewers } from "@/types/BrewerTypes";
 
-const db = new Dexie("Coffyyy") as Dexie & {
+// A new database name is the intentional local-data reset. Existing
+// development data is disposable and no compatibility migration is required.
+const db = new Dexie("CoffyyyBrewer") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
-	Machines: EntityTable<Machines, "id">;
+	Brewers: EntityTable<Brewers, "id">;
 	Brews: EntityTable<Brews, "id">;
 };
 
-db.version(1).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote, tastingNotes",
-	Machines: "++id, name",
-	Brews:
-		"++id, bean, overallRating, grindSize, date, acidity, adjustementNeeded, aftertaste",
-});
-
-db.version(2).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote, tastingNotes",
-	Machines: "++id, name",
-	Brews:
-		"++id, bean, overallRating, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
-});
-
-db.version(3).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
-	Machines: "++id, name",
-	Brews:
-		"++id, bean, overallRating, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
-});
-
-db.version(4).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
-	Machines: "++id, name",
-	Brews:
-		"++id, bean, overallRating, tasteScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
-});
-
-db.version(5).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
-	Machines: "++id, name",
-	Brews:
-		"++id, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
-});
-
-db.version(6).stores({
-	Beans:
-		"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
-	Machines: "++id, name, type",
-	Brews:
-		"++id, beanId, method, brewerId, overallRating, tasteScore, strengthScore, grindSize, date, beanWeight, espressoWeight, waterAmount, heatLevel, brewTime, flow, extractionTime",
-});
+db.version(1)
+	.stores({
+		Beans:
+			"++id, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+		Brewers: "++id, name, type",
+		Brews:
+			"++id, beanId, method, brewerId, overallRating, tasteScore, strengthScore, grindSize, date, beanWeight, espressoWeight, waterAmount, heatLevel, brewTime, flow, extractionTime",
+	});
 
 export { db };

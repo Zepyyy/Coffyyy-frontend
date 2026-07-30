@@ -105,11 +105,11 @@ function DetailItem({
 export function BrewHistoryRow({
 	brew,
 	beanName,
-	machineName,
+	brewerName,
 }: {
 	brew: Brews;
 	beanName: string;
-	machineName: string | undefined;
+	brewerName: string | undefined;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
@@ -184,7 +184,7 @@ export function BrewHistoryRow({
 						</p>
 						<p className="mt-0.5 truncate font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
 							{brew.method ?? "Method unknown"}
-							{machineName ? ` · Brewer: ${machineName}` : ""}
+							{brewerName ? ` · Brewer: ${brewerName}` : ""}
 						</p>
 					</div>
 					<p className="truncate font-Recursive text-xs text-muted-foreground">

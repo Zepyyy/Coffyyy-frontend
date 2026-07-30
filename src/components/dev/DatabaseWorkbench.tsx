@@ -12,17 +12,17 @@ const PRESETS: Array<{
 	{
 		name: "Small",
 		description: "Quick UI smoke test",
-		counts: { beans: 3, machines: 2, brews: 12 },
+		counts: { beans: 3, brewers: 2, brews: 12 },
 	},
 	{
 		name: "Demo",
 		description: "Balanced everyday dataset",
-		counts: { beans: 8, machines: 3, brews: 48 },
+		counts: { beans: 8, brewers: 3, brews: 48 },
 	},
 	{
 		name: "Stress",
 		description: "More rows for filtering and charts",
-		counts: { beans: 24, machines: 6, brews: 300 },
+		counts: { beans: 24, brewers: 6, brews: 300 },
 	},
 ];
 
@@ -36,7 +36,7 @@ type OperationStatus = {
 } | null;
 
 function formatCounts(counts: DatabaseSeedCounts) {
-	return `${counts.beans} beans · ${counts.machines} machines · ${counts.brews} brews`;
+	return `${counts.beans} beans · ${counts.brewers} brewers · ${counts.brews} brews`;
 }
 
 export default function DatabaseWorkbench() {
@@ -54,9 +54,9 @@ export default function DatabaseWorkbench() {
 		Number.isInteger(customCounts.beans) &&
 		customCounts.beans >= 1 &&
 		customCounts.beans <= 50 &&
-		Number.isInteger(customCounts.machines) &&
-		customCounts.machines >= 1 &&
-		customCounts.machines <= 12 &&
+		Number.isInteger(customCounts.brewers) &&
+		customCounts.brewers >= 1 &&
+		customCounts.brewers <= 12 &&
 		Number.isInteger(customCounts.brews) &&
 		customCounts.brews >= 0 &&
 		customCounts.brews <= 500;
@@ -134,7 +134,7 @@ export default function DatabaseWorkbench() {
 			<div className="grid grid-cols-3 gap-2">
 				{[
 					["Beans", databaseCounts.beans],
-					["Machines", databaseCounts.machines],
+					["Brewers", databaseCounts.brewers],
 					["Brews", databaseCounts.brews],
 				].map(([label, count]) => (
 					<div key={label} className="border border-border bg-background p-3">
@@ -187,7 +187,7 @@ export default function DatabaseWorkbench() {
 					{(
 						[
 							["beans", "Beans", 1, 50],
-							["machines", "Machines", 1, 12],
+							["brewers", "Brewers", 1, 12],
 							["brews", "Brews", 0, 500],
 						] as Array<[keyof DatabaseSeedCounts, string, number, number]>
 					).map(([field, label, min, max]) => (
@@ -218,7 +218,7 @@ export default function DatabaseWorkbench() {
 						Reset with custom data
 					</Button>
 					<span className="font-Mono text-[10px] text-muted-foreground">
-						Beans 1–50 · Machines 1–12 · Brews 0–500
+						Beans 1–50 · Brewers 1–12 · Brews 0–500
 					</span>
 				</div>
 			</div>
@@ -227,7 +227,7 @@ export default function DatabaseWorkbench() {
 				<div className="border border-destructive/50 bg-destructive/5 p-4">
 					<p className="text-sm font-medium">
 						{pendingAction.type === "clear"
-							? "Clear every local bean, machine, and brew?"
+							? "Clear every local bean, brewer, and brew?"
 							: `Replace current database with ${pendingAction.label.toLowerCase()} data?`}
 					</p>
 					<p className="mt-1 text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-export type Machines = {
+export type Brewers = {
 	id: number;
 	name: string;
 	brand: string;
@@ -15,13 +15,13 @@ export const BREWER_CATEGORIES = [
 	"French press",
 	"AeroPress",
 ] as const;
-export type MachineCardProps = {
+export type BrewerCardProps = {
 	id: number;
 	name: string;
 	type: string;
 };
 
-export type MachineForm = {
+export type BrewerForm = {
 	name: string;
 	brand: string;
 	model: string;
@@ -31,7 +31,7 @@ export type MachineForm = {
 	purchaseDate: string;
 };
 
-export type MachineSuggestions = {
+export type BrewerSuggestions = {
 	brands: Array<string>;
 	models: Array<string>;
 	types: Array<string>;
@@ -39,7 +39,7 @@ export type MachineSuggestions = {
 	capacities: Array<string>;
 };
 
-export type MachineFilters = {
+export type BrewerFilters = {
 	name: string;
 	brand: string;
 	model: string;

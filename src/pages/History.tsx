@@ -55,17 +55,17 @@ export default function History() {
 		() => new Map(suggestions.bean.map((bean) => [bean.id, bean.name])),
 		[suggestions.bean],
 	);
-	const machineNameMap = useMemo(
+	const brewerNameMap = useMemo(
 		() =>
-			new Map(suggestions.machine.map((machine) => [machine.id, machine.name])),
-		[suggestions.machine],
+			new Map(suggestions.brewer.map((brewer) => [brewer.id, brewer.name])),
+		[suggestions.brewer],
 	);
 
 	const hasActiveFilters = search.trim().length > 0 || ratingFilter !== "all";
 	const shownCount = brews?.length ?? 0;
-	const topMachineName =
-		stats?.topMachine != null
-			? (machineNameMap.get(stats.topMachine) ?? `Brewer #${stats.topMachine}`)
+	const topBrewerName =
+		stats?.topBrewer != null
+			? (brewerNameMap.get(stats.topBrewer) ?? `Brewer #${stats.topBrewer}`)
 			: "—";
 
 	function clearFilters() {
@@ -125,7 +125,7 @@ export default function History() {
 								},
 								{
 									label: "Top brewer",
-									value: stats != null ? topMachineName : "…",
+									value: stats != null ? topBrewerName : "…",
 									className: "col-span-2 sm:col-span-4 lg:col-span-1",
 								},
 							].map(({ label, value, className }) => (
@@ -265,10 +265,10 @@ export default function History() {
 											? (beanNameMap.get(brew.beanId) ?? `Bean #${brew.beanId}`)
 											: "Unknown bean"
 									}
-									machineName={
-										(brew.brewerId ?? brew.machineId) != null
-											? (machineNameMap.get(brew.brewerId ?? brew.machineId!) ??
-												`Brewer #${brew.brewerId ?? brew.machineId}`)
+									brewerName={
+										brew.brewerId != null
+											? (brewerNameMap.get(brew.brewerId) ??
+													`Brewer #${brew.brewerId}`)
 											: "No brewer saved"
 									}
 								/>

@@ -1,12 +1,12 @@
 import { Check } from "lucide-react";
-import type { MachineCardProps } from "@/types/MachineTypes";
+import type { BrewerCardProps } from "@/types/BrewerTypes";
 
-export default function QuickMachineCard({
-	machine,
+export default function QuickBrewerCard({
+	brewer,
 	selected,
 	onClick,
 }: {
-	machine: MachineCardProps;
+	brewer: BrewerCardProps;
 	selected?: boolean;
 	onClick?: () => void;
 }) {
@@ -19,10 +19,10 @@ export default function QuickMachineCard({
 		>
 			<div className="px-2.5 py-2">
 				<p className="font-Lora text-lg font-semibold line-clamp-1 leading-snug">
-					{machine.name}
+					{brewer.name}
 				</p>
 				<p className="mt-0.5 font-Mono text-xs uppercase tracking-widest text-muted-foreground">
-					{machine.type}
+					{brewer.type}
 				</p>
 			</div>
 			{selected && (

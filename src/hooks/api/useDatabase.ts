@@ -5,7 +5,7 @@ export const useDatabaseCounts = () => {
 	return (
 		useLiveQuery(() => getDatabaseCounts(), []) ?? {
 			beans: 0,
-			machines: 0,
+			brewers: 0,
 			brews: 0,
 		}
 	);
