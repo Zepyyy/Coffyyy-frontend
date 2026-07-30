@@ -116,7 +116,7 @@ export function BrewHistoryRow({
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const ratio =
-		brew.beanWeight && brew.espressoWeight
+		brew.method === "Espresso" && brew.beanWeight && brew.espressoWeight
 			? (brew.espressoWeight / brew.beanWeight).toFixed(1)
 			: null;
 
@@ -124,22 +124,36 @@ export function BrewHistoryRow({
 	const time = formatTime(brew.date);
 	const taste = axisLabel(brew.tasteScore, "Sour", "Bitter");
 	const strength = axisLabel(brew.strengthScore, "Weak", "Strong");
-	const recipeLine = [
-		brew.method ?? "Method unknown",
-		brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
-		brew.beanWeight != null ? `${brew.beanWeight}g in` : null,
+	const recipeDetails =
 		brew.method === "Moka Pot"
 			? [
+					brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+					brew.beanWeight != null ? `${brew.beanWeight}g dose` : null,
 					brew.waterAmount != null ? `${brew.waterAmount}ml water` : null,
 					brew.yieldWeight != null ? `${brew.yieldWeight}g yield` : null,
 				]
-					.filter(Boolean)
-					.join(" · ") || null
-			: brew.espressoWeight != null
-				? `${brew.espressoWeight}g out`
-				: null,
-		brew.method !== "Moka Pot" && ratio ? `1:${ratio}` : null,
-	]
+			: brew.method === "Espresso"
+				? [
+						brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+						brew.beanWeight != null ? `${brew.beanWeight}g dose` : null,
+						brew.espressoWeight != null
+							? `${brew.espressoWeight}g output`
+							: null,
+						ratio ? `1:${ratio}` : null,
+					]
+				: [
+						brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+						brew.beanWeight != null
+							? `${brew.beanWeight}g recorded dose`
+							: null,
+						brew.espressoWeight != null
+							? `${brew.espressoWeight}g recorded output`
+							: null,
+						brew.yieldWeight != null
+							? `${brew.yieldWeight}g recorded yield`
+							: null,
+					];
+	const recipeLine = [brew.method ?? "Method unknown", ...recipeDetails]
 		.filter(Boolean)
 		.join(" · ");
 
@@ -232,18 +246,31 @@ export function BrewHistoryRow({
 			{expanded && (
 				<div className="space-y-4 border-t border-border/70 bg-muted/10 px-4 py-4">
 					<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-						<DetailItem
-							icon={<Scale className="size-4" />}
-							label={brew.method === "Moka Pot" ? "Dose / yield" : "Dose / output"}
-							value={
-								brew.beanWeight != null &&
-								(brew.method === "Moka Pot"
-									? brew.yieldWeight != null
-									: brew.espressoWeight != null)
-									? `${brew.beanWeight} g dose → ${brew.method === "Moka Pot" ? `${brew.yieldWeight} g yield` : `${brew.espressoWeight} g output`}`
-									: "Not saved"
-							}
-						/>
+						{brew.method !== undefined ? (
+							<DetailItem
+								icon={<Scale className="size-4" />}
+								label={
+									brew.method === "Moka Pot" ? "Dose / yield" : "Dose / output"
+								}
+								value={
+									brew.beanWeight != null &&
+									(brew.method === "Moka Pot"
+										? brew.yieldWeight != null
+										: brew.espressoWeight != null)
+										? `${brew.beanWeight} g dose → ${brew.method === "Moka Pot" ? `${brew.yieldWeight} g yield` : `${brew.espressoWeight} g output`}`
+										: "Not saved"
+								}
+							/>
+						) : (
+							<DetailItem
+								icon={<Scale className="size-4" />}
+								label="Recorded measurements"
+								value={
+									recipeDetails.slice(1).filter(Boolean).join(" · ") ||
+									"Not saved"
+								}
+							/>
+						)}
 						<DetailItem
 							icon={<Gauge className="size-4" />}
 							label="Grind"
@@ -254,20 +281,22 @@ export function BrewHistoryRow({
 							label={
 								brew.method === "Moka Pot"
 									? "Total brew time"
-									: brew.method
+									: brew.method === "Espresso"
 										? "Extraction"
-										: "Time"
+										: "Recorded time"
 							}
 							value={
 								(brew.method === "Moka Pot"
 									? brew.brewTime
-									: brew.extractionTime) || "Not saved"
+									: brew.method === "Espresso"
+										? brew.extractionTime
+										: (brew.brewTime ?? brew.extractionTime)) || "Not saved"
 							}
 						/>
-						{brew.method !== "Moka Pot" && (
+						{brew.method === "Espresso" && (
 							<DetailItem
 								icon={<Waves className="size-4" />}
-								label={brew.method ? "Flow" : "Flow (legacy)"}
+								label="Flow"
 								value={brew.flow || "Not saved"}
 							/>
 						)}

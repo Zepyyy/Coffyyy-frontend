@@ -154,25 +154,24 @@ export const STEPS: Step[] = [
 	},
 	{
 		step: 2,
-		title: "Parameters",
-		information: [
-			"GrindSize",
-			"BeanWeight",
-			"EspressoWeight",
-			"ExtractionTime",
-			"Flow",
-		],
-		description:
-			"Grind size; bean weight; espresso weight; extraction time; flow.",
+		title: "Brew method",
+		information: ["Brew method"],
+		description: "Which brew method did you use?",
 	},
 	{
 		step: 3,
-		title: "Setup",
+		title: "Brewer",
 		information: ["Brewer"],
-		description: "Which brewer did you use?",
+		description: "Which brewer did you use, if any?",
 	},
 	{
 		step: 4,
+		title: "Measurements",
+		information: ["Method-specific measurements"],
+		description: "Record measurements meaningful to this method.",
+	},
+	{
+		step: 5,
 		title: "Summary",
 		information: [],
 		description: "Review and save.",

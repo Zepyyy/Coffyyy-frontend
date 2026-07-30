@@ -10,6 +10,7 @@ import SectionTitle from "@/components/log/SectionTitle";
 import { addBrew } from "@/db/crud/add";
 import { useBrewSuggestions } from "@/hooks/api/useBrews";
 import { getLastUsedBrew } from "@/lib/api/brews";
+import { applyLastUsedBrew, buildBrewSummary } from "@/lib/brewMethods";
 import {
 	DEFAULT_FLOW,
 	DIAL_DEFAULT_BEAN_WEIGHT,
@@ -85,8 +86,17 @@ export default function BrewLog() {
 			// A method change must never carry fields from the previous method
 			// into the new record. Shared fields remain available to both methods.
 			...(method === "Moka Pot"
-				? { extractionTime: "", flow: "" }
-				: { waterAmount: undefined, heatLevel: undefined, brewTime: "" }),
+				? {
+						espressoWeight: undefined,
+						extractionTime: "",
+						flow: "",
+					}
+				: {
+						yieldWeight: undefined,
+						waterAmount: undefined,
+						heatLevel: undefined,
+						brewTime: "",
+					}),
 		}));
 	}
 
@@ -191,6 +201,11 @@ export default function BrewLog() {
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
 	const selectedBrewer = suggestions.brewer.find((m) => m.id === form.brewerId);
+	const summaryRows = buildBrewSummary(
+		form,
+		selectedBean?.name,
+		selectedBrewer?.name,
+	);
 
 	return (
 		<div className="mx-auto w-full">
@@ -282,9 +297,9 @@ export default function BrewLog() {
 							)}
 						</div>
 						<div
-							className={`transition-opacity duration-300 space-y-4 ${step === 2 ? "opacity-100" : "opacity-0"}`}
+							className={`transition-opacity duration-300 space-y-4 ${step === 2 || step === 4 ? "opacity-100" : "opacity-0"}`}
 						>
-							{step === 2 && (
+							{(step === 2 || step === 4) && (
 								<section className="space-y-10">
 									<div className="space-y-2">
 										<FieldLabel required>Brew method</FieldLabel>
@@ -305,46 +320,23 @@ export default function BrewLog() {
 												</button>
 											))}
 										</div>
-										{lastUsed && (
+										{step === 4 && lastUsed && (
 											<button
 												type="button"
 												className="text-xs text-muted-foreground underline"
-												onClick={() => {
-													setField(
-														"grindSize",
-														lastUsed.grindSize ?? form.grindSize,
-													);
-													setField(
-														"beanWeight",
-														lastUsed.beanWeight ?? form.beanWeight,
-													);
-													setField(
-														form.method === "Moka Pot"
-															? "yieldWeight"
-															: "espressoWeight",
-														form.method === "Moka Pot"
-															? (lastUsed.yieldWeight ??
-																	lastUsed.espressoWeight ??
-																	form.yieldWeight)
-															: (lastUsed.espressoWeight ??
-																	form.espressoWeight),
-													);
-													setField("waterAmount", lastUsed.waterAmount);
-													setField("heatLevel", lastUsed.heatLevel);
-													setField("brewTime", lastUsed.brewTime ?? "");
-													setField(
-														"extractionTime",
-														lastUsed.extractionTime ?? "",
-													);
-													setField("flow", lastUsed.flow ?? "");
-												}}
+												onClick={() =>
+													setForm((current) =>
+														applyLastUsedBrew(current, lastUsed),
+													)
+												}
 											>
 												Last used: apply previous setup
 											</button>
 										)}
 									</div>
-									{form.method && (
+									{step === 4 && form.method && (
 										<>
+											<SectionTitle>Measurements</SectionTitle>
 											<div className="space-y-2">
 												<FieldLabel>Grind size</FieldLabel>
 												<div className="flex flex-col gap-4">
@@ -604,91 +596,19 @@ export default function BrewLog() {
 							)}
 						</div>
 						<div
-							className={`transition-opacity duration-200 space-y-4 ${step === 4 ? "opacity-100" : "opacity-0"}`}
+							className={`transition-opacity duration-200 space-y-4 ${step === 5 ? "opacity-100" : "opacity-0"}`}
 						>
-							{step === 4 && (
+							{step === 5 && (
 								<section className="space-y-4">
 									<SectionTitle>Summary</SectionTitle>
 									<div className="divide-y divide-border border border-border">
-										<SummaryRow
-											label="Bean"
-											value={selectedBean?.name ?? "—"}
-										/>
-										<SummaryRow
-											label="Brewer"
-											value={selectedBrewer?.name ?? "—"}
-										/>
-										<SummaryRow label="Method" value={form.method ?? "—"} />
-										<SummaryRow
-											label="Grind size"
-											value={form.grindSize ?? "—"}
-										/>
-										{form.method === "Moka Pot" ? (
-											<>
-												<SummaryRow
-													label="Coffee dose"
-													value={
-														form.beanWeight != null
-															? `${form.beanWeight} g`
-															: "—"
-													}
-												/>
-												<SummaryRow
-													label="Yield"
-													value={
-														form.yieldWeight != null
-															? `${form.yieldWeight} g`
-															: "—"
-													}
-												/>
-												<SummaryRow
-													label="Water amount"
-													value={
-														form.waterAmount != null
-															? `${form.waterAmount} ml`
-															: "—"
-													}
-												/>
-												<SummaryRow
-													label="Heat level"
-													value={form.heatLevel ?? "—"}
-												/>
-												<SummaryRow
-													label="Total brew time"
-													value={form.brewTime || "—"}
-												/>
-											</>
-										) : (
-											<>
-												<SummaryRow
-													label="Coffee dose"
-													value={
-														form.beanWeight != null
-															? `${form.beanWeight} g`
-															: "—"
-													}
-												/>
-												<SummaryRow
-													label="Espresso yield"
-													value={
-														form.espressoWeight != null
-															? `${form.espressoWeight} g`
-															: "—"
-													}
-												/>
-												{espressoRatio && (
-													<SummaryRow
-														label="Ratio"
-														value={`1:${espressoRatio}`}
-													/>
-												)}
-												<SummaryRow
-													label="Extraction time"
-													value={form.extractionTime || "—"}
-												/>
-												<SummaryRow label="Flow" value={form.flow || "—"} />
-											</>
-										)}
+										{summaryRows.map((row) => (
+											<SummaryRow
+												key={row.label}
+												label={row.label}
+												value={row.value}
+											/>
+										))}
 									</div>
 
 									<div className="border-t border-border pt-4 space-y-2">

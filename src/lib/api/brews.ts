@@ -1,4 +1,5 @@
 import { db } from "@/db/db";
+import { findLastUsedBrew } from "@/lib/brewMethods";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewerCardProps } from "@/types/BrewerTypes";
 import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
@@ -215,19 +216,5 @@ export async function getLastUsedBrew(
 	method: BrewMethod | undefined,
 	brewerId?: number,
 ): Promise<Brews | null> {
-	if (beanId == null || method == null) return null;
-	const brews = await db.Brews.toArray();
-	const matching = brews
-		.filter((brew) => brew.beanId === beanId && brew.method === method)
-		.sort((a, b) => +new Date(b.date) - +new Date(a.date));
-	if (brewerId != null) {
-		const brewerMatch = matching.find(
-			(brew) => brew.brewerId === brewerId,
-		);
-		if (brewerMatch) return brewerMatch;
-	}
-
-	// The brewer is optional: once a brewer-specific match is unavailable,
-	// prefer the newest brew for the same bean and method regardless of brewer.
-	return matching[0] ?? null;
+	return findLastUsedBrew(await db.Brews.toArray(), beanId, method, brewerId);
 }

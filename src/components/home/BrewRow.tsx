@@ -18,11 +18,18 @@ export default function BrewRow({
 					brew.yieldWeight != null ? `${brew.yieldWeight} g yield` : null,
 					brew.brewTime ? `${brew.brewTime} brew` : null,
 				].filter(Boolean)
-			: [
-					brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
-					ratio,
-					brew.extractionTime ? `${brew.extractionTime} extraction` : null,
-				].filter(Boolean);
+			: brew.method === "Espresso"
+				? [
+						brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+						ratio,
+						brew.extractionTime ? `${brew.extractionTime} extraction` : null,
+					].filter(Boolean)
+				: [
+						brew.grindSize != null ? `Grind ${brew.grindSize}` : null,
+						brew.beanWeight != null
+							? `${brew.beanWeight} g recorded dose`
+							: null,
+					].filter(Boolean);
 	const date = new Date(brew.date).toLocaleDateString(undefined, {
 		month: "short",
 		day: "numeric",
