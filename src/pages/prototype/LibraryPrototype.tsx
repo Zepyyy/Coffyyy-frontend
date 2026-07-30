@@ -419,7 +419,7 @@ function BrewerActions({
 			<button
 				type="button"
 				onClick={() => startBrew(brewer)}
-				className="flex items-center gap-1.5 bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+				className="flex items-center gap-1.5 border border-foreground/50 bg-background/70 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-85"
 			>
 				Start brew <ArrowRight className="size-3" />
 			</button>

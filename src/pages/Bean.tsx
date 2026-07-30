@@ -195,7 +195,7 @@ export default function Bean() {
 						{!bean.archived && (
 							<Link
 								to={brewLogPath({ beanId })}
-								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+								className="border border-foreground/50 bg-background/70 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-85"
 							>
 								Start brew
 							</Link>

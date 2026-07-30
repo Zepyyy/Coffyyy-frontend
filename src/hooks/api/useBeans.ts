@@ -19,8 +19,10 @@ export const useAllBeans = (includeArchived = false) => {
 
 export const useBeanUsage = () => {
 	return (
-		useLiveQuery(async () => summarizeBeanUsage(await db.Brews.toArray()), []) ??
-		new Map()
+		useLiveQuery(
+			async () => summarizeBeanUsage(await db.Brews.toArray()),
+			[],
+		) ?? new Map()
 	);
 };
 

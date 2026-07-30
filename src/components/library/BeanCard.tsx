@@ -19,7 +19,6 @@ import { colorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import { formatShortDate } from "@/lib/dates";
 import RoastDots from "../home/RoastDots";
-import { Separator } from "../ui/separator";
 
 const noteBadge: Partial<
 	Record<
@@ -102,11 +101,19 @@ export default function BeanCard({
 	];
 
 	return (
-		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
+		<div className="relative z-20 isolate flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
+			<div
+				aria-hidden="true"
+				className={`pointer-events-none absolute inset-x-0 top-0 h-56 bg-radial-[at_25%_25%] ${colorSwatch[bean.dominantNote]?.gradient}`}
+				style={{
+					WebkitMaskImage:
+						"linear-gradient(to bottom, black 0%, black 45%, transparent 100%)",
+					maskImage:
+						"linear-gradient(to bottom, black 0%, black 45%, transparent 100%)",
+				}}
+			/>
 			{/* Header row */}
-			<article
-				className={`p-4 relative w-full ${colorSwatch[bean.dominantNote]?.bg} overflow-hidden`}
-			>
+			<article className="relative w-full p-4">
 				<div
 					className={`text-2xl font-Lora font-semibold leading-tight tracking-wide ${colorSwatch[bean.dominantNote]?.text}`}
 				>
@@ -119,34 +126,37 @@ export default function BeanCard({
 					{bean.origin.join(", ")} · {bean.brand}
 				</div>
 				{/* Background text effect */}
-				<div
+				{/*<div
 					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${colorSwatch[bean.dominantNote]?.text}`}
 				>
 					{bean.name || "Unnamed bean"}
-				</div>
+				</div>*/}
 				{/* Top left icon */}
 				<NoteIcon
 					strokeWidth={2}
 					className={`size-6 absolute top-5 right-5 ${colorSwatch[bean.dominantNote]?.text}`}
 				/>
 			</article>
-			<Separator />
+			{/*<Separator />*/}
 
-			<article className="relative flex flex-1 flex-col gap-6 py-4 px-4">
+			<article className={`relative flex flex-1 flex-col gap-6 py-4 px-4`}>
 				{parameters.map(
 					(param) =>
 						(param.values?.length ?? 0) > 0 && (
 							<div key={param.label} className="flex flex-col gap-2">
-								<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
+								<span
+									className={`font-News text-md uppercase ${colorSwatch[bean.dominantNote]?.text} font-normal leading-tight tracking-wider`}
+								>
 									{param.label}
 								</span>
 								<div className="flex flex-wrap gap-1.5">
-									{param.values?.map((value) => (
+									{param.values?.map((value, index) => (
 										<span
 											key={value}
-											className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em] border border-primary/15 bg-primary/5 px-2 py-0.5"
+											className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em] px-0.5 py-0.5"
 										>
 											{value}
+											{index < param.values!.length - 1 && " ·"}
 										</span>
 									))}
 								</div>
@@ -164,7 +174,9 @@ export default function BeanCard({
 					</button>
 				)}
 				<div className="flex flex-col gap-2">
-					<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
+					<span
+						className={`font-News text-md uppercase ${colorSwatch[bean.dominantNote]?.text} font-normal leading-tight tracking-wider`}
+					>
 						Roast Level
 					</span>
 					<div className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em]">
@@ -182,7 +194,7 @@ export default function BeanCard({
 							{lastUsed ? formatShortDate(lastUsed) : "Never used"}
 						</p>
 						{lastMethod && (
-							<p className="font-Mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+							<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
 								{lastMethod}
 							</p>
 						)}
@@ -220,7 +232,7 @@ export default function BeanCard({
 					: startBrewTo && (
 							<Link
 								to={startBrewTo}
-								className="border border-foreground bg-foreground px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-background"
+								className="border border-foreground/50 bg-background/70 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-85"
 							>
 								Start brew
 							</Link>

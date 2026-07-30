@@ -120,7 +120,7 @@ export default function BrewerDetail() {
 					{!brewer.archived && (
 						<Link
 							to={brewLogPath({ brewerId: brewer.id })}
-							className="bg-foreground px-4 py-2.5 font-Mono text-[10px] uppercase tracking-[0.14em] text-background"
+							className="border border-foreground/50 bg-background/70 px-3 py-2 font-Mono text-[10px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-85"
 						>
 							Start brew
 						</Link>

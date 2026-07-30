@@ -537,7 +537,7 @@ export default function BrewLog() {
 														type="text"
 														className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
 														step="0.01"
-									placeholder="e.g. 00:28"
+														placeholder="e.g. 00:28"
 														value={form.extractionTime}
 														onChange={(e) =>
 															setField("extractionTime", e.target.value)
