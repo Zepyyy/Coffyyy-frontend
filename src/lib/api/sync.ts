@@ -1,7 +1,5 @@
 import { db } from "@/db/db";
-import type { Beans } from "@/types/BeanTypes";
-import type { Brews } from "@/types/BrewTypes";
-import type { Machines } from "@/types/MachineTypes";
+import { SyncLeaseLostError } from "@/db/sync/coordinator";
 import {
 	listPendingOperations,
 	maxAttempts,
@@ -13,17 +11,19 @@ import {
 import type {
 	BackendPushOperation,
 	OutboxRecord,
-	PushResult,
 	PushResponse,
-	RemoteMapping,
-	RemoteTombstone,
+	PushResult,
 	RecoveryHistoryEntry,
 	RecoveryHistoryPage,
+	RemoteMapping,
+	RemoteTombstone,
 	SyncEntity,
 	SyncOperation,
 } from "@/db/sync/types";
 import { ApiError, api } from "@/lib/axios";
-import { SyncLeaseLostError } from "@/db/sync/coordinator";
+import type { Beans } from "@/types/BeanTypes";
+import type { Brews } from "@/types/BrewTypes";
+import type { Machines } from "@/types/MachineTypes";
 
 export type RemoteChange = {
 	revision: number;
@@ -60,7 +60,9 @@ export async function getRemoteHistory(options?: {
 	limit?: number;
 }) {
 	if ((options?.entity === undefined) !== (options?.serverId === undefined)) {
-		throw new Error("Remote history filters require entity and serverId together");
+		throw new Error(
+			"Remote history filters require entity and serverId together",
+		);
 	}
 	const changes: RecoveryHistoryEntry[] = [];
 	let since = 0;
@@ -453,10 +455,7 @@ async function markFailed(
 				: {}),
 			updatedAt: Date.now(),
 		});
-	if (
-		result?.reason === "already_deleted" &&
-		result.serverId !== undefined
-	) {
+	if (result?.reason === "already_deleted" && result.serverId !== undefined) {
 		await putTombstone({
 			entity: operation.entity,
 			localId: operation.entityLocalId,

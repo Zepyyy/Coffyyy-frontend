@@ -68,7 +68,10 @@ function assertWorkspace(workspace, label) {
 	const beanIds = new Set(workspace.beans.map((bean) => bean.id));
 	const machineIds = new Set(workspace.machines.map((machine) => machine.id));
 	for (const brew of workspace.brews) {
-		if (!beanIds.has(Number(brew.beanId)) || !machineIds.has(Number(brew.machineId))) {
+		if (
+			!beanIds.has(Number(brew.beanId)) ||
+			!machineIds.has(Number(brew.machineId))
+		) {
 			throw new Error(`${label} brew ${brew.id} has a dangling reference`);
 		}
 	}

@@ -65,7 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	useEffect(() => {
 		return coordinator.subscribe((signal) => {
-			if (signal.type === "cache-invalidated" || signal.type === "sync-completed") {
+			if (
+				signal.type === "cache-invalidated" ||
+				signal.type === "sync-completed"
+			) {
 				void queryClient.invalidateQueries();
 				return;
 			}

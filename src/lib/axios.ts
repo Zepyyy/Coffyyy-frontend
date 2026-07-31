@@ -2,7 +2,7 @@ import axios, {
 	type AxiosError,
 	AxiosHeaders,
 	type AxiosInstance,
-	type AxiosRequestConfig,
+	// type AxiosRequestConfig,
 } from "axios";
 import { getCsrfToken } from "./csrf";
 
@@ -29,11 +29,11 @@ export class ApiError extends Error {
 	}
 }
 
-function isMutating(config: AxiosRequestConfig) {
-	return ["post", "put", "patch", "delete"].includes(
-		(config.method ?? "get").toLowerCase(),
-	);
-}
+// function isMutating(config: AxiosRequestConfig) {
+// 	return ["post", "put", "patch", "delete"].includes(
+// 		(config.method ?? "get").toLowerCase(),
+// 	);
+// }
 
 function normalizeError(error: AxiosError<unknown>) {
 	const data = error.response?.data;
@@ -57,13 +57,13 @@ api.interceptors.request.use((config) => {
 	config.baseURL = BACKENDS[env] ?? BACKENDS.staging;
 	config.headers = AxiosHeaders.from(config.headers);
 
-	if (isMutating(config)) {
-		const csrfToken = getCsrfToken();
+	// if (isMutating(config)) {
+	const csrfToken = getCsrfToken();
 
-		if (csrfToken) {
-			config.headers.set("X-CSRF-TOKEN", csrfToken);
-		}
+	if (csrfToken) {
+		config.headers.set("X-CSRF-TOKEN", csrfToken);
 	}
+	// }
 
 	return config;
 });

@@ -65,9 +65,9 @@ function defaultChannelFactory(name: string) {
 	const onStorage = (event: StorageEvent) => {
 		if (event.key !== key || !event.newValue || !listener) return;
 		try {
-			listener(
-				{ data: JSON.parse(event.newValue) as SyncSignal } as MessageEvent<SyncSignal>,
-			);
+			listener({
+				data: JSON.parse(event.newValue) as SyncSignal,
+			} as MessageEvent<SyncSignal>);
 		} catch {
 			// Ignore malformed messages from other versions of the app.
 		}
@@ -173,8 +173,7 @@ export class SyncCoordinator {
 		this.ownerId = options.ownerId ?? crypto.randomUUID();
 		this.leaseMs = options.leaseMs ?? DEFAULT_LEASE_MS;
 		this.heartbeatMs = options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS;
-		this.channelFactory =
-			options.channelFactory ?? defaultChannelFactory;
+		this.channelFactory = options.channelFactory ?? defaultChannelFactory;
 	}
 
 	private ensureChannel() {

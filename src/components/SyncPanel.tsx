@@ -11,10 +11,7 @@ import {
 	exportOutboxOperations,
 	retryFailedOperations,
 } from "@/lib/data";
-import {
-	getRemoteHistory,
-	restoreRemoteVersion,
-} from "@/lib/api/sync";
+import { getRemoteHistory, restoreRemoteVersion } from "@/lib/api/sync";
 import type { RecoveryHistoryEntry } from "@/db/sync/types";
 
 function formatExpiry(value: string | null) {
@@ -162,7 +159,9 @@ export default function SyncPanel() {
 					: "No retained losing versions in the seven-day window.",
 			);
 		} catch (error) {
-			setMessage(error instanceof Error ? error.message : "History load failed");
+			setMessage(
+				error instanceof Error ? error.message : "History load failed",
+			);
 		} finally {
 			setIsLoadingHistory(false);
 		}
@@ -306,7 +305,8 @@ export default function SyncPanel() {
 												className="flex items-center justify-between gap-2"
 											>
 												<span>
-													{entry.entityType} #{entry.serverId} · rev. {entry.revision}
+													{entry.entityType} #{entry.serverId} · rev.{" "}
+													{entry.revision}
 													{entry.accepted ? "" : " · losing"}
 												</span>
 												<Button

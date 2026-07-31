@@ -1086,14 +1086,17 @@ describe("pull sync", () => {
 				finished: false,
 			}),
 		];
-		vi.spyOn(api, "get").mockImplementation(async () => ({
-			data: {
-				changes: remoteChanges,
-				nextCursor: 2,
-				hasMore: false,
-				fullResyncRequired: false,
-			},
-		}) as never);
+		vi.spyOn(api, "get").mockImplementation(
+			async () =>
+				({
+					data: {
+						changes: remoteChanges,
+						nextCursor: 2,
+						hasMore: false,
+						fullResyncRequired: false,
+					},
+				}) as never,
+		);
 
 		await expect(pullRemoteChanges()).resolves.toMatchObject({
 			applied: 2,
@@ -1260,7 +1263,10 @@ describe("recovery history", () => {
 			createdAt: "2026-07-24T10:00:00.000Z",
 		});
 
-		expect(operationId).toMatchObject({ operationId: expect.any(String), recreated: false });
+		expect(operationId).toMatchObject({
+			operationId: expect.any(String),
+			recreated: false,
+		});
 		expect(await db.Beans.get(11)).toMatchObject({
 			name: "Restored name",
 			serverRevision: 9,
