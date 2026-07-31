@@ -54,6 +54,16 @@ Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d9
 
 The frontend snapshot-sync implementation is complete on `cloud-sync-feature` and targets the new snapshot API. Backend snapshot migration is present on backend `dev` but is not yet deployed to staging; authenticated cross-browser rollout verification remains pending.
 
+### Snapshot migration audit — 2026-07-31
+
+- Local implementation: frontend `44dfef2`; backend `5065860`.
+- Local checks: frontend 4 test files/13 tests, build, and lint pass; backend 4 Jest suites/18 tests and build pass. Backend lint still reports 7 existing unsafe-`any` errors in auth/workspace spec files.
+- Source/migration review (partial): frontend runtime uses the snapshot boundary and Dexie v10 removes obsolete sync tables; backend migration `20260731190000_remove_legacy_sync` drops legacy sync tables/columns. Historical migration files and legacy backend source/modules remain locally until deployed cleanup is verified. The backend `docs/duplicate-workspace-audit.md` contains a read-only duplicate-workspace audit procedure; no workspace inventory or cleanup was run.
+- Deployment gap: staging returns snapshot GET `404` and still exposes authenticated legacy history; migration deployment and authenticated Browser A/B verification are therefore unproven.
+- Review: documentation-only change; no documented-standard violations or Fowler smells found.
+
+Issue #45 remains partially complete and open: local snapshot behavior and cleanup migration are present, but parent acceptance still lacks deployed migration/old-route removal, duplicate-workspace evidence, and authenticated reconnect/cross-browser/atomic replacement checks. Issue #49 was reopened because its staging gate was closed while blocked. See linked issue comments for probe results and remaining checks.
+
 Suggestions in the log forms are generated from previously saved beans and machines.
 - Vitest covers transactional snapshot replacement (`npm test`).
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
