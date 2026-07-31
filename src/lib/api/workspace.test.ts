@@ -18,6 +18,8 @@ describe("workspace snapshot seam", () => {
 
 	it("replaces all local records and remaps brew relationships transactionally", async () => {
 		await db.Beans.add({ ...snapshot.beans[0], id: 99 });
+		await db.Machines.add({ ...snapshot.machines[0], id: 99 });
+		await db.Brews.add({ ...snapshot.brews[0], id: 99, beanId: 99, machineId: 99, date: new Date(snapshot.brews[0].date) });
 		await replaceLocalSnapshot(snapshot);
 
 		const bean = await db.Beans.toArray();
@@ -32,10 +34,35 @@ describe("workspace snapshot seam", () => {
 		expect(brew[0].machineId).toBe(machine[0].id);
 	});
 
+	it("deletes local records absent from the replacement", async () => {
+		await db.Beans.bulkAdd([
+			{ ...snapshot.beans[0], id: 1 },
+			{ ...snapshot.beans[0], id: 2, localId: "bean-2", name: "Kenya" },
+		]);
+		await replaceLocalSnapshot(snapshot);
+
+		expect(await db.Beans.toArray()).toHaveLength(1);
+		expect(await db.Beans.get({ localId: "bean-2" })).toBeUndefined();
+	});
+
 	it("rejects relationships that do not exist before writing", async () => {
 		const invalid = { ...snapshot, brews: [{ ...snapshot.brews[0], beanLocalId: "missing" }] };
 		expect(() => validateSnapshot(invalid)).toThrow("invalid relationships");
 		expect(await db.Beans.count()).toBe(0);
+	});
+
+	it("rejects empty and duplicate brew IDs before replacing data", async () => {
+		const invalid = {
+			...snapshot,
+			brews: [
+				{ ...snapshot.brews[0], localId: "" },
+				{ ...snapshot.brews[0], beanLocalId: undefined, machineLocalId: undefined },
+			],
+		};
+
+		expect(() => validateSnapshot(invalid)).toThrow("duplicate IDs");
+		await db.Beans.add({ ...snapshot.beans[0], id: 7 });
+		expect(await db.Beans.get(7)).toBeDefined();
 	});
 
 	it("hashes the same content independent of record order", () => {

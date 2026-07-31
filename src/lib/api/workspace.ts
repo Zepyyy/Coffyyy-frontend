@@ -95,7 +95,15 @@ export function validateSnapshot(snapshot: WorkspaceSnapshot) {
 	}
 	const beanIds = new Set(snapshot.beans.map((bean) => bean.localId));
 	const machineIds = new Set(snapshot.machines.map((machine) => machine.localId));
-	if (beanIds.size !== snapshot.beans.length || machineIds.size !== snapshot.machines.length) {
+	const brewIds = new Set(snapshot.brews.map((brew) => brew.localId));
+	if (
+		[...beanIds, ...machineIds, ...brewIds].some(
+			(localId) => typeof localId !== "string" || localId.length === 0,
+		) ||
+		beanIds.size !== snapshot.beans.length ||
+		machineIds.size !== snapshot.machines.length ||
+		brewIds.size !== snapshot.brews.length
+	) {
 		throw new Error("Workspace snapshot contains duplicate IDs");
 	}
 	for (const brew of snapshot.brews) {
