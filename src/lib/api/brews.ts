@@ -60,8 +60,8 @@ async function getBrewNameMaps() {
 }
 
 export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
-	const brews = await db.Brews.orderBy("date").reverse().limit(limit).toArray();
-	return brews;
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
+	return brews.slice(0, limit);
 }
 
 export async function getLatestUnratedBrew(): Promise<Brews | null> {

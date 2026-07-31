@@ -1,5 +1,6 @@
 export type Machines = {
 	id: number;
+	localId?: string;
 	name: string;
 	brand: string;
 	type: string;

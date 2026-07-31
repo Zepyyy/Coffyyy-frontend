@@ -7,7 +7,7 @@ import type {
 import { uniqueSorted } from "./utils";
 
 export async function getAllMachines(): Promise<Array<Machines>> {
-	return db.Machines.toArray();
+	return getActiveMachines();
 }
 
 export async function getMachineCount(): Promise<number> {
@@ -22,11 +22,11 @@ export async function getMachineNameById(
 }
 
 export async function getAllMachineNames(): Promise<Array<Machines["name"]>> {
-	return db.Machines.toArray().then((machines) => machines.map((m) => m.name));
+	return getActiveMachines().then((machines) => machines.map((m) => m.name));
 }
 
 export async function getMachineFilters(): Promise<Array<MachineFilters>> {
-	const machines = await db.Machines.toArray();
+	const machines = await getActiveMachines();
 	return machines.map((b) => {
 		return {
 			name: b.name,
@@ -40,7 +40,7 @@ export async function getMachineFilters(): Promise<Array<MachineFilters>> {
 }
 
 export async function getMachineSuggestions(): Promise<MachineSuggestions> {
-	const machines = await db.Machines.toArray();
+	const machines = await getActiveMachines();
 	const extract = (field: keyof Machines) =>
 		machines
 			.map((m) => m[field])
@@ -53,4 +53,8 @@ export async function getMachineSuggestions(): Promise<MachineSuggestions> {
 		grindRanges: uniqueSorted(extract("grindRange")),
 		capacities: uniqueSorted(extract("capacity")),
 	};
+}
+
+async function getActiveMachines() {
+	return db.Machines.toArray();
 }

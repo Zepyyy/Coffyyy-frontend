@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import * as statsApi from "@/lib/api/stats";
+import * as statsApi from "@/lib/data";
 
 export const useBrewCountForBean = (bean: string | undefined) => {
 	return (

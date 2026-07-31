@@ -1,37 +1,34 @@
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
+import type { Machines } from "@/types/MachineTypes";
 import { db } from "../db";
 
 async function updateBeanByName(bean: Partial<Beans>, name: string) {
-	try {
-		return await db.Beans.where({ name }).modify({ ...bean });
-	} catch (error) {
-		return error;
-	}
+	const current = await db.Beans.where({ name }).first();
+	return current ? updateBeanById(bean, current.id) : 0;
 }
 
 async function updateBeanById(bean: Partial<Beans>, id: number) {
-	try {
-		return await db.Beans.where({ id }).modify({ ...bean });
-	} catch (error) {
-		return error;
-	}
+	return db.Beans.update(id, bean);
 }
 
 async function updateBrewByName(brew: Partial<Brews>, name: string) {
-	try {
-		return await db.Brews.where({ name }).modify({ ...brew });
-	} catch (error) {
-		return error;
-	}
+	const current = await db.Brews.where({ name }).first();
+	return current ? updateBrewById(brew, current.id) : 0;
 }
 
 async function updateBrewById(brew: Partial<Brews>, id: number) {
-	try {
-		return await db.Brews.where({ id }).modify({ ...brew });
-	} catch (error) {
-		return error;
-	}
+	return db.Brews.update(id, brew);
 }
 
-export { updateBeanById, updateBeanByName, updateBrewById, updateBrewByName };
+async function updateMachineById(machine: Partial<Machines>, id: number) {
+	return db.Machines.update(id, machine);
+}
+
+export {
+	updateBeanById,
+	updateBeanByName,
+	updateBrewById,
+	updateBrewByName,
+	updateMachineById,
+};

@@ -19,7 +19,7 @@ export async function getBeanCount(): Promise<number> {
 }
 
 export async function getAllBeanNames(): Promise<Array<Beans["name"]>> {
-	return db.Beans.toArray().then((beans) => beans.map((b) => b.name));
+	return getAllBeans().then((beans) => beans.map((b) => b.name));
 }
 
 export async function getBeanDominantNote(
@@ -31,7 +31,7 @@ export async function getBeanDominantNote(
 }
 
 export async function getBeanFilters(): Promise<Array<BeanFilters>> {
-	const beans = await db.Beans.toArray();
+	const beans = await getAllBeans();
 	return beans.map((b) => {
 		return {
 			origin: b.origin,
@@ -43,8 +43,7 @@ export async function getBeanFilters(): Promise<Array<BeanFilters>> {
 }
 
 export async function getBeanSuggestions(): Promise<BeanSuggestions> {
-	const beans = await db.Beans.toArray();
-	console.log(beans);
+	const beans = await getAllBeans();
 	const extract = (field: keyof Beans) =>
 		beans
 			.map((b) => b[field])

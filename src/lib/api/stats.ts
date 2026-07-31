@@ -178,12 +178,12 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 
 export async function getBrewCountForBean(bean: string): Promise<number> {
 	if (!bean) return 0;
-	return db.Brews.where("bean").equals(bean).count();
+	return db.Brews.filter((brew) => String(brew.beanId) === bean).count();
 }
 
 export async function getUniqueBeansBrewedCount(): Promise<number> {
-	const beans = await db.Brews.orderBy("bean").uniqueKeys();
-	return beans.filter(Boolean).length;
+	const beans = await db.Brews.toArray();
+	return new Set(beans.map((brew) => brew.beanId).filter(Boolean)).size;
 }
 
 export async function getBeanBrewInsights(

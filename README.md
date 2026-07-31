@@ -37,9 +37,9 @@ Stack:
 
 ### Backend
 
-This project didn't have a backend for the initial release and I used the browser's IndexedDB to store data locally, using Dexie's IndexedDB wrapper, and its custom React hooks.
-I'm actively building the backend, porting the database to the cloud, hosted on [Railway](https://railway.app/), using [Supabase](https://supabase.com/) as the database provider.
-(-> [Backend](https://github.com/Zepyyy/Coffyyy-backend/))
+The initial release was local-only: the browser's IndexedDB stored application data through [Dexie](https://dexie.org/) and custom React hooks. The cloud architecture is now being introduced incrementally through the [Coffyyy backend](https://github.com/Zepyyy/Coffyyy-backend/).
+
+The frontend communicates only with the NestJS API hosted on [Railway](https://railway.app/). NestJS uses Prisma to access the PostgreSQL database hosted on [Supabase](https://supabase.com/), which remains private behind the backend. Frontend code must not use `supabase-js`, Supabase service keys, or the Supabase Data API directly.
 
 Stack:
 - NestJS
@@ -48,9 +48,24 @@ Stack:
 - PostgreSQL (hosted on [Supabase](https://supabase.com/))
 
 ## Current State
-The backend is in active development and will be connected soon. For the moment, IndexedDB powers the app, so clearing browser storage will remove local data.
+The app remains local-first and can be used without an account or password. IndexedDB currently powers the app, so clearing browser storage will remove local data until sync is enabled.
+
+Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d917` passes cookie-session, CSRF, pairing, revocation, import-idempotency, expiry, and rate-limit checks. Backend `master` remains separate for production.
+
+The frontend snapshot-sync implementation is complete on `cloud-sync-feature` and targets the new snapshot API. Backend snapshot migration is present on backend `dev` but is not yet deployed to staging; authenticated cross-browser rollout verification remains pending.
+
+### Snapshot migration audit — 2026-07-31
+
+- Local implementation: frontend `44dfef2`; backend `5065860`.
+- Local checks: frontend 4 test files/13 tests, build, and lint pass; backend 4 Jest suites/18 tests and build pass. Backend lint still reports 7 existing unsafe-`any` errors in auth/workspace spec files.
+- Source/migration review (partial): frontend runtime uses the snapshot boundary and Dexie v10 removes obsolete sync tables; backend migration `20260731190000_remove_legacy_sync` drops legacy sync tables/columns. Historical migration files and legacy backend source/modules remain locally until deployed cleanup is verified. The backend `docs/duplicate-workspace-audit.md` contains a read-only duplicate-workspace audit procedure; no workspace inventory or cleanup was run.
+- Deployment gap: staging returns snapshot GET `404` and still exposes authenticated legacy history; migration deployment and authenticated Browser A/B verification are therefore unproven.
+- Review: documentation-only change; no documented-standard violations or Fowler smells found.
+
+Issue #45 remains partially complete and open: local snapshot behavior and cleanup migration are present, but parent acceptance still lacks deployed migration/old-route removal, duplicate-workspace evidence, and authenticated reconnect/cross-browser/atomic replacement checks. Issue #49 was reopened because its staging gate was closed while blocked. See linked issue comments for probe results and remaining checks.
+
 Suggestions in the log forms are generated from previously saved beans and machines.
-- No automated test runner is configured yet.
+- Vitest covers transactional snapshot replacement (`npm test`).
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
 - Home-screen charts are wired to live brew data and are the most developed of the insight views.
 
@@ -58,9 +73,25 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Fully local IndexedDB implementation
 - [x] Landing page with basic navigation
 - [x] Dashboard connected to live data, showing charts and recent brews.
-- [ ] Full backend API integration with cloud-based database
+- [x] Issue #10 Phase 1: backend contract and security on backend `dev`
+- [x] Issue #10 Phase 1.5: Railway staging deployment and verification
+- [x] Issue #10 Phase 2: durable enrollment and snapshot sync groundwork
+- [ ] Issue #10 Phase 3: backend snapshot migration and deployed contract (backend code complete; staging deployment pending)
+- [ ] Issue #10 Phase 4: staging verification, rollout, and cleanup (blocked by staging deployment)
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
-- [ ] Syncing feature to sync data between devices, without an auth. (Code-based?) <- To be decided
+
+The migration remains a work in progress. See [Issue #10](https://github.com/Zepyyy/Coffyyy-frontend/issues/10) for the detailed plan, implementation status, branch workflow, and acceptance criteria.
+
+## Cloud sync model
+
+Cloud sync is optional; local-only use remains the default. A user does not need a traditional account or password to use Coffyyy.
+
+- **Enrollment:** the browser stores one active workspace ID and reusable sync code in dedicated Dexie metadata. Enable creates a workspace only once; reconnect never creates one implicitly.
+- **Snapshots:** Push explicitly replaces the cloud snapshot; Pull replaces local data transactionally. Stable local IDs preserve brew relationships.
+- **Offline behavior:** Pause stops push/pull but leaves the app usable. If local and cloud snapshots both changed, the user chooses Push local, Pull cloud, or Cancel.
+- **Backup:** JSON export/import contains app data only, never enrollment or session credentials.
+- **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
+- **Browser storage:** JWTs and Supabase credentials are never stored in browser storage. Dexie stores local app data and the explicit enrollment metadata; the backend stores only a hash of the sync code.
 
 ## App Routes
 
@@ -81,16 +112,18 @@ Suggestions in the log forms are generated from previously saved beans and machi
 ```text
 src/
   components/     Feature-grouped UI: home/, library/, log/, history/, ui/ (+ Header nav)
-  contexts/       Theme context
-  db/             Dexie database (db.ts) and CRUD helpers (crud/)
-  hooks/          Shared hook types plus api/ live-query hooks backed by Dexie
-  lib/api/        Read/query helpers for beans, brews, machines, stats
+  contexts/       Theme and sync-session contexts
+  db/             Dexie database (db.ts) and local-cache CRUD helpers (crud/)
+  hooks/          Shared hook types plus current live-query hooks and future API query hooks
+  lib/api/        Data-layer adapters for beans, brews, machines, and stats
   pages/          Route components (incl. log/ subroutes)
-  providers/      App-level providers (theme, etc.)
+  providers/      App-level providers (theme, query, sync session)
   types/          Shared TypeScript models (Bean, Brew, Machine)
 ```
 
 `@/` is aliased to `src/`.
+
+During the migration, components are being separated from persistence. Components should use the data-layer adapters and query/mutation hooks rather than calling Dexie directly. Dexie and its CRUD helpers remain behind the local-cache infrastructure; incremental pull is available through the sync data boundary.
 
 ## Getting Started
 

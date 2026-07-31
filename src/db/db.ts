@@ -2,11 +2,13 @@ import { Dexie, type EntityTable } from "dexie";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
+import type { Enrollment } from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
 	Machines: EntityTable<Machines, "id">;
 	Brews: EntityTable<Brews, "id">;
+	Enrollment: EntityTable<Enrollment, "id">;
 };
 
 db.version(1).stores({
@@ -48,5 +50,84 @@ db.version(5).stores({
 	Brews:
 		"++id, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
 });
+
+db.version(6)
+	.stores({
+		Beans:
+			"++id, localId, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+		Machines: "++id, localId, name",
+		Brews:
+			"++id, localId, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime",
+		Outbox:
+			"++id, &operationId, status, [status+sequence], entity, entityLocalId, clientId, nextAttemptAt",
+		RemoteMappings: "++id, &[entity+localId], entity, localId, remoteId",
+	})
+	.upgrade(async (tx) => {
+		for (const tableName of ["Beans", "Machines", "Brews"] as const) {
+			const table = tx.table(tableName);
+			await table.toCollection().modify((record) => {
+				if (!record.localId) record.localId = crypto.randomUUID();
+			});
+		}
+	});
+
+db.version(7).stores({
+	SyncState: "&id",
+});
+
+db.version(8).stores({
+	Beans:
+		"++id, localId, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote, deletedAt",
+	Machines: "++id, localId, name, deletedAt",
+	Brews:
+		"++id, localId, bean, overallRating, tasteScore, strengthScore, grindSize, date, machine, beanWeight, espressoWeight, flow, extractionTime, deletedAt",
+	Outbox:
+		"++id, &operationId, status, [status+sequence], entity, entityLocalId, clientId, nextAttemptAt",
+	RemoteMappings: "++id, &[entity+localId], entity, localId, remoteId",
+	Tombstones:
+		"++id, &[entity+localId], entity, localId, remoteId, serverRevision",
+	SyncState: "&id",
+});
+
+db.version(9).stores({
+	SyncLeases: "&id, workspaceId, ownerId, expiresAt",
+});
+
+db.version(10).stores({
+	Beans:
+		"++id, localId, name, flavors, roastLevel, origin, botanic, variety, brand, finished, dominantNote",
+	Machines: "++id, localId, name",
+	Brews:
+		"++id, localId, bean, machine, overallRating, tasteScore, strengthScore, grindSize, date",
+	Enrollment: "&id, workspaceId, paused",
+	Outbox: null,
+	RemoteMappings: null,
+	Tombstones: null,
+	SyncState: null,
+	SyncLeases: null,
+});
+
+db.version(11)
+	.stores({
+		Beans:
+			"++id, localId, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+		Machines: "++id, localId, name",
+		Brews:
+			"++id, localId, bean, machine, overallRating, tasteScore, strengthScore, grindSize, date",
+		Enrollment: "&id, workspaceId, paused",
+	})
+	.upgrade(async (tx) => {
+		for (const tableName of ["Beans", "Machines", "Brews"] as const) {
+			await tx
+				.table(tableName)
+				.toCollection()
+				.modify((record) => {
+					delete record.serverRevision;
+					delete record.deletedAt;
+					delete record.remoteBeanId;
+					delete record.remoteMachineId;
+				});
+		}
+	});
 
 export { db };

@@ -108,12 +108,18 @@ export default function Home() {
 			</Link>
 
 			{!import.meta.env.PROD && (
-				<div>
+				<div className="flex gap-4">
 					<Link
 						to="/dev"
 						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
 					>
 						Dev tools →
+					</Link>
+					<Link
+						to="/buttons"
+						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+					>
+						Buttons →
 					</Link>
 				</div>
 			)}

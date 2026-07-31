@@ -5,13 +5,10 @@ import { db } from "../db";
 
 async function addBean(bean: Omit<Beans, "id">) {
 	try {
-		// Check if a bean with the same name already exists
-		const existingBean = await db.Beans.where("name").equals(bean.name).first();
-		if (!existingBean) {
-			return await db.Beans.bulkAdd([bean]);
-		} else {
+		const existing = await db.Beans.where("name").equals(bean.name).first();
+		if (existing)
 			return new Error(`Bean with name ${bean.name} already exists`);
-		}
+		return await db.Beans.add({ ...bean, localId: crypto.randomUUID() });
 	} catch (error) {
 		return error;
 	}
@@ -19,7 +16,7 @@ async function addBean(bean: Omit<Beans, "id">) {
 
 async function addBrew(brew: Omit<Brews, "id">) {
 	try {
-		return await db.Brews.bulkAdd([brew]);
+		return await db.Brews.add({ ...brew, localId: crypto.randomUUID() });
 	} catch (error) {
 		return error;
 	}
@@ -27,15 +24,12 @@ async function addBrew(brew: Omit<Brews, "id">) {
 
 async function addMachine(machine: Omit<Machines, "id">) {
 	try {
-		// Check if a bean with the same name already exists
-		const existingMachine = await db.Machines.where("name")
+		const existing = await db.Machines.where("name")
 			.equals(machine.name)
 			.first();
-		if (!existingMachine) {
-			return await db.Machines.bulkAdd([machine]);
-		} else {
+		if (existing)
 			return new Error(`Machine with name ${machine.name} already exists`);
-		}
+		return await db.Machines.add({ ...machine, localId: crypto.randomUUID() });
 	} catch (error) {
 		return error;
 	}

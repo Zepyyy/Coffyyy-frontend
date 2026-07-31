@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import type { HistorySortMode } from "../../lib/api/brews";
-import * as brewStatsApi from "../../lib/api/brews";
+import * as brewStatsApi from "@/lib/data";
 
 export const useRecentBrews = (limit: number) => {
 	return useLiveQuery(() => brewStatsApi.getRecentBrews(limit), [limit]) ?? [];

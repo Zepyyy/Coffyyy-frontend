@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteMachineById } from "@/db/crud/delete";
+import { deleteMachineById } from "@/lib/data";
 import type { Machines } from "@/types/MachineTypes";
 import { Separator } from "../ui/separator";
 import Tag from "../ui/tag";
