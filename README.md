@@ -52,7 +52,7 @@ The app remains local-first and can be used without an account or password. Inde
 
 Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d917` passes cookie-session, CSRF, pairing, revocation, import-idempotency, expiry, and rate-limit checks. Backend `master` remains separate for production.
 
-The frontend sync rewrite is in progress: durable browser enrollment, bounded reconnect, transactional workspace snapshots, explicit Push, automatic Pull, pause/disconnected states, and JSON backup/import are implemented against the new snapshot API. Backend migration and staging rollout remain pending.
+The frontend snapshot-sync implementation is complete on `cloud-sync-feature` and targets the new snapshot API. Backend snapshot migration is present on backend `dev` but is not yet deployed to staging; authenticated cross-browser rollout verification remains pending.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
 - Vitest covers transactional snapshot replacement (`npm test`).
@@ -66,8 +66,8 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Issue #10 Phase 1: backend contract and security on backend `dev`
 - [x] Issue #10 Phase 1.5: Railway staging deployment and verification
 - [x] Issue #10 Phase 2: durable enrollment and snapshot sync groundwork
-- [ ] Issue #10 Phase 3: backend snapshot migration and deployed contract
-- [ ] Issue #10 Phase 4: staging verification, rollout, and cleanup
+- [ ] Issue #10 Phase 3: backend snapshot migration and deployed contract (backend code complete; staging deployment pending)
+- [ ] Issue #10 Phase 4: staging verification, rollout, and cleanup (blocked by staging deployment)
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
 
 The migration remains a work in progress. See [Issue #10](https://github.com/Zepyyy/Coffyyy-frontend/issues/10) for the detailed plan, implementation status, branch workflow, and acceptance criteria.
