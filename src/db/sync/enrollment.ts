@@ -8,7 +8,8 @@ export async function getEnrollment() {
 }
 
 export async function saveEnrollment(
-	value: Omit<Enrollment, "id" | "updatedAt"> & Partial<Pick<Enrollment, "updatedAt">>,
+	value: Omit<Enrollment, "id" | "updatedAt"> &
+		Partial<Pick<Enrollment, "updatedAt">>,
 ) {
 	const enrollment: Enrollment = {
 		...value,
@@ -19,7 +20,9 @@ export async function saveEnrollment(
 	return enrollment;
 }
 
-export async function updateEnrollment(changes: Partial<Omit<Enrollment, "id">>) {
+export async function updateEnrollment(
+	changes: Partial<Omit<Enrollment, "id">>,
+) {
 	const current = await getEnrollment();
 	if (!current) return undefined;
 	const next = { ...current, ...changes, updatedAt: Date.now() };

@@ -5,10 +5,9 @@ import { db } from "../db";
 
 async function addBean(bean: Omit<Beans, "id">) {
 	try {
-		const existing = await db.Beans.where("name")
-			.equals(bean.name)
-			.first();
-		if (existing) return new Error(`Bean with name ${bean.name} already exists`);
+		const existing = await db.Beans.where("name").equals(bean.name).first();
+		if (existing)
+			return new Error(`Bean with name ${bean.name} already exists`);
 		return await db.Beans.add({ ...bean, localId: crypto.randomUUID() });
 	} catch (error) {
 		return error;

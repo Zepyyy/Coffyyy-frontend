@@ -118,12 +118,15 @@ db.version(11)
 	})
 	.upgrade(async (tx) => {
 		for (const tableName of ["Beans", "Machines", "Brews"] as const) {
-			await tx.table(tableName).toCollection().modify((record) => {
-				delete record.serverRevision;
-				delete record.deletedAt;
-				delete record.remoteBeanId;
-				delete record.remoteMachineId;
-			});
+			await tx
+				.table(tableName)
+				.toCollection()
+				.modify((record) => {
+					delete record.serverRevision;
+					delete record.deletedAt;
+					delete record.remoteBeanId;
+					delete record.remoteMachineId;
+				});
 		}
 	});
 

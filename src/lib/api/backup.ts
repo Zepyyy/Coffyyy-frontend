@@ -1,4 +1,9 @@
-import { readLocalSnapshot, replaceLocalSnapshot, type WorkspaceSnapshot, validateSnapshot } from "./workspace";
+import {
+	readLocalSnapshot,
+	replaceLocalSnapshot,
+	type WorkspaceSnapshot,
+	validateSnapshot,
+} from "./workspace";
 
 export async function exportLocalSnapshot() {
 	return JSON.stringify(await readLocalSnapshot(), null, 2);

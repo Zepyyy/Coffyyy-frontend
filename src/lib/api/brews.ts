@@ -172,7 +172,6 @@ export async function getBrewsForBeanId(
 	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
-
 export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 	const beans = await db.Beans.toArray().then((b) =>
 		b.map((b) => ({

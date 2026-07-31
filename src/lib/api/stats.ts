@@ -191,7 +191,9 @@ export async function getBeanBrewInsights(
 ): Promise<BeanBrewInsights | null> {
 	if (!beanId) return null;
 
-	const brews = (await db.Brews.filter((brew) => brew.beanId === beanId).toArray()).sort(sortByNewest);
+	const brews = (
+		await db.Brews.filter((brew) => brew.beanId === beanId).toArray()
+	).sort(sortByNewest);
 
 	if (brews.length === 0) {
 		return null;

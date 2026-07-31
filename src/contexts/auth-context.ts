@@ -1,6 +1,6 @@
 import { createContext } from "react";
-import type { WorkspaceSnapshot } from "@/lib/api/workspace";
 import type * as authApi from "@/lib/api/auth";
+import type { WorkspaceSnapshot } from "@/lib/api/workspace";
 
 export type AuthStatus =
 	| "loading"

@@ -63,7 +63,16 @@ describe("local snapshot backup", () => {
 			finished: false,
 		});
 
-		await expect(importLocalSnapshot(JSON.stringify({ schemaVersion: 1, beans: [], machines: [], brews: [{ localId: "brew-1", beanLocalId: "missing" }] }))).rejects.toThrow("invalid relationships");
+		await expect(
+			importLocalSnapshot(
+				JSON.stringify({
+					schemaVersion: 1,
+					beans: [],
+					machines: [],
+					brews: [{ localId: "brew-1", beanLocalId: "missing" }],
+				}),
+			),
+		).rejects.toThrow("invalid relationships");
 		expect((await db.Beans.toArray())[0].name).toBe("Existing");
 	});
 });

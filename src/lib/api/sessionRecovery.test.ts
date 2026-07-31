@@ -8,12 +8,14 @@ describe("session recovery", () => {
 			bootstrapCsrf: vi.fn().mockResolvedValue(undefined),
 			getSession: vi
 				.fn()
-			.mockRejectedValueOnce(new ApiError("expired", 401))
-			.mockResolvedValue({ authenticated: true }),
+				.mockRejectedValueOnce(new ApiError("expired", 401))
+				.mockResolvedValue({ authenticated: true }),
 			pairSync: vi.fn().mockResolvedValue(undefined),
 		};
 
-		await expect(restoreSession("code", api)).resolves.toEqual({ authenticated: true });
+		await expect(restoreSession("code", api)).resolves.toEqual({
+			authenticated: true,
+		});
 		expect(api.pairSync).toHaveBeenCalledOnce();
 		expect(api.pairSync).toHaveBeenCalledWith("code");
 	});
@@ -25,7 +27,9 @@ describe("session recovery", () => {
 			.mockResolvedValue("ok");
 		const restore = vi.fn().mockResolvedValue(undefined);
 
-		await expect(retryAfterSessionExpiry(operation, restore)).resolves.toBe("ok");
+		await expect(retryAfterSessionExpiry(operation, restore)).resolves.toBe(
+			"ok",
+		);
 		expect(restore).toHaveBeenCalledOnce();
 		expect(operation).toHaveBeenCalledTimes(2);
 	});
@@ -35,7 +39,9 @@ describe("session recovery", () => {
 		const operation = vi.fn().mockRejectedValue(error);
 		const restore = vi.fn();
 
-		await expect(retryAfterSessionExpiry(operation, restore)).rejects.toBe(error);
+		await expect(retryAfterSessionExpiry(operation, restore)).rejects.toBe(
+			error,
+		);
 		expect(restore).not.toHaveBeenCalled();
 	});
 });

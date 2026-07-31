@@ -6,14 +6,19 @@ export const buttonVariants = cva(
 		variants: {
 			variant: {
 				default: "bg-primary text-primary-foreground hover:bg-primary/90",
+				ink: "bg-foreground text-background font-News text-base italic hover:bg-foreground/85 hover:tracking-wide",
 				destructive:
 					"bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+				"subtle-destructive":
+					"bg-tag-red-900/40 text-foreground hover:bg-tag-red-900 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-tag-red-900/40 dark:hover:bg-tag-red-900 border border-tag-red-100/30",
 				outline:
-					"border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+					"border bg-background shadow-xs hover:bg-primary/15 border-primary/30    hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+				"outline-dashed":
+					"border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/15 hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
 				secondary:
 					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
 				ghost:
-					"hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+					"hover:bg-primary/10 hover:text-foreground dark:hover:bg-primary/50",
 				link: "text-primary underline-offset-4 hover:underline",
 				transparent:
 					"text-foreground border-none shadow-none inset-shadow-none active:shadow-none active:inset-shadow-none",
