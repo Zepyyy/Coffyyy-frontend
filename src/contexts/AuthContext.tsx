@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { forgetEnrollment, getEnrollment, saveEnrollment, updateEnrollment } from "@/db/sync/enrollment";
 import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
 import * as authApi from "@/lib/api/auth";
+import { restoreSession, retryAfterSessionExpiry } from "@/lib/api/sessionRecovery";
 import {
 	getWorkspaceSnapshot,
 	putWorkspaceSnapshot,
@@ -61,17 +62,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setIsBusy(true);
 			setLastError(null);
 			try {
-				let nextSession: authApi.SessionState;
-				try {
-					await authApi.bootstrapCsrf();
-					nextSession = await authApi.getSession();
-				} catch (error) {
-					if (!(error instanceof ApiError) || error.status !== 401) throw error;
-					await authApi.pairSync(current.syncCode);
-					nextSession = await authApi.getSession();
-				}
+				const restore = () => restoreSession(current.syncCode, authApi);
+				const nextSession = await restore();
 				setSession(nextSession);
-				const [local, remote] = await Promise.all([readLocalSnapshot(), getWorkspaceSnapshot()]);
+				const [local, remote] = await Promise.all([
+					readLocalSnapshot(),
+					retryAfterSessionExpiry(getWorkspaceSnapshot, restore),
+				]);
 				const localChanged = snapshotHash(local) !== current.lastSyncedHash;
 				const cloudChanged = remote.version !== current.cloudVersion;
 		if (localChanged && cloudChanged) {
