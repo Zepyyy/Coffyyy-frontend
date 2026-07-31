@@ -4,7 +4,7 @@ import axios, {
 	type AxiosInstance,
 	// type AxiosRequestConfig,
 } from "axios";
-import { getCsrfToken } from "./csrf";
+import { getCsrfToken, setCsrfToken } from "./csrf";
 
 export const BACKENDS = {
 	staging: "https://coffyyy-backend-staging.up.railway.app/api",
@@ -52,6 +52,10 @@ export const api: AxiosInstance = axios.create({
 	withCredentials: true,
 });
 
+type RetriableRequest = Parameters<AxiosInstance["request"]>[0] & {
+	_csrfRetried?: boolean;
+};
+
 api.interceptors.request.use((config) => {
 	const env = (localStorage.getItem(API_ENV_KEY) ?? "staging") as BackendEnv;
 	config.baseURL = BACKENDS[env] ?? BACKENDS.staging;
@@ -71,6 +75,21 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
 	(response) => response,
 	(error: AxiosError<unknown>) => {
+		const config = error.config as RetriableRequest | undefined;
+		if (
+			error.response?.status === 403 &&
+			config &&
+			!config._csrfRetried &&
+			!config.url?.endsWith("/auth/sync/csrf")
+		) {
+			config._csrfRetried = true;
+			return api
+				.get<{ csrfToken: string }>("/auth/sync/csrf")
+				.then((response) => {
+					setCsrfToken(response.data.csrfToken);
+					return api.request(config);
+				});
+		}
 		if (error.response?.status === 401 && typeof window !== "undefined") {
 			window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
 		}

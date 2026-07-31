@@ -2,23 +2,13 @@ import { Dexie, type EntityTable } from "dexie";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
-import type {
-	OutboxRecord,
-	RemoteMapping,
-	RemoteTombstone,
-	SyncCursor,
-	SyncLease,
-} from "./sync/types";
+import type { Enrollment } from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
 	Machines: EntityTable<Machines, "id">;
 	Brews: EntityTable<Brews, "id">;
-	Outbox: EntityTable<OutboxRecord, "id">;
-	RemoteMappings: EntityTable<RemoteMapping, "id">;
-	Tombstones: EntityTable<RemoteTombstone, "id">;
-	SyncState: EntityTable<SyncCursor, "id">;
-	SyncLeases: EntityTable<SyncLease, "id">;
+	Enrollment: EntityTable<Enrollment, "id">;
 };
 
 db.version(1).stores({
@@ -101,6 +91,20 @@ db.version(8).stores({
 
 db.version(9).stores({
 	SyncLeases: "&id, workspaceId, ownerId, expiresAt",
+});
+
+db.version(10).stores({
+	Beans:
+		"++id, localId, name, flavors, roastLevel, origin, botanic, variety, brand, finished, dominantNote",
+	Machines: "++id, localId, name",
+	Brews:
+		"++id, localId, bean, machine, overallRating, tasteScore, strengthScore, grindSize, date",
+	Enrollment: "&id, workspaceId, paused",
+	Outbox: null,
+	RemoteMappings: null,
+	Tombstones: null,
+	SyncState: null,
+	SyncLeases: null,
 });
 
 export { db };

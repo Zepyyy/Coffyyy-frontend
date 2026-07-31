@@ -52,10 +52,10 @@ The app remains local-first and can be used without an account or password. Inde
 
 Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d917` passes cookie-session, CSRF, pairing, revocation, import-idempotency, expiry, and rate-limit checks. Backend `master` remains separate for production.
 
-The frontend foundation is in place: cookie-session bootstrap, CSRF-aware API requests, global unauthorized handling, React Query adapters, a local-first sync panel, and resumable remote pull. Full conflict recovery and multi-tab reconciliation remain WIP.
+The frontend sync rewrite is in progress: durable browser enrollment, bounded reconnect, transactional workspace snapshots, explicit Push, automatic Pull, pause/disconnected states, and JSON backup/import are implemented against the new snapshot API. Backend migration and staging rollout remain pending.
 
 Suggestions in the log forms are generated from previously saved beans and machines.
-- Vitest covers the offline outbox/push seams (`npm test`).
+- Vitest covers transactional snapshot replacement (`npm test`).
 - The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
 - Home-screen charts are wired to live brew data and are the most developed of the insight views.
 
@@ -65,10 +65,9 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Dashboard connected to live data, showing charts and recent brews.
 - [x] Issue #10 Phase 1: backend contract and security on backend `dev`
 - [x] Issue #10 Phase 1.5: Railway staging deployment and verification
-- [ ] Issue #10 Phase 2: frontend enable-sync and connect-existing-data flows
-- [ ] Issue #10 Phase 3: complete the frontend data-layer boundary (PR #14 is partial groundwork)
-- [ ] Issue #10 Phase 4: define offline cache/outbox, conflict, retry, and reconnect behavior
-- [ ] Issue #10 Phase 5: verification, Railway deployment, rollout, and cleanup
+- [x] Issue #10 Phase 2: durable enrollment and snapshot sync groundwork
+- [ ] Issue #10 Phase 3: backend snapshot migration and deployed contract
+- [ ] Issue #10 Phase 4: staging verification, rollout, and cleanup
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
 
 The migration remains a work in progress. See [Issue #10](https://github.com/Zepyyy/Coffyyy-frontend/issues/10) for the detailed plan, implementation status, branch workflow, and acceptance criteria.
@@ -77,10 +76,12 @@ The migration remains a work in progress. See [Issue #10](https://github.com/Zep
 
 Cloud sync is optional; local-only use remains the default. A user does not need a traditional account or password to use Coffyyy.
 
-- **Enable sync:** the planned flow backs up and previews local data, imports it through the backend, verifies canonical records, then hydrates Dexie before switching modes. The current foundation does not complete this flow.
-- **Connect existing data:** the planned flow pairs through a sync code, confirms replacement of non-empty local data, downloads the workspace, and hydrates Dexie transactionally. The current foundation does not complete this flow.
+- **Enrollment:** the browser stores one active workspace ID and reusable sync code in dedicated Dexie metadata. Enable creates a workspace only once; reconnect never creates one implicitly.
+- **Snapshots:** Push explicitly replaces the cloud snapshot; Pull replaces local data transactionally. Stable local IDs preserve brew relationships.
+- **Offline behavior:** Pause stops push/pull but leaves the app usable. If local and cloud snapshots both changed, the user chooses Push local, Pull cloud, or Cancel.
+- **Backup:** JSON export/import contains app data only, never enrollment or session credentials.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
-- **Browser storage:** JWTs, sync codes, and Supabase credentials are never stored in LocalStorage. Dexie stores the synced-workspace cache, outbox, remote mappings, and durable pull cursor.
+- **Browser storage:** JWTs and Supabase credentials are never stored in browser storage. Dexie stores local app data and the explicit enrollment metadata; the backend stores only a hash of the sync code.
 
 ## App Routes
 

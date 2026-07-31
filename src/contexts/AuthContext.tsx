@@ -1,380 +1,236 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	listUnresolvedOperations,
-	markOperationsReconciled,
-} from "@/db/sync/outbox";
-import { SyncCoordinator } from "@/db/sync/coordinator";
+import { forgetEnrollment, getEnrollment, saveEnrollment, updateEnrollment } from "@/db/sync/enrollment";
+import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
 import * as authApi from "@/lib/api/auth";
 import {
-	assertCanonicalWorkspace,
-	assertRemoteWorkspace,
-	fetchRemoteWorkspace,
-	importLocalData,
-	PendingOutboxError,
-	replaceWithRemoteData,
-	restoreLocalData,
-	snapshotLocalData,
-} from "@/lib/api/migration";
-import { ApiError, AUTH_UNAUTHORIZED_EVENT } from "@/lib/axios";
-import { pullRemoteChanges, pushPendingOperations } from "@/lib/api/sync";
-import {
-	AuthContext,
-	type AuthContextValue,
-	type AuthStatus,
-} from "./auth-context";
+	getWorkspaceSnapshot,
+	putWorkspaceSnapshot,
+	readLocalSnapshot,
+	replaceLocalSnapshot,
+	snapshotHash,
+	type WorkspaceResponse,
+	type WorkspaceSnapshot,
+} from "@/lib/api/workspace";
+import { AuthContext, type AuthContextValue, type AuthStatus } from "./auth-context";
 
 function errorMessage(error: unknown) {
-	if (error instanceof ApiError) return error.message;
-	if (error instanceof Error) return error.message;
-	return "Sync request failed";
+	return error instanceof Error ? error.message : "Sync request failed";
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const queryClient = useQueryClient();
-	const [coordinator] = useState(() => new SyncCoordinator());
 	const [status, setStatus] = useState<AuthStatus>("loading");
 	const [session, setSession] = useState<authApi.SessionState | null>(null);
-	const [syncCode, setSyncCode] = useState<string | null>(null);
-	const [syncCodeExpiresAt, setSyncCodeExpiresAt] = useState<string | null>(
-		null,
-	);
+	const [enrollment, setEnrollment] = useState<Awaited<ReturnType<typeof getEnrollment>>>(undefined);
+	const [conflictSnapshot, setConflictSnapshot] = useState<WorkspaceSnapshot | null>(null);
 	const [isBusy, setIsBusy] = useState(false);
 	const [lastError, setLastError] = useState<string | null>(null);
-	const workspaceIdRef = useRef<number | undefined>(undefined);
-	workspaceIdRef.current = session?.workspaceId;
+	const reconnecting = useRef<Promise<void> | null>(null);
+	const channel = useRef<BroadcastChannel | null>(null);
 
-	const setLocal = useCallback(() => {
-		setStatus("local");
-		setSession(null);
-		setSyncCode(null);
-		setSyncCodeExpiresAt(null);
+	const broadcast = useCallback((type: string, workspaceId: number) => {
+		channel.current?.postMessage({ type, workspaceId });
 	}, []);
 
-	const pauseSession = useCallback(() => {
-		if (workspaceIdRef.current !== undefined)
-			coordinator.broadcast("session-paused", workspaceIdRef.current);
-		setLocal();
-	}, [coordinator, setLocal]);
+	const invalidate = useCallback(() => void queryClient.invalidateQueries(), [queryClient]);
+	const syncRemote = useCallback(async (remote: WorkspaceResponse) => {
+		await replaceLocalSnapshot(remote.snapshot);
+		const hash = snapshotHash(remote.snapshot);
+		await updateEnrollment({ cloudVersion: remote.version, lastSyncedHash: hash });
+		setConflictSnapshot(null);
+		broadcast("snapshot-updated", (await getEnrollment())?.workspaceId ?? 0);
+		invalidate();
+	}, [broadcast, invalidate]);
+
+	const pushSnapshot = useCallback(async (expectedVersion: number) => {
+		const local = await readLocalSnapshot();
+		const response = await putWorkspaceSnapshot(local, expectedVersion);
+		await updateEnrollment({ cloudVersion: response.version, lastSyncedHash: snapshotHash(response.snapshot) });
+		setConflictSnapshot(null);
+		setStatus("active");
+		broadcast("snapshot-updated", (await getEnrollment())?.workspaceId ?? 0);
+		invalidate();
+	}, [broadcast, invalidate]);
+
+	const reconnect = useCallback(async () => {
+		if (reconnecting.current) return reconnecting.current;
+		const run = (async () => {
+			const current = await getEnrollment();
+			if (!current || current.paused) return;
+			setIsBusy(true);
+			setLastError(null);
+			try {
+				let nextSession: authApi.SessionState;
+				try {
+					await authApi.bootstrapCsrf();
+					nextSession = await authApi.getSession();
+				} catch (error) {
+					if (!(error instanceof ApiError) || error.status !== 401) throw error;
+					await authApi.pairSync(current.syncCode);
+					nextSession = await authApi.getSession();
+				}
+				setSession(nextSession);
+				const [local, remote] = await Promise.all([readLocalSnapshot(), getWorkspaceSnapshot()]);
+				const localChanged = snapshotHash(local) !== current.lastSyncedHash;
+				const cloudChanged = remote.version !== current.cloudVersion;
+		if (localChanged && cloudChanged) {
+			await updateEnrollment({ cloudVersion: remote.version });
+			setConflictSnapshot(remote.snapshot);
+					setStatus("conflict");
+					return;
+				}
+				if (localChanged) await pushSnapshot(remote.version);
+				else await syncRemote(remote);
+				setStatus("active");
+			} catch (error) {
+				setStatus("disconnected");
+				setLastError(errorMessage(error));
+				throw error;
+			} finally {
+				setIsBusy(false);
+			}
+		})();
+		reconnecting.current = run;
+		try { await run; } finally { reconnecting.current = null; }
+	}, [pushSnapshot, syncRemote]);
+
+	const enableSync = useCallback(async () => {
+		const existing = await getEnrollment();
+		if (existing) return reconnect();
+		setIsBusy(true);
+		setLastError(null);
+		try {
+			await authApi.bootstrapCsrf();
+			const result = await authApi.enableSync();
+			await saveEnrollment({ workspaceId: result.workspaceId, syncCode: result.syncCode, paused: false, cloudVersion: 0, lastSyncedHash: "" });
+			setEnrollment(await getEnrollment());
+			setSession(await authApi.getSession());
+			await pushSnapshot(0);
+			setStatus("active");
+		} catch (error) {
+			setStatus("disconnected");
+			setLastError(errorMessage(error));
+			throw error;
+		} finally { setIsBusy(false); }
+	}, [pushSnapshot, reconnect]);
+
+	const pairSyncCode = useCallback(async (code: string) => {
+		setIsBusy(true);
+		setLastError(null);
+		try {
+			const result = await authApi.pairSync(code.trim());
+			await saveEnrollment({ workspaceId: result.workspaceId, syncCode: code.trim(), paused: false, cloudVersion: 0, lastSyncedHash: "" });
+			setEnrollment(await getEnrollment());
+			setSession(await authApi.getSession());
+			await syncRemote(await getWorkspaceSnapshot());
+			setStatus("active");
+		} catch (error) {
+			setStatus("disconnected");
+			setLastError(errorMessage(error));
+			throw error;
+		} finally { setIsBusy(false); }
+	}, [syncRemote]);
+
+	const pauseSync = useCallback(async () => {
+		await updateEnrollment({ paused: true });
+		setEnrollment(await getEnrollment());
+		setStatus("paused");
+	}, []);
+
+	const resumeSync = useCallback(async () => {
+		await updateEnrollment({ paused: false });
+		setEnrollment(await getEnrollment());
+		await reconnect();
+	}, [reconnect]);
+
+	const pushLocal = useCallback(async () => {
+		const current = await getEnrollment();
+		if (!current) throw new Error("Sync is not enrolled");
+		setIsBusy(true);
+		try { await pushSnapshot(current.cloudVersion); }
+		catch (error) {
+			if (error instanceof ApiError && error.status === 409) {
+				try { setConflictSnapshot((await getWorkspaceSnapshot()).snapshot); } catch { /* keep the conflict state */ }
+				setStatus("conflict");
+			} else setStatus("disconnected");
+			setLastError(errorMessage(error));
+			throw error;
+		}
+		finally { setIsBusy(false); }
+	}, [pushSnapshot]);
+
+	const pullCloud = useCallback(async () => {
+		setIsBusy(true);
+		try { await syncRemote(await getWorkspaceSnapshot()); setStatus("active"); }
+		catch (error) { setLastError(errorMessage(error)); throw error; }
+		finally { setIsBusy(false); }
+	}, [syncRemote]);
+
+	const forget = useCallback(async () => {
+		await forgetEnrollment();
+		setEnrollment(undefined);
+		setSession(null);
+		setConflictSnapshot(null);
+		setStatus("local");
+	}, []);
+
+	const replaceSyncCode = useCallback(async () => {
+		const result = await authApi.rotateSyncCode();
+		await updateEnrollment({ syncCode: result.syncCode });
+		setEnrollment(await getEnrollment());
+		return result.syncCode;
+	}, []);
 
 	useEffect(() => {
-		return () => {
-			coordinator.close();
+		if (typeof BroadcastChannel === "undefined") return;
+		const next = new BroadcastChannel("coffyyy:workspace-sync");
+		channel.current = next;
+		next.onmessage = (event) => {
+			if (event.data?.workspaceId !== enrollment?.workspaceId) return;
+			if (event.data.type === "snapshot-updated") invalidate();
 		};
-	}, [coordinator]);
-
-	useEffect(() => {
-		return coordinator.subscribe((signal) => {
-			if (
-				signal.type === "cache-invalidated" ||
-				signal.type === "sync-completed"
-			) {
-				void queryClient.invalidateQueries();
-				return;
-			}
-			if (signal.type === "sync-failed") {
-				if (status === "synced") setLastError(signal.message ?? "Sync failed");
-				return;
-			}
-			if (signal.type === "session-paused") {
-				if (session?.workspaceId === signal.workspaceId) setLocal();
-				return;
-			}
-			if (!navigator.onLine) return;
-			void authApi
-				.bootstrapCsrf()
-				.then(() => authApi.getSession())
-				.then((nextSession) => {
-					if (nextSession.workspaceId !== signal.workspaceId) return;
-					setSession(nextSession);
-					setStatus("synced");
-					setLastError(null);
-				})
-				.catch((error: unknown) => {
-					if (!(error instanceof ApiError) || error.status !== 401)
-						setLastError(errorMessage(error));
-				});
-		});
-	}, [coordinator, queryClient, session?.workspaceId, setLocal, status]);
+		return () => { next.close(); channel.current = null; };
+	}, [enrollment?.workspaceId, invalidate]);
 
 	useEffect(() => {
 		let active = true;
-		const handleUnauthorized = () => {
-			if (active) pauseSession();
-		};
-		window.addEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
-
-		void authApi
-			.bootstrapCsrf()
-			.then(() => authApi.getSession())
-			.then((nextSession) => {
-				if (!active) return;
-				setSession(nextSession);
-				setStatus("synced");
-				coordinator.broadcast("session-resumed", nextSession.workspaceId);
-			})
-			.catch((error: unknown) => {
-				if (!active) return;
-				if (!(error instanceof ApiError) || error.status !== 401) {
-					setLastError(errorMessage(error));
-				}
-				setLocal();
-			});
-
-		return () => {
-			active = false;
-			window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, handleUnauthorized);
-		};
-	}, [coordinator, pauseSession, setLocal]);
+		void getEnrollment().then((current) => {
+			if (!active) return;
+			setEnrollment(current);
+			if (!current) { setStatus("local"); return; }
+			if (current.paused) { setStatus("paused"); return; }
+			void reconnect().catch(() => undefined);
+		});
+		return () => { active = false; };
+	}, [reconnect]);
 
 	useEffect(() => {
-		if (status !== "synced" || session?.workspaceId === undefined) return;
-		let inFlight: Promise<void> | null = null;
-		const sync = () => {
-			if (!navigator.onLine || inFlight) return;
-			inFlight = (async () => {
-				await coordinator.run(session.workspaceId, async (assertLease) => {
-					await pushPendingOperations(assertLease);
-					await pullRemoteChanges(100, assertLease);
-					await queryClient.invalidateQueries();
-				});
-			})()
-				.catch((error: unknown) => {
-					if (!(error instanceof ApiError) || error.status !== 401) {
-						setLastError(errorMessage(error));
-					}
-				})
-				.finally(() => {
-					inFlight = null;
-				});
-		};
-		window.addEventListener("online", sync);
-		const interval = window.setInterval(sync, 30_000);
-		sync();
-		return () => {
-			window.removeEventListener("online", sync);
-			window.clearInterval(interval);
-		};
-	}, [coordinator, queryClient, session?.workspaceId, status]);
+		const onUnauthorized = () => { if (enrollment && status === "active") void reconnect().catch(() => undefined); };
+		const onOnline = () => { if (enrollment && status === "active") void reconnect().catch(() => undefined); };
+		window.addEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
+		window.addEventListener("online", onOnline);
+		return () => { window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized); window.removeEventListener("online", onOnline); };
+	}, [enrollment, reconnect, status]);
 
-	const enableSync = useCallback(async () => {
-		setIsBusy(true);
-		setLastError(null);
-		let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
-		let localDataReplaced = false;
-		let workspaceId: number | undefined;
-		let ownsWorkspaceLease = false;
-		try {
-			snapshot = await snapshotLocalData();
-			const importedOperationIds = snapshot.outbox.map(
-				(operation) => operation.operationId,
-			);
-			const idempotencyKey = crypto.randomUUID();
-			const result = await authApi.enableSync();
-			workspaceId = result.workspaceId;
-			const localSnapshot = snapshot;
-			const coordinated = await coordinator.run(
-				result.workspaceId,
-				async (assertLease) => {
-					await assertLease();
-					await importLocalData(localSnapshot, idempotencyKey);
-					await assertLease();
-					const remote = await fetchRemoteWorkspace();
-					await assertLease();
-					assertCanonicalWorkspace(localSnapshot, remote);
-					const nextSession = await authApi.getSession();
-					await markOperationsReconciled(importedOperationIds);
-					await replaceWithRemoteData(remote, {
-						removeOutboxOperationIds: importedOperationIds,
-					});
-					return nextSession;
-				},
-			);
-			ownsWorkspaceLease = coordinated.acquired;
-			if (!coordinated.acquired)
-				throw new Error("Another tab is syncing this workspace");
-			localDataReplaced = true;
-			setSession(coordinated.value);
-			setStatus("synced");
-			setSyncCode(result.syncCode);
-			setSyncCodeExpiresAt(result.syncCodeExpiresAt);
-			coordinator.broadcast("session-resumed", result.workspaceId);
-			coordinator.broadcast("cache-invalidated", result.workspaceId);
-			await queryClient.invalidateQueries();
-			return result;
-		} catch (error) {
-			if (workspaceId !== undefined && ownsWorkspaceLease)
-				coordinator.broadcast("session-paused", workspaceId);
-			if (localDataReplaced && snapshot) {
-				await restoreLocalData(snapshot).catch(() => undefined);
-			}
-			if (ownsWorkspaceLease) await authApi.logout().catch(() => undefined);
-			setLocal();
-			setLastError(errorMessage(error));
-			throw error;
-		} finally {
-			setIsBusy(false);
-		}
-	}, [coordinator, queryClient, setLocal]);
-
-	const pairSyncCode = useCallback(
-		async (code: string) => {
-			setIsBusy(true);
-			setLastError(null);
-			let snapshot: Awaited<ReturnType<typeof snapshotLocalData>> | null = null;
-			let ownsWorkspaceLease = false;
-			let localDataReplaced = false;
-			try {
-				snapshot = await snapshotLocalData();
-				const result = await authApi.pairSync(code.trim());
-				const coordinated = await coordinator.run(
-					result.workspaceId,
-					async (assertLease) => {
-						await assertLease();
-						const nextSession = await authApi.getSession();
-						const remote = await fetchRemoteWorkspace();
-						await assertLease();
-						assertRemoteWorkspace(remote);
-						await replaceWithRemoteData(remote, { discardOutbox: true });
-						return nextSession;
-					},
-				);
-				ownsWorkspaceLease = coordinated.acquired;
-				if (!coordinated.acquired)
-					throw new Error("Another tab is syncing this workspace");
-				localDataReplaced = true;
-				setSession(coordinated.value);
-				setStatus("synced");
-				setSyncCode(null);
-				setSyncCodeExpiresAt(null);
-				coordinator.broadcast("session-resumed", result.workspaceId);
-				coordinator.broadcast("cache-invalidated", result.workspaceId);
-				await queryClient.invalidateQueries();
-				return result;
-			} catch (error) {
-				if (ownsWorkspaceLease) await authApi.logout().catch(() => undefined);
-				if (localDataReplaced && snapshot)
-					await restoreLocalData(snapshot).catch(() => undefined);
-				setLocal();
-				setLastError(errorMessage(error));
-				throw error;
-			} finally {
-				setIsBusy(false);
-			}
-		},
-		[coordinator, queryClient, setLocal],
-	);
-
-	const reconcile = useCallback(
-		async (discardOutbox = false) => {
-			setIsBusy(true);
-			setLastError(null);
-			try {
-				if (session?.workspaceId === undefined)
-					throw new Error("Sync session is not active");
-				const result = await coordinator.run(
-					session.workspaceId,
-					async (assertLease) => {
-						await pushPendingOperations(assertLease);
-						const unresolved = await listUnresolvedOperations();
-						if (unresolved.length && !discardOutbox) {
-							throw new PendingOutboxError(unresolved);
-						}
-						const remote = await fetchRemoteWorkspace();
-						await assertLease();
-						assertRemoteWorkspace(remote);
-						await replaceWithRemoteData(remote, { discardOutbox });
-					},
-				);
-				if (!result.acquired)
-					throw new Error("Another tab is syncing this workspace");
-				await queryClient.invalidateQueries();
-			} catch (error) {
-				setLastError(errorMessage(error));
-				throw error;
-			} finally {
-				setIsBusy(false);
-			}
-		},
-		[coordinator, queryClient, session?.workspaceId],
-	);
-
-	const rotateSyncCode = useCallback(async () => {
-		setIsBusy(true);
-		setLastError(null);
-		try {
-			const result = await authApi.rotateSyncCode();
-			setSyncCode(result.syncCode);
-			setSyncCodeExpiresAt(result.expiresAt);
-			return result;
-		} catch (error) {
-			setLastError(errorMessage(error));
-			throw error;
-		} finally {
-			setIsBusy(false);
-		}
-	}, []);
-
-	const logout = useCallback(async () => {
-		setIsBusy(true);
-		setLastError(null);
-		try {
-			await authApi.logout();
-		} catch (error) {
-			if (!(error instanceof ApiError) || error.status !== 401) {
-				setLastError(errorMessage(error));
-			}
-		} finally {
-			pauseSession();
-			setIsBusy(false);
-		}
-	}, [pauseSession]);
-
-	const revokeSessions = useCallback(async () => {
-		setIsBusy(true);
-		setLastError(null);
-		try {
-			await authApi.revokeSessions();
-		} catch (error) {
-			setLastError(errorMessage(error));
-			throw error;
-		} finally {
-			pauseSession();
-			setIsBusy(false);
-		}
-	}, [pauseSession]);
-
-	const value = useMemo<AuthContextValue>(
-		() => ({
-			status,
-			session,
-			syncCode,
-			syncCodeExpiresAt,
-			isBusy,
-			lastError,
-			enableSync,
-			pairSyncCode,
-			reconcile,
-			rotateSyncCode,
-			logout,
-			revokeSessions,
-			clearError: () => setLastError(null),
-		}),
-		[
-			status,
-			session,
-			syncCode,
-			syncCodeExpiresAt,
-			isBusy,
-			lastError,
-			enableSync,
-			pairSyncCode,
-			reconcile,
-			rotateSyncCode,
-			logout,
-			revokeSessions,
-		],
-	);
+	const value = useMemo<AuthContextValue>(() => ({
+		status,
+		session,
+		enrollment: enrollment ? { workspaceId: enrollment.workspaceId, syncCode: enrollment.syncCode } : null,
+		isBusy,
+		lastError,
+		conflictSnapshot,
+		enableSync,
+		pairSyncCode,
+		reconnect,
+		pauseSync,
+		resumeSync,
+		pushLocal,
+		pullCloud,
+		forgetEnrollment: forget,
+		replaceSyncCode,
+		clearError: () => setLastError(null),
+	}), [status, session, enrollment, isBusy, lastError, conflictSnapshot, enableSync, pairSyncCode, reconnect, pauseSync, resumeSync, pushLocal, pullCloud, forget, replaceSyncCode]);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

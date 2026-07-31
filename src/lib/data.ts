@@ -57,25 +57,6 @@ export {
 	updateMachineById,
 } from "../db/crud/update";
 export {
-	getSyncCursor,
-	getRemoteHistory,
-	pullRemoteChanges,
-	pushPendingOperations,
-	restoreRemoteVersion,
-} from "./api/sync";
-export {
-	listPendingOperations,
-	retryOperation,
-	exportFailedOperations,
-	exportOutboxOperations,
-	listUnresolvedOperations,
-	countOutboxOperations,
-	countFailedOperations,
-	clearOutbox,
-	listOutboxOperations,
-	retryFailedOperations,
-} from "../db/sync/outbox";
-export {
 	clearDatabase,
 	resetDatabaseWithSeed,
 } from "../db/crud/seed";

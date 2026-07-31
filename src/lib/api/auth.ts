@@ -11,7 +11,6 @@ export type SessionState = {
 export type EnableSyncResponse = {
 	workspaceId: number;
 	syncCode: string;
-	syncCodeExpiresAt: string;
 	csrfToken: string | undefined;
 };
 
@@ -24,7 +23,6 @@ export type PairResponse = {
 
 export type RotatedSyncCode = {
 	syncCode: string;
-	expiresAt: string;
 };
 
 type BootstrapCsrfResponse = {

@@ -1,21 +1,31 @@
 import { createContext } from "react";
+import type { WorkspaceSnapshot } from "@/lib/api/workspace";
 import type * as authApi from "@/lib/api/auth";
 
-export type AuthStatus = "loading" | "local" | "synced";
+export type AuthStatus =
+	| "loading"
+	| "local"
+	| "active"
+	| "paused"
+	| "disconnected"
+	| "conflict";
 
 export type AuthContextValue = {
 	status: AuthStatus;
 	session: authApi.SessionState | null;
-	syncCode: string | null;
-	syncCodeExpiresAt: string | null;
+	enrollment: { workspaceId: number; syncCode: string } | null;
 	isBusy: boolean;
 	lastError: string | null;
-	enableSync: () => Promise<authApi.EnableSyncResponse>;
-	pairSyncCode: (code: string) => Promise<authApi.PairResponse>;
-	reconcile: (discardOutbox?: boolean) => Promise<void>;
-	rotateSyncCode: () => Promise<authApi.RotatedSyncCode>;
-	logout: () => Promise<void>;
-	revokeSessions: () => Promise<void>;
+	conflictSnapshot: WorkspaceSnapshot | null;
+	enableSync: () => Promise<void>;
+	pairSyncCode: (code: string) => Promise<void>;
+	reconnect: () => Promise<void>;
+	pauseSync: () => Promise<void>;
+	resumeSync: () => Promise<void>;
+	pushLocal: () => Promise<void>;
+	pullCloud: () => Promise<void>;
+	forgetEnrollment: () => Promise<void>;
+	replaceSyncCode: () => Promise<string>;
 	clearError: () => void;
 };
 

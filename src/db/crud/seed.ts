@@ -185,20 +185,12 @@ export async function clearDatabase() {
 			db.Beans,
 			db.Machines,
 			db.Brews,
-			db.Outbox,
-			db.RemoteMappings,
-			db.Tombstones,
-			db.SyncState,
 		],
 		async () => {
 			await Promise.all([
 				db.Brews.clear(),
 				db.Beans.clear(),
 				db.Machines.clear(),
-				db.Outbox.clear(),
-				db.RemoteMappings.clear(),
-				db.Tombstones.clear(),
-				db.SyncState.clear(),
 			]);
 		},
 	);
@@ -215,20 +207,12 @@ export async function resetDatabaseWithSeed(
 			db.Beans,
 			db.Machines,
 			db.Brews,
-			db.Outbox,
-			db.RemoteMappings,
-			db.Tombstones,
-			db.SyncState,
 		],
 		async () => {
 			await Promise.all([
 				db.Brews.clear(),
 				db.Beans.clear(),
 				db.Machines.clear(),
-				db.Outbox.clear(),
-				db.RemoteMappings.clear(),
-				db.Tombstones.clear(),
-				db.SyncState.clear(),
 			]);
 
 			const beanIds: number[] = [];
