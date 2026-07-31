@@ -6,111 +6,127 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-type Note = Beans["dominantNote"] | "default";
+export type Note = Beans["dominantNote"] | "default";
 
-type Swatch = {
+export type Swatch = {
 	bg: string;
 	secondaryBg: string;
 	stripe: string;
 	text: string;
 	secondaryText: string;
-	border: string;
+	borderColor: string;
 	var: string;
 	secondaryVar: string;
 };
 
-export const colorSwatch: Record<Note, Swatch> = {
-	Fruity: {
+type TagColor =
+	| "teal"
+	| "red"
+	| "blue"
+	| "green"
+	| "yellow"
+	| "orange"
+	| "purple"
+	| "gray";
+
+const tagColors: Record<TagColor, Swatch> = {
+	teal: {
 		bg: "bg-tag-teal-900",
 		secondaryBg: "bg-tag-teal-900/40",
 		stripe: "bg-tag-teal-500",
 		text: "text-tag-teal-100",
 		secondaryText: "text-tag-teal-100/75",
-		border: "border border-tag-teal-500",
+		borderColor: "border-tag-teal-500",
 		var: "var(--color-tag-teal-500)",
 		secondaryVar: "var(--color-tag-teal-900)",
 	},
-	Nutty: {
+	red: {
 		bg: "bg-tag-red-900",
 		secondaryBg: "bg-tag-red-900/40",
 		stripe: "bg-tag-red-500",
 		text: "text-tag-red-100",
 		secondaryText: "text-tag-red-100/75",
-		border: "border border-tag-red-500",
+		borderColor: "border-tag-red-500",
 		var: "var(--color-tag-red-500)",
 		secondaryVar: "var(--color-tag-red-900)",
 	},
-	Floral: {
+	blue: {
 		bg: "bg-tag-blue-900",
 		secondaryBg: "bg-tag-blue-900/40",
 		stripe: "bg-tag-blue-500",
 		text: "text-tag-blue-100",
 		secondaryText: "text-tag-blue-100/75",
-		border: "border border-tag-blue-500",
+		borderColor: "border-tag-blue-500",
 		var: "var(--color-tag-blue-500)",
 		secondaryVar: "var(--color-tag-blue-900)",
 	},
-	Green: {
+	green: {
 		bg: "bg-tag-green-900",
 		secondaryBg: "bg-tag-green-900/40",
 		stripe: "bg-tag-green-500",
 		text: "text-tag-green-100",
 		secondaryText: "text-tag-green-100/75",
-		border: "border border-tag-green-500",
+		borderColor: "border-tag-green-500",
 		var: "var(--color-tag-green-500)",
 		secondaryVar: "var(--color-tag-green-900)",
 	},
-	Roasted: {
+	yellow: {
 		bg: "bg-tag-yellow-900",
 		secondaryBg: "bg-tag-yellow-900/40",
 		stripe: "bg-tag-yellow-500",
 		text: "text-tag-yellow-100",
 		secondaryText: "text-tag-yellow-100/75",
-		border: "border border-tag-yellow-500",
+		borderColor: "border-tag-yellow-500",
 		var: "var(--color-tag-yellow-500)",
 		secondaryVar: "var(--color-tag-yellow-900)",
 	},
-	Sour: {
+	orange: {
 		bg: "bg-tag-orange-900",
 		secondaryBg: "bg-tag-orange-900/40",
 		stripe: "bg-tag-orange-500",
 		text: "text-tag-orange-100",
 		secondaryText: "text-tag-orange-100/75",
-		border: "border border-tag-orange-500",
+		borderColor: "border-tag-orange-500",
 		var: "var(--color-tag-orange-500)",
 		secondaryVar: "var(--color-tag-orange-900)",
 	},
-	Spices: {
+	purple: {
 		bg: "bg-tag-purple-900",
 		secondaryBg: "bg-tag-purple-900/40",
 		stripe: "bg-tag-purple-500",
 		text: "text-tag-purple-100",
 		secondaryText: "text-tag-purple-100/75",
-		border: "border border-tag-purple-500",
+		borderColor: "border-tag-purple-500",
 		var: "var(--color-tag-purple-500)",
 		secondaryVar: "var(--color-tag-purple-900)",
 	},
-	Sweet: {
-		bg: "bg-tag-yellow-900",
-		secondaryBg: "bg-tag-yellow-900/40",
-		stripe: "bg-tag-yellow-500",
-		text: "text-tag-yellow-100",
-		secondaryText: "text-tag-yellow-100/75",
-		border: "border border-tag-yellow-500",
-		var: "var(--color-tag-yellow-500)",
-		secondaryVar: "var(--color-tag-yellow-900)",
-	},
-	default: {
+	gray: {
 		bg: "bg-tag-gray-900",
 		secondaryBg: "bg-tag-gray-900/40",
 		stripe: "bg-tag-gray-500",
 		text: "text-tag-gray-100",
 		secondaryText: "text-tag-gray-100/75",
-		border: "border border-tag-gray-500",
+		borderColor: "border-tag-gray-500",
 		var: "var(--color-tag-gray-500)",
 		secondaryVar: "var(--color-tag-gray-900)",
 	},
 };
+
+export const colorSwatch: Record<Note, Swatch> = {
+	Fruity: tagColors.teal,
+	Nutty: tagColors.red,
+	Floral: tagColors.blue,
+	Green: tagColors.green,
+	Roasted: tagColors.yellow,
+	Sour: tagColors.orange,
+	Spices: tagColors.purple,
+	Sweet: tagColors.yellow,
+	default: tagColors.gray,
+};
+
+export function getColorSwatch(note: string | null | undefined): Swatch {
+	return colorSwatch[note as Note] ?? colorSwatch.default;
+}
 
 export function parseWeight({
 	value,

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { deleteBeanById } from "@/db/crud/delete";
-import { colorSwatch } from "@/lib/utils";
+import { getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
 import RoastDots from "../home/RoastDots";
@@ -75,6 +75,7 @@ export default function BeanCard({
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
+	const swatch = getColorSwatch(bean.dominantNote);
 
 	const parameters: Parameter[] = [
 		{ label: "Variety", values: bean.variety },
@@ -85,37 +86,35 @@ export default function BeanCard({
 	return (
 		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
 			{/* Header row */}
-			<article
-				className={`p-4 relative w-full ${colorSwatch[bean.dominantNote]?.bg} overflow-hidden`}
-			>
+			<article className={`p-4 relative w-full ${swatch.bg} overflow-hidden`}>
 				<div
-					className={`text-2xl font-Lora font-semibold leading-tight tracking-wide ${colorSwatch[bean.dominantNote]?.text}`}
+					className={`text-2xl font-Lora font-semibold leading-tight tracking-wide ${swatch.text}`}
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
 
 				<div
-					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${colorSwatch[bean.dominantNote]?.secondaryText}`}
+					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${swatch.secondaryText}`}
 				>
 					{bean.origin.join(", ")} · {bean.brand}
 				</div>
 				{dialInState?.isDialedIn && (
 					<div
-						className={`mt-3 absolute bottom-1 right-1 items-center border px-2 py-1 font-Mono text-[9px] uppercase tracking-[0.16em] ${colorSwatch[bean.dominantNote]?.text} border-current/20 bg-background/40`}
+						className={`mt-3 absolute bottom-1 right-1 items-center border px-2 py-1 font-Mono text-[9px] uppercase tracking-[0.16em] ${swatch.text} border-current/20 bg-background/40`}
 					>
 						Dialed In
 					</div>
 				)}
 				{/* Background text effect */}
 				<div
-					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${colorSwatch[bean.dominantNote]?.text}`}
+					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${swatch.text}`}
 				>
 					{bean.name || "Unnamed bean"}
 				</div>
 				{/* Top left icon */}
 				<NoteIcon
 					strokeWidth={2}
-					className={`size-6 absolute top-5 right-5 ${colorSwatch[bean.dominantNote]?.text}`}
+					className={`size-6 absolute top-5 right-5 ${swatch.text}`}
 				/>
 			</article>
 			<Separator />
