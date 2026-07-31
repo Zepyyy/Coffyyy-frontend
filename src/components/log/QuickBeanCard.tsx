@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { colorSwatch } from "@/lib/utils";
+import { getColorSwatch } from "@/lib/utils";
 import type { BeanCardProps } from "@/types/BeanTypes";
 
 export default function QuickBeanCard({
@@ -11,7 +11,7 @@ export default function QuickBeanCard({
 	selected?: boolean;
 	onClick?: () => void;
 }) {
-	const swatch = colorSwatch[bean.dominantNote];
+	const swatch = getColorSwatch(bean.dominantNote);
 	return (
 		<button
 			type="button"

@@ -10,7 +10,7 @@ import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
-import { colorSwatch } from "@/lib/utils";
+import { getColorSwatch } from "@/lib/utils";
 import type { BeanBrewParameterSummary } from "@/types/BrewTypes";
 
 function formatWeight(value: number | null) {
@@ -71,7 +71,7 @@ export default function Bean() {
 		);
 	}
 
-	const swatch = colorSwatch[bean.dominantNote] ?? colorSwatch.default;
+	const swatch = getColorSwatch(bean.dominantNote);
 
 	const beanMeta = [
 		bean.origin?.join(", "),
@@ -145,7 +145,7 @@ export default function Bean() {
 						{bean.flavors.map((f) => (
 							<span
 								key={f}
-								className={`rounded-full border ${swatch.border} px-2.5 py-0.5 font-Mono text-[10px] uppercase tracking-widest ${swatch.text}`}
+								className={`rounded-full border ${swatch.borderColor} px-2.5 py-0.5 font-Mono text-[10px] uppercase tracking-widest ${swatch.text}`}
 							>
 								{f}
 							</span>

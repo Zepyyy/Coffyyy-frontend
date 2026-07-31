@@ -1,5 +1,5 @@
 import { type ChartConfig } from "@/components/ui/chart";
-import { colorSwatch } from "@/lib/utils";
+import { getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanBrewInsights } from "@/types/BrewTypes";
 import BeanBarChart from "./BeanBarChart";
@@ -52,7 +52,7 @@ export default function BestBrewPanel({
 	withBarChart?: boolean;
 	withGraph?: boolean;
 }) {
-	const swatch = colorSwatch[bean.dominantNote] ?? colorSwatch.default;
+	const swatch = getColorSwatch(bean.dominantNote);
 	const chartData = buildGrindAverageChartData(insights.recentBrewScores);
 	const chartConfig = {
 		avgRating: {

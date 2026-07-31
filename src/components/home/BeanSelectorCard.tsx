@@ -10,7 +10,7 @@ import {
 	type LucideIcon,
 	Salad,
 } from "lucide-react";
-import { colorSwatch } from "@/lib/utils";
+import { getColorSwatch } from "@/lib/utils";
 import type { BeanCardProps, Beans } from "@/types/BeanTypes";
 import RoastDots from "./RoastDots";
 
@@ -34,7 +34,7 @@ export default function BeanSelectorCard({
 	selected: boolean;
 	onClick: () => void;
 }) {
-	const swatch = colorSwatch[bean.dominantNote] ?? colorSwatch.default;
+	const swatch = getColorSwatch(bean.dominantNote);
 	const NoteIcon = noteIcon[bean.dominantNote] ?? FileQuestion;
 
 	return (
@@ -43,7 +43,7 @@ export default function BeanSelectorCard({
 			onClick={onClick}
 			className={`relative overflow-hidden border text-start transition-all cursor-pointer ${
 				selected
-					? `${swatch.bg} ${swatch.border}`
+					? `${swatch.bg} border ${swatch.borderColor}`
 					: "border-border bg-background hover:border-primary/30"
 			}`}
 		>

@@ -1,5 +1,4 @@
-import { cn, colorSwatch } from "@/lib/utils";
-import type { Beans } from "@/types/BeanTypes";
+import { cn, getColorSwatch } from "@/lib/utils";
 
 export default function OptionChips({
 	options,
@@ -42,7 +41,7 @@ export default function OptionChips({
 					>
 						{withDot && (
 							<span
-								className={`w-2 h-2 rounded-full ${colorSwatch[opt as Beans["dominantNote"]]?.stripe}`}
+								className={cn("w-2 h-2 rounded-full", getColorSwatch(opt).stripe)}
 							/>
 						)}
 						{opt}
