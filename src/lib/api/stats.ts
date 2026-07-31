@@ -178,15 +178,11 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 
 export async function getBrewCountForBean(bean: string): Promise<number> {
 	if (!bean) return 0;
-	return db.Brews.filter(
-		(brew) => String(brew.beanId) === bean && brew.deletedAt === undefined,
-	).count();
+	return db.Brews.filter((brew) => String(brew.beanId) === bean).count();
 }
 
 export async function getUniqueBeansBrewedCount(): Promise<number> {
-	const beans = await db.Brews.filter(
-		(brew) => brew.deletedAt === undefined,
-	).toArray();
+	const beans = await db.Brews.toArray();
 	return new Set(beans.map((brew) => brew.beanId).filter(Boolean)).size;
 }
 
@@ -195,11 +191,7 @@ export async function getBeanBrewInsights(
 ): Promise<BeanBrewInsights | null> {
 	if (!beanId) return null;
 
-	const brews = (
-		await db.Brews.filter(
-			(brew) => brew.beanId === beanId && brew.deletedAt === undefined,
-		).toArray()
-	).sort(sortByNewest);
+	const brews = (await db.Brews.filter((brew) => brew.beanId === beanId).toArray()).sort(sortByNewest);
 
 	if (brews.length === 0) {
 		return null;
@@ -251,17 +243,13 @@ export async function getBrewCountForBeanId(
 	beanId: number | undefined,
 ): Promise<number> {
 	if (!beanId) return 0;
-	return db.Brews.filter(
-		(b) => b.beanId === beanId && b.deletedAt === undefined,
-	).count();
+	return db.Brews.filter((b) => b.beanId === beanId).count();
 }
 
 export async function getBeanDialInStates(
 	beanIds?: number[],
 ): Promise<BeanDialInState[]> {
-	const brews = (await db.Brews.toArray()).filter(
-		(brew) => brew.deletedAt === undefined,
-	);
+	const brews = await db.Brews.toArray();
 	const relevantIds = new Set(
 		beanIds?.filter((beanId): beanId is number => typeof beanId === "number") ??
 			[],

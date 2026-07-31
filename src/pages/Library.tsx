@@ -23,9 +23,7 @@ export default function Library() {
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
-	const activeMachines = allMachines.filter(
-		(machine) => machine.deletedAt === undefined,
-	);
+	const activeMachines = allMachines;
 
 	const beanIds = useMemo(
 		() =>

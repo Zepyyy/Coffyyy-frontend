@@ -61,14 +61,11 @@ async function getBrewNameMaps() {
 
 export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 	const brews = await db.Brews.orderBy("date").reverse().toArray();
-	const active = brews.filter((brew) => brew.deletedAt === undefined);
-	return active.slice(0, limit);
+	return brews.slice(0, limit);
 }
 
 export async function getLatestUnratedBrew(): Promise<Brews | null> {
-	const brews = (await db.Brews.orderBy("date").reverse().toArray()).filter(
-		(brew) => brew.deletedAt === undefined,
-	);
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
 	return (
 		brews.find(
 			(b) =>
@@ -84,9 +81,7 @@ export async function getBrewsForHistoryView(
 	search: string,
 	minRating: number | null,
 ): Promise<Brews[]> {
-	let list = (await db.Brews.toArray()).filter(
-		(brew) => brew.deletedAt === undefined,
-	);
+	let list = await db.Brews.toArray();
 	const names = await getBrewNameMaps();
 	const q = search.trim().toLowerCase();
 	if (q) {
@@ -121,9 +116,7 @@ export async function getBrewsForHistoryView(
 }
 
 export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
-	const brews = (await db.Brews.toArray()).filter(
-		(brew) => brew.deletedAt === undefined,
-	);
+	const brews = await db.Brews.toArray();
 	if (brews.length === 0) {
 		return {
 			total: 0,
@@ -175,19 +168,13 @@ export async function getBrewsForBeanId(
 	beanId: number | undefined,
 ): Promise<Brews[]> {
 	if (!beanId) return [];
-	const brews = await db.Brews.filter(
-		(b) => b.beanId === beanId && b.deletedAt === undefined,
-	).toArray();
+	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
 	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
-export async function getBrewSuggestions(
-	includeDeleted = false,
-): Promise<BrewSuggestions> {
-	const beans = await (includeDeleted
-		? db.Beans.toArray()
-		: db.Beans.filter((b) => b.deletedAt === undefined).toArray()
-	).then((b) =>
+
+export async function getBrewSuggestions(): Promise<BrewSuggestions> {
+	const beans = await db.Beans.toArray().then((b) =>
 		b.map((b) => ({
 			id: b.id,
 			name: b.name,
@@ -197,10 +184,7 @@ export async function getBrewSuggestions(
 			roastLevel: b.roastLevel,
 		})),
 	);
-	const machines = await (includeDeleted
-		? db.Machines.toArray()
-		: db.Machines.filter((b) => b.deletedAt === undefined).toArray()
-	).then((b) =>
+	const machines = await db.Machines.toArray().then((b) =>
 		b.map((b) => ({
 			id: b.id,
 			name: b.name,

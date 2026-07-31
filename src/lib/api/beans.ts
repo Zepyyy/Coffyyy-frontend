@@ -11,11 +11,11 @@ export async function getBean(
 }
 
 export async function getAllBeans(): Promise<Array<Beans>> {
-	return db.Beans.filter((bean) => bean.deletedAt === undefined).toArray();
+	return db.Beans.toArray();
 }
 
 export async function getBeanCount(): Promise<number> {
-	return db.Beans.filter((bean) => bean.deletedAt === undefined).count();
+	return db.Beans.count();
 }
 
 export async function getAllBeanNames(): Promise<Array<Beans["name"]>> {

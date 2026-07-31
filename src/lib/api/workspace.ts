@@ -6,8 +6,8 @@ import { api } from "@/lib/axios";
 
 export type WorkspaceSnapshot = {
 	schemaVersion: 1;
-	beans: Array<Omit<Beans, "id" | "serverRevision" | "deletedAt"> & { localId: string }>;
-	machines: Array<Omit<Machines, "id" | "serverRevision" | "deletedAt"> & { localId: string }>;
+	beans: Array<Omit<Beans, "id"> & { localId: string }>;
+	machines: Array<Omit<Machines, "id"> & { localId: string }>;
 	brews: Array<{
 		localId: string;
 		beanLocalId?: string;
@@ -48,20 +48,20 @@ export async function readLocalSnapshot(): Promise<WorkspaceSnapshot> {
 	return {
 		schemaVersion: 1,
 		beans: beans.map((record) => {
-			const bean = { ...record } as Partial<Beans>;
-			const id = bean.id;
+			const bean = { ...record } as Record<string, unknown>;
+			const id = record.id;
 			delete bean.id;
 			delete bean.serverRevision;
 			delete bean.deletedAt;
-			return { ...bean, localId: localId(record, `bean:${id}`) } as Omit<Beans, "id" | "serverRevision" | "deletedAt"> & { localId: string };
+			return { ...bean, localId: localId(record, `bean:${id}`) } as Omit<Beans, "id"> & { localId: string };
 		}),
 		machines: machines.map((record) => {
-			const machine = { ...record } as Partial<Machines>;
-			const id = machine.id;
+			const machine = { ...record } as Record<string, unknown>;
+			const id = record.id;
 			delete machine.id;
 			delete machine.serverRevision;
 			delete machine.deletedAt;
-			return { ...machine, localId: localId(record, `machine:${id}`) } as Omit<Machines, "id" | "serverRevision" | "deletedAt"> & { localId: string };
+			return { ...machine, localId: localId(record, `machine:${id}`) } as Omit<Machines, "id"> & { localId: string };
 		}),
 		brews: brews.map((brew) => ({
 			localId: localId(brew, `brew:${brew.id}`),

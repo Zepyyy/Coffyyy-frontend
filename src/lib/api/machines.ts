@@ -11,9 +11,7 @@ export async function getAllMachines(): Promise<Array<Machines>> {
 }
 
 export async function getMachineCount(): Promise<number> {
-	return db.Machines.filter(
-		(machine) => machine.deletedAt === undefined,
-	).count();
+	return db.Machines.count();
 }
 
 export async function getMachineNameById(
@@ -58,7 +56,5 @@ export async function getMachineSuggestions(): Promise<MachineSuggestions> {
 }
 
 async function getActiveMachines() {
-	return db.Machines.filter(
-		(machine) => machine.deletedAt === undefined,
-	).toArray();
+	return db.Machines.toArray();
 }

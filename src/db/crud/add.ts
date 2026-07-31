@@ -7,7 +7,6 @@ async function addBean(bean: Omit<Beans, "id">) {
 	try {
 		const existing = await db.Beans.where("name")
 			.equals(bean.name)
-			.filter((record) => record.deletedAt === undefined)
 			.first();
 		if (existing) return new Error(`Bean with name ${bean.name} already exists`);
 		return await db.Beans.add({ ...bean, localId: crypto.randomUUID() });
@@ -28,7 +27,6 @@ async function addMachine(machine: Omit<Machines, "id">) {
 	try {
 		const existing = await db.Machines.where("name")
 			.equals(machine.name)
-			.filter((record) => record.deletedAt === undefined)
 			.first();
 		if (existing)
 			return new Error(`Machine with name ${machine.name} already exists`);

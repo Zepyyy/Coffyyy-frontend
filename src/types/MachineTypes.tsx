@@ -1,8 +1,6 @@
 export type Machines = {
 	id: number;
 	localId?: string;
-	serverRevision?: number;
-	deletedAt?: number;
 	name: string;
 	brand: string;
 	type: string;

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { exportLocalSnapshot, importLocalSnapshot } from "@/lib/api/migration";
+import { exportLocalSnapshot, importLocalSnapshot } from "@/lib/api/backup";
 
 function statusLabel(status: string) {
 	return status === "active"

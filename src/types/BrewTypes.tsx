@@ -4,8 +4,6 @@ import type { MachineCardProps } from "./MachineTypes";
 export type Brews = {
 	id: number;
 	localId?: string;
-	serverRevision?: number;
-	deletedAt?: number;
 	beanWeight: number;
 	espressoWeight: number;
 	extractionTime: string | undefined;
@@ -17,8 +15,6 @@ export type Brews = {
 	date: Date;
 	beanId: number | undefined;
 	machineId: number | undefined;
-	remoteBeanId?: number;
-	remoteMachineId?: number;
 };
 
 export type BrewForm = {

@@ -107,4 +107,24 @@ db.version(10).stores({
 	SyncLeases: null,
 });
 
+db.version(11)
+	.stores({
+		Beans:
+			"++id, localId, name, flavors, roastLevel, origin, city, botanic, variety, brand, finished, dominantNote",
+		Machines: "++id, localId, name",
+		Brews:
+			"++id, localId, bean, machine, overallRating, tasteScore, strengthScore, grindSize, date",
+		Enrollment: "&id, workspaceId, paused",
+	})
+	.upgrade(async (tx) => {
+		for (const tableName of ["Beans", "Machines", "Brews"] as const) {
+			await tx.table(tableName).toCollection().modify((record) => {
+				delete record.serverRevision;
+				delete record.deletedAt;
+				delete record.remoteBeanId;
+				delete record.remoteMachineId;
+			});
+		}
+	});
+
 export { db };
