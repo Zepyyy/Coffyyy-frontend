@@ -1,5 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Wifi } from "lucide-react";
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import SyncPanel from "./components/SyncPanel";
 import { useTheme } from "./contexts/ThemeContext";
@@ -14,10 +15,12 @@ const NAV_LINKS = [
 export default function App() {
 	const { theme, toggleTheme } = useTheme();
 
+	const [showSyncPanel, setShowSyncPanel] = useState(false);
+
 	return (
 		<div className="min-h-screen text-foreground flex flex-col diamond-bg">
 			<header className="sticky top-0 z-50 h-16 border-b border-border bg-background/95 backdrop-blur-sm">
-				<div className="flex h-full w-full px-4 items-center">
+				<div className="flex h-full w-full px-4 items-center relative">
 					<span className="flex text-2xl font-News italic tracking-tight select-none flex-1">
 						Coffyyy
 					</span>
@@ -58,8 +61,18 @@ export default function App() {
 							))}
 						</nav>
 					</div>
-					<div className="flex">
+					<div
+						className={`flex justify-center ${!showSyncPanel ? "hidden" : "flex"}`}
+					>
 						<SyncPanel />
+					</div>
+					<div className="flex ml-5 gap-2">
+						<button
+							onClick={() => setShowSyncPanel(!showSyncPanel)}
+							className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+						>
+							<Wifi size={16} />
+						</button>
 						<button
 							type="button"
 							onClick={toggleTheme}
