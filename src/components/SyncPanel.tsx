@@ -290,47 +290,47 @@ export default function SyncPanel() {
 
 				{auth.enrollment && (
 					<div className="space-y-3 border-t border-border pt-4">
-						<div className="flex items-center justify-between gap-3">
-							<div className="min-w-0">
-								<p className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-									Sync code
-								</p>
-								<p className="mt-1 truncate font-Mono text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded flex-1">
+						<div className="min-w-0">
+							<p className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+								Sync code qsd
+							</p>
+							<div className="flex items-center justify-between gap-3">
+								<p className="mt-1 truncate font-Mono text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded">
 									{codeVisible
 										? auth.enrollment.syncCode
 										: "••••••••••••••••••••••••••••"}
 								</p>
-							</div>
-							<div className="flex shrink-0 gap-1 ">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setCodeVisible((visible) => !visible)}
-								>
-									{codeVisible ? "Hide" : "Show"}
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									aria-label="Copy sync code"
-									onClick={() =>
-										void navigator.clipboard.writeText(
-											auth.enrollment!.syncCode,
-										)
-									}
-								>
-									<CopyIcon />
-								</Button>
-								{auth.status !== "paused" && (
+								<div className="flex shrink-0 gap-1 ">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setCodeVisible((visible) => !visible)}
+									>
+										{codeVisible ? "Hide" : "Show"}
+									</Button>
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										aria-label="Replace sync code"
-										onClick={() => void auth.replaceSyncCode()}
+										aria-label="Copy sync code"
+										onClick={() =>
+											void navigator.clipboard.writeText(
+												auth.enrollment!.syncCode,
+											)
+										}
 									>
-										<RefreshCcw />
+										<CopyIcon />
 									</Button>
-								)}
+									{auth.status !== "paused" && (
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Replace sync code"
+											onClick={() => void auth.replaceSyncCode()}
+										>
+											<RefreshCcw />
+										</Button>
+									)}
+								</div>
 							</div>
 						</div>
 						<div className="flex items-center justify-between gap-3">

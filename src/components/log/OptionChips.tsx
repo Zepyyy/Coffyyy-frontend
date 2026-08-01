@@ -41,7 +41,10 @@ export default function OptionChips({
 					>
 						{withDot && (
 							<span
-								className={cn("w-2 h-2 rounded-full", getColorSwatch(opt).stripe)}
+								className={cn(
+									"w-2 h-2 rounded-full",
+									getColorSwatch(opt).stripe,
+								)}
 							/>
 						)}
 						{opt}
