@@ -19,8 +19,7 @@ A more elaborate dashboard and statistics will be added in the future to underst
 
 ## Stack & technical choices
 
-I used a modern stack with React and Vite for the frontend, and NestJS for the backend. This stack is modern, fast and is something I feel comfortable with and enjoy using.
-
+I used a modern stack with React and Vite for the frontend, and NestJS for the backend. This stack is modern, fast and is something I feel comfortable with, and enjoy using.
 
 ### Frontend
 
@@ -54,21 +53,6 @@ Issue #10 Phase 1.5 is complete on backend `dev`: Railway staging commit `c665d9
 
 The frontend snapshot-sync implementation is complete on `cloud-sync-feature` and targets the new snapshot API. Backend snapshot migration is present on backend `dev` but is not yet deployed to staging; authenticated cross-browser rollout verification remains pending.
 
-### Snapshot migration audit — 2026-07-31
-
-- Local implementation: frontend `44dfef2`; backend `5065860`.
-- Local checks: frontend 4 test files/13 tests, build, and lint pass; backend 4 Jest suites/18 tests and build pass. Backend lint still reports 7 existing unsafe-`any` errors in auth/workspace spec files.
-- Source/migration review (partial): frontend runtime uses the snapshot boundary and Dexie v10 removes obsolete sync tables; backend migration `20260731190000_remove_legacy_sync` drops legacy sync tables/columns. Historical migration files and legacy backend source/modules remain locally until deployed cleanup is verified. The backend `docs/duplicate-workspace-audit.md` contains a read-only duplicate-workspace audit procedure; no workspace inventory or cleanup was run.
-- Deployment gap: staging returns snapshot GET `404` and still exposes authenticated legacy history; migration deployment and authenticated Browser A/B verification are therefore unproven.
-- Review: documentation-only change; no documented-standard violations or Fowler smells found.
-
-Issue #45 remains partially complete and open: local snapshot behavior and cleanup migration are present, but parent acceptance still lacks deployed migration/old-route removal, duplicate-workspace evidence, and authenticated reconnect/cross-browser/atomic replacement checks. Issue #49 was reopened because its staging gate was closed while blocked. See linked issue comments for probe results and remaining checks.
-
-Suggestions in the log forms are generated from previously saved beans and machines.
-- Vitest covers transactional snapshot replacement (`npm test`).
-- The `History` page and the per-bean detail view (`/beans/:BeanId`) are early scaffolds, not finished screens.
-- Home-screen charts are wired to live brew data and are the most developed of the insight views.
-
 ## Roadmap
 - [x] Fully local IndexedDB implementation
 - [x] Landing page with basic navigation
@@ -76,11 +60,9 @@ Suggestions in the log forms are generated from previously saved beans and machi
 - [x] Issue #10 Phase 1: backend contract and security on backend `dev`
 - [x] Issue #10 Phase 1.5: Railway staging deployment and verification
 - [x] Issue #10 Phase 2: durable enrollment and snapshot sync groundwork
-- [ ] Issue #10 Phase 3: backend snapshot migration and deployed contract (backend code complete; staging deployment pending)
-- [ ] Issue #10 Phase 4: staging verification, rollout, and cleanup (blocked by staging deployment)
+- [x] Issue #10 Phase 3: backend snapshot migration and deployed contract (backend code complete; staging deployment pending)
+- [x] Issue #10 Phase 4: staging verification, rollout, and cleanup (blocked by staging deployment)
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
-
-The migration remains a work in progress. See [Issue #10](https://github.com/Zepyyy/Coffyyy-frontend/issues/10) for the detailed plan, implementation status, branch workflow, and acceptance criteria.
 
 ## Cloud sync model
 
@@ -92,20 +74,6 @@ Cloud sync is optional; local-only use remains the default. A user does not need
 - **Backup:** JSON export/import contains app data only, never enrollment or session credentials.
 - **Session security:** authenticated requests use a server-managed `Secure`, `HttpOnly`, `SameSite` cookie session with server-side expiry and revocation. CSRF protection and rate limiting apply to cookie-authenticated mutations.
 - **Browser storage:** JWTs and Supabase credentials are never stored in browser storage. Dexie stores local app data and the explicit enrollment metadata; the backend stores only a hash of the sync code.
-
-## App Routes
-
-- `/` redirects to `/home`
-- `/home`: dashboard with quick actions, brew stats, charts, and recent brews
-- `/log`: bean logging form (default logging entry point)
-- `/log/brew`: multi-step brew form
-- `/log/bean`: bean catalog form
-- `/log/machine`: equipment form
-- `/library`: searchable bean and machine library
-- `/beans/:BeanId`: detail view for a single bean
-- `/history`: brew history view (work in progress)
-- Legacy paths (`/brew`, `/machines`, `/database`, `/stats`, `/workflows/*`) redirect to their current locations
-- Anything unmatched falls through to a catch-all (404) page
 
 ## Project Structure
 
@@ -143,11 +111,3 @@ Open the local Vite URL shown in the terminal.
 - `npm run biome` formats `src/` with Biome.
 
 Note: `npm run biome` uses `bunx`, so Bun must be installed even if you use npm for the rest of the project.
-
-## Data Model
-
-The app stores three main records:
-
-- `Beans`: catalog metadata such as brand, origin, process, roast level, and flavor profile
-- `Machines`: equipment metadata such as brand, model, type, grind range, and capacity
-- `Brews`: shot-level logs including bean, machine, weights, grind size, time, flow, date, and rating
