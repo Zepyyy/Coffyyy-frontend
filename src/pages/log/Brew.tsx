@@ -1,23 +1,26 @@
-import { type ChangeEvent, useState } from "react";
-import { Link } from "react-router";
+import { Coffee, RotateCcw, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
-import FieldLabel from "@/components/log/FieldLabel";
-import OptionChips from "@/components/log/OptionChips";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
-import SectionTitle from "@/components/log/SectionTitle";
+import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
 import { addBrew } from "@/lib/data";
-import { useBrewSuggestions } from "@/hooks/api/useBrews";
+import { useBrewSuggestions, useLastBrewForBean } from "@/hooks/api/useBrews";
 import {
 	DEFAULT_FLOW,
-	DIAL_DEFAULT_BEAN_WEIGHT,
-	DIAL_DEFAULT_ESPRESSO_WEIGHT,
 	MAX_BEAN_WEIGHT,
 	MAX_ESPRESSO_WEIGHT,
 	MIN_BEAN_WEIGHT,
 	MIN_ESPRESSO_WEIGHT,
 } from "@/lib/defaults";
-import { clampWeight, cn, parseWeight, STEPS } from "@/lib/utils";
+import {
+	clampWeight,
+	cn,
+	formatExtractionTime,
+	formatRelativeDay,
+	parseExtractionTime,
+} from "@/lib/utils";
 import type { BrewForm } from "@/types/BrewTypes";
 
 const INITIAL: BrewForm = {
@@ -32,63 +35,164 @@ const INITIAL: BrewForm = {
 };
 
 const GRIND_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+const TIME_PRESETS = ["25", "28", "30", "32", "36"];
 
-function SummaryRow({
-	label,
-	value,
+function StepHeading({
+	index,
+	title,
+	hint,
 }: {
-	label: string;
-	value: string | number;
+	index: string;
+	title: string;
+	hint: string;
 }) {
 	return (
-		<div className="flex items-center justify-between px-4 py-2.5">
-			<span className="font-Mono text-xs uppercase tracking-widest text-muted-foreground">
+		<div className="flex items-baseline gap-3">
+			<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+				{index}
+			</span>
+			<h2 className="font-News text-2xl italic tracking-tight text-foreground/90">
+				{title}
+			</h2>
+			<span className="hidden font-Recursive text-xs text-muted-foreground sm:inline">
+				{hint}
+			</span>
+		</div>
+	);
+}
+
+function RecipeSegment({
+	label,
+	value,
+	muted,
+}: {
+	label: string;
+	value: string;
+	muted?: boolean;
+}) {
+	return (
+		<span className="inline-flex items-baseline gap-1.5">
+			<span className="font-Mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
 				{label}
 			</span>
-			<span className="font-Recursive text-sm text-foreground">{value}</span>
-		</div>
+			<span
+				className={cn(
+					"font-Mono text-sm font-semibold",
+					muted ? "text-muted-foreground/50" : "text-foreground",
+				)}
+			>
+				{value}
+			</span>
+		</span>
 	);
 }
 
 export default function BrewLog() {
 	const [form, setForm] = useState<BrewForm>(INITIAL);
-	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const [error, setError] = useState("");
+	const [saveError, setSaveError] = useState("");
+	const [savedBrewId, setSavedBrewId] = useState<number | null>(null);
+	const [rated, setRated] = useState(false);
+	const [beanSearch, setBeanSearch] = useState("");
 
-	const [step, setStep] = useState(1);
+	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
 
 	const suggestions = useBrewSuggestions();
+	const lastBrewForBean = useLastBrewForBean(form.beanId);
+
+	// Deep link: /log/brew?bean=12 selects the bean up front.
+	useEffect(() => {
+		const beanParam = searchParams.get("bean");
+		if (beanParam == null) return;
+		const beanId = Number(beanParam);
+		if (Number.isFinite(beanId) && beanId > 0) {
+			setForm((f) => ({ ...f, beanId }));
+		}
+	}, [searchParams]);
+
+	// Selecting a bean picks up that bean's latest recipe as the starting point.
+	const [prefill, setPrefill] = useState<{
+		from: string;
+		date: Date;
+	} | null>(null);
+	const prefillSourceId = useMemo(
+		() => (lastBrewForBean?.beanId === form.beanId ? form.beanId : undefined),
+		[lastBrewForBean, form.beanId],
+	);
+	useEffect(() => {
+		if (!lastBrewForBean || prefillSourceId !== form.beanId) return;
+		const seconds = parseExtractionTime(lastBrewForBean.extractionTime);
+		setForm((f) => ({
+			...f,
+			grindSize: lastBrewForBean.grindSize ?? f.grindSize,
+			beanWeight: lastBrewForBean.beanWeight ?? f.beanWeight,
+			espressoWeight: lastBrewForBean.espressoWeight ?? f.espressoWeight,
+			extractionTime: seconds != null ? String(seconds) : f.extractionTime,
+			flow: lastBrewForBean.flow ?? f.flow,
+			machineId: lastBrewForBean.machineId ?? f.machineId,
+		}));
+		setPrefill({
+			from: `your last shot of this bean`,
+			date: new Date(lastBrewForBean.date),
+		});
+	}, [lastBrewForBean, prefillSourceId, form.beanId]);
+
+	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
+	useEffect(() => {
+		setSelectedBeanId(form.beanId ?? null);
+	}, [form.beanId]);
 
 	function setField<K extends keyof BrewForm>(field: K, value: BrewForm[K]) {
 		setForm((f) => ({ ...f, [field]: value }));
 	}
 
-	async function handleSubmit(e: ChangeEvent) {
+	function selectBean(beanId: number) {
+		setField("beanId", beanId);
+	}
+
+	function startFresh() {
+		setForm((f) => ({ ...INITIAL, beanId: f.beanId }));
+		setPrefill(null);
+	}
+
+	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		setError("");
-		setStatus("");
+		if (!form.beanId || isSaving) return;
+		setSaveError("");
 
 		setIsSaving(true);
 		try {
 			const result = await addBrew({
 				beanId: form.beanId,
 				machineId: form.machineId,
-				date: form.date,
+				date: new Date(),
 				beanWeight: form.beanWeight,
 				grindSize: form.grindSize,
 				espressoWeight: form.espressoWeight,
 				flow: form.flow,
 				extractionTime: form.extractionTime,
 			});
-			setError(result instanceof Error ? result.message : String(result));
-			setForm(INITIAL);
-			setStatus("Done.");
-		} catch {
-			setStatus("Save failed.");
+			if (result instanceof Error) {
+				setSaveError(result.message);
+			} else {
+				setSavedBrewId(result);
+				setRated(false);
+			}
 		} finally {
 			setIsSaving(false);
 		}
+	}
+
+	function logAnother() {
+		setSavedBrewId(null);
+		setForm((f) => ({
+			...f,
+			date: new Date(),
+			flow: "",
+			extractionTime: "",
+		}));
+		setPrefill(null);
 	}
 
 	const setBeanWeight = (value: number) => {
@@ -108,346 +212,431 @@ export default function BrewLog() {
 		setField("espressoWeight", Number(next.toFixed(1)));
 	};
 
-	const beanWeightValue = parseWeight({
-		value: form.beanWeight,
-		default_weight: DIAL_DEFAULT_BEAN_WEIGHT,
-		min: MIN_BEAN_WEIGHT,
-		max: MAX_BEAN_WEIGHT,
-	});
-	const espressoWeightValue = parseWeight({
-		value: form.espressoWeight,
-		default_weight: DIAL_DEFAULT_ESPRESSO_WEIGHT,
-		min: MIN_ESPRESSO_WEIGHT,
-		max: MAX_ESPRESSO_WEIGHT,
-	});
-	const espressoRatio = form.beanWeight
-		? (form.espressoWeight / form.beanWeight).toFixed(1)
-		: null;
+	const espressoRatio =
+		form.beanWeight && form.espressoWeight
+			? (form.espressoWeight / form.beanWeight).toFixed(1)
+			: null;
+	const timeSeconds = parseExtractionTime(form.extractionTime);
 
-	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
-	const [selectedMachineId, setSelectedMachineId] = useState<number | null>(
-		null,
-	);
-
-	const [show, setShow] = useState(false);
-	const isEmpty = suggestions.bean.length === 0;
+	const filteredBeans = useMemo(() => {
+		const q = beanSearch.trim().toLowerCase();
+		if (!q) return suggestions.bean;
+		return suggestions.bean.filter((b) =>
+			[b.name, b.origin?.join(" ")]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase()
+				.includes(q),
+		);
+	}, [beanSearch, suggestions.bean]);
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
-	const selectedMachine = suggestions.machine.find(
-		(m) => m.id === form.machineId,
-	);
+	const isEmpty = suggestions.bean.length === 0;
+
+	// Success: the shot is logged, rate it now or move on.
+	if (savedBrewId != null) {
+		return (
+			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
+				<div className="space-y-6 border border-border bg-background p-6 sm:p-8">
+					<div className="flex items-start justify-between gap-4">
+						<div>
+							<p className="font-Mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+								Shot logged
+							</p>
+							<p className="mt-1 font-News text-3xl italic tracking-tight text-foreground/90">
+								{selectedBean?.name ?? "Brew"} in the book.
+							</p>
+						</div>
+						<Coffee className="size-8 text-primary/30" strokeWidth={1.5} />
+					</div>
+
+					{!rated && savedBrewId != null && (
+						<TasteRatingPrompt
+							brew={{
+								id: savedBrewId,
+								date: new Date(),
+								grindSize: form.grindSize,
+								beanWeight: form.beanWeight,
+								espressoWeight: form.espressoWeight,
+								beanId: form.beanId,
+								machineId: form.machineId,
+								flow: form.flow,
+								extractionTime: form.extractionTime,
+							}}
+							beanName={selectedBean?.name ?? "the brew"}
+							onDismiss={() => setRated(true)}
+						/>
+					)}
+
+					<div className="flex flex-wrap gap-3 pt-1">
+						<button
+							type="button"
+							onClick={logAnother}
+							className="border border-border bg-primary-200/15 px-5 py-2.5 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/50"
+						>
+							Log another shot
+						</button>
+						<button
+							type="button"
+							onClick={() => navigate("/home")}
+							className="border border-border px-5 py-2.5 font-Recursive text-sm text-muted-foreground transition-colors hover:text-foreground"
+						>
+							Back to dashboard
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="mx-auto w-full">
-			<div className="grid lg:grid-cols-[16rem_minmax(0,1fr)] mx-6">
-				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
-					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-						<div className="border-l-5 border-primary-200 pl-5">
-							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
-								Log a Brew
-							</h1>
-							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Log parameters, rate later.
-							</p>
-						</div>
-						{import.meta.env.DEV && (
-							<div className="bg-background p-2 border border-primary/20">
-								<p className="text-sm text-foreground py-1">Status: {status}</p>
-								{Object.entries(form).map(([key, value]) => (
-									<div key={key}>
-										<p className="text-sm text-muted-foreground space-x-4">
-											<span>{key}: </span>
-											<span className="font-mono text-foreground">
-												{Array.isArray(value)
-													? value.join(", ")
-													: value?.toLocaleString()}
-											</span>
-										</p>
-									</div>
-								))}
-							</div>
-						)}
-						{error && <p className="text-sm text-foreground py-1">{error}</p>}
+			<div className="mx-6 grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
+				<aside className="lg:sticky lg:top-20 lg:self-start space-y-6 lg:block hidden">
+					<div className="border-l-5 border-primary-200 pl-5">
+						<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+							Log a brew
+						</h1>
+						<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							Twenty seconds, then pour.
+						</p>
 					</div>
+
+					{/* Live recipe line — fills in as the shot is dialed */}
+					<div className="border border-border bg-background p-4 space-y-2">
+						<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+							The recipe
+						</p>
+						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+							<RecipeSegment label="grind" value={String(form.grindSize)} />
+							<RecipeSegment label="in" value={`${form.beanWeight}g`} />
+							<RecipeSegment label="out" value={`${form.espressoWeight}g`} />
+							<RecipeSegment
+								label="ratio"
+								value={espressoRatio ? `1:${espressoRatio}` : "—"}
+								muted={!espressoRatio}
+							/>
+							<RecipeSegment
+								label="time"
+								value={
+									timeSeconds != null
+										? (formatExtractionTime(timeSeconds) ?? "—")
+										: "—"
+								}
+								muted={timeSeconds == null}
+							/>
+						</div>
+					</div>
+
+					{prefill && (
+						<div className="space-y-1.5">
+							<p className="font-Recursive text-xs text-muted-foreground">
+								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
+							</p>
+							<button
+								type="button"
+								onClick={startFresh}
+								className="inline-flex items-center gap-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<RotateCcw className="size-3" />
+								Start fresh
+							</button>
+						</div>
+					)}
+					{saveError && (
+						<p className="font-Recursive text-xs text-destructive">
+							{saveError}
+						</p>
+					)}
 				</aside>
-				<section className="space-y-5 border border-border bg-background p-6 mx-12">
-					<form onSubmit={handleSubmit} className="space-y-10">
-						{/* Step indicator */}
-						<div className="text-sm text-muted-foreground">
-							Step {step}/{STEPS.length}
+
+				<section className="border border-border bg-background p-6 lg:p-8 mb-8">
+					{/* Mobile: the aside is hidden, so the prefill note travels with the form */}
+					{prefill && (
+						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
+							<p className="font-Recursive text-xs text-muted-foreground">
+								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
+							</p>
+							<button
+								type="button"
+								onClick={startFresh}
+								className="inline-flex shrink-0 items-center gap-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<RotateCcw className="size-3" />
+								Start fresh
+							</button>
 						</div>
-						<div
-							className={`transition-opacity duration-300 space-y-4 ${step === 1 ? "opacity-100" : "opacity-0"}`}
-						>
-							{step === 1 && (
-								<section className="space-y-3">
-									<SectionTitle>{STEPS[step - 1].title}</SectionTitle>
-									<div className="space-y-12">
-										<div className="space-y-12">
-											<FieldLabel required>The bean</FieldLabel>
-											{isEmpty && (
-												<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
-													<p className="font-News text-2xl text-foreground/60">
-														No beans
-													</p>
-													<p className="font-Recursive text-sm text-muted-foreground">
-														Add your first bean to get started.
-													</p>
-													<Link
-														to="/log/bean"
-														className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
-													>
-														Log a Bean
-													</Link>
-												</div>
-											)}
-											<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-												{suggestions.bean.map((beanInfo) => (
-													<BeanSelectorCard
-														key={beanInfo.name}
-														bean={{
-															id: beanInfo.id,
-															name: beanInfo.name,
-															origin: beanInfo.origin,
-															dominantNote: beanInfo.dominantNote,
-															process: beanInfo.process,
-															roastLevel: beanInfo.roastLevel,
-														}}
-														selected={selectedBeanId === beanInfo.id}
-														onClick={() => {
-															setField("beanId", beanInfo.id);
-															setSelectedBeanId(beanInfo.id);
-														}}
-													/>
-												))}
-											</div>
-										</div>
+					)}
+					<form onSubmit={handleSubmit} className="space-y-12">
+						{/* 01 — The bean */}
+						<section className="space-y-4">
+							<StepHeading
+								index="01"
+								title="The bean"
+								hint="Which bag is open?"
+							/>
+							{isEmpty ? (
+								<div className="border border-dashed border-border p-10 text-center space-y-3">
+									<p className="font-News text-2xl text-foreground/60">
+										No beans yet
+									</p>
+									<p className="font-Recursive text-sm text-muted-foreground">
+										Add a bean first — it takes a minute.
+									</p>
+									<Link
+										to="/log/bean"
+										className="inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
+									>
+										Add a bean
+									</Link>
+								</div>
+							) : (
+								<>
+									{suggestions.bean.length > 8 && (
+										<label className="relative block max-w-xs">
+											<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+											<input
+												className="h-9 w-full border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+												placeholder="Search your beans…"
+												value={beanSearch}
+												onChange={(e) => setBeanSearch(e.target.value)}
+												aria-label="Search beans"
+											/>
+										</label>
+									)}
+									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+										{filteredBeans.map((beanInfo) => (
+											<BeanSelectorCard
+												key={beanInfo.id}
+												bean={{
+													id: beanInfo.id,
+													name: beanInfo.name,
+													origin: beanInfo.origin,
+													dominantNote: beanInfo.dominantNote,
+													process: beanInfo.process,
+													roastLevel: beanInfo.roastLevel,
+													variety: beanInfo.variety,
+												}}
+												selected={selectedBeanId === beanInfo.id}
+												onClick={() => selectBean(beanInfo.id)}
+											/>
+										))}
 									</div>
-								</section>
+									{!isEmpty && filteredBeans.length === 0 && (
+										<p className="font-Recursive text-sm text-muted-foreground">
+											No bean matches “{beanSearch}”.
+										</p>
+									)}
+								</>
 							)}
-						</div>
-						<div
-							className={`transition-opacity duration-300 space-y-4 ${step === 2 ? "opacity-100" : "opacity-0"}`}
-						>
-							{step === 2 && (
-								<section className="space-y-10">
-									<div className="space-y-2">
-										<FieldLabel required>Grind Size</FieldLabel>
-										<div className="flex flex-col gap-4">
-											<button
-												type="button"
-												className={
-													"flex w-fit items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
-												}
-												onClick={() => setShow(!show)}
-											>
-												{show ? "Hide" : "Custom Grind Size"}
-											</button>
+						</section>
 
-											{show && (
-												<input
-													type="number"
-													className="flex-1 w-fit border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none appearance-none"
-													step="0.01"
-													placeholder="e.g. 18"
-													value={form.grindSize}
-													onChange={(e) =>
-														setField("grindSize", Number(e.target.value))
-													}
-												/>
+						{/* 02 — The recipe */}
+						<section className="space-y-6">
+							<StepHeading
+								index="02"
+								title="The recipe"
+								hint="Dial it in — the dials start from last time."
+							/>
+							<div className="space-y-2">
+								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+									Grind size
+								</p>
+								<div className="flex flex-wrap gap-1.5">
+									{GRIND_SIZES.map((lvl) => (
+										<button
+											key={lvl}
+											type="button"
+											onClick={() =>
+												setField("grindSize", form.grindSize === lvl ? 12 : lvl)
+											}
+											className={cn(
+												"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2 sm:flex-none sm:px-2",
+												form.grindSize === lvl
+													? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
+													: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
 											)}
-											<div className="flex flex-wrap gap-1.5">
-												{GRIND_SIZES.map((lvl) => (
-													<button
-														key={lvl}
-														type="button"
-														onClick={() =>
-															setField(
-																"grindSize",
-																form.grindSize === lvl ? 12 : lvl,
-															)
-														}
-														className={cn(
-															"flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
-															form.grindSize === lvl
-																? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
-																: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
-														)}
-													>
-														{lvl}
-													</button>
-												))}
-											</div>
-										</div>
+										>
+											{lvl}
+										</button>
+									))}
+									<input
+										type="number"
+										step="0.01"
+										className="w-24 border border-border bg-background px-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+										placeholder="Other"
+										value={
+											GRIND_SIZES.includes(form.grindSize) ? "" : form.grindSize
+										}
+										onChange={(e) =>
+											setField("grindSize", Number(e.target.value))
+										}
+										aria-label="Custom grind size"
+									/>
+								</div>
+								<div
+									className="h-1 w-full"
+									style={{
+										background:
+											"linear-gradient(to right, var(--primary-100), var(--primary))",
+									}}
+								/>
+								<div className="w-full flex items-center justify-between font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+									<span>Finer</span>
+									<span className="hidden sm:inline">Fine</span>
+									<span>Medium</span>
+									<span className="hidden sm:inline">Coarse</span>
+									<span>Coarser</span>
+								</div>
+							</div>
 
-										<div
-											className="h-1 w-full"
-											style={{
-												background:
-													"linear-gradient(to right, var(--primary-100), var(--primary))",
-											}}
-										/>
-										<div className="w-full flex items-center justify-around gap-4 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-											<span>Finer</span>
-											<span>Fine</span>
-											<span>Medium</span>
-											<span>Coarse</span>
-											<span>Coarser</span>
-										</div>
+							<div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-start lg:gap-14">
+								<div className="flex flex-col items-center">
+									<p className="font-Recursive text-sm text-foreground">
+										In — ground coffee
+									</p>
+									<Dial
+										value={form.beanWeight}
+										onChange={setBeanWeight}
+										min={MIN_BEAN_WEIGHT}
+										max={MAX_BEAN_WEIGHT}
+										label="Dose (ground coffee) dial"
+									/>
+								</div>
+								{espressoRatio && (
+									<div className="relative border border-dashed border-border px-6 py-3 text-center">
+										<span className="font-Lora text-5xl font-bold text-primary-700/90 dark:text-primary-200/90">
+											1:{espressoRatio}
+										</span>
+										<span className="absolute -bottom-5 left-1/2 -translate-x-1/2 font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground select-none">
+											ratio
+										</span>
 									</div>
-									<div className="flex flex-row items-center justify-start mx-auto gap-15">
-										<div className="flex flex-col items-center">
-											<FieldLabel required>Bean Weight</FieldLabel>
-											<Dial
-												value={beanWeightValue}
-												onChange={setBeanWeight}
-												min={MIN_BEAN_WEIGHT}
-												max={MAX_BEAN_WEIGHT}
-											/>
-										</div>
+								)}
+								<div className="flex flex-col items-center">
+									<p className="font-Recursive text-sm text-foreground">
+										Out — espresso in the cup
+									</p>
+									<Dial
+										value={form.espressoWeight}
+										onChange={setEspressoWeight}
+										min={MIN_ESPRESSO_WEIGHT}
+										max={MAX_ESPRESSO_WEIGHT}
+										label="Yield (espresso weight) dial"
+									/>
+								</div>
+							</div>
 
-										<div className="flex flex-col items-center">
-											<FieldLabel required>Espresso Weight</FieldLabel>
-											<Dial
-												value={espressoWeightValue}
-												onChange={setEspressoWeight}
-												min={MIN_ESPRESSO_WEIGHT}
-												max={MAX_ESPRESSO_WEIGHT}
-											/>
-										</div>
-										{espressoRatio && (
-											<div className="text-7xl min-w-fit text-center font-Lora font-bold text-primary-700/90 relative border border-border border-dashed px-6 py-3.5">
-												1:{espressoRatio}
-												<span className="absolute -bottom-5 left-2 text-xs font-Mono font-medium tracking-widest uppercase select-none">
-													ratio
-												</span>
-											</div>
-										)}
-									</div>
-									<div className="space-y-2">
-										<FieldLabel required>Extraction Time</FieldLabel>
+							<div className="grid gap-6 md:grid-cols-2">
+								<div className="space-y-2">
+									<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+										Extraction time
+									</p>
+									<div className="flex flex-wrap items-center gap-1.5">
+										{TIME_PRESETS.map((t) => (
+											<button
+												key={t}
+												type="button"
+												onClick={() => setField("extractionTime", t)}
+												className={cn(
+													"border px-3 py-1.5 font-Mono text-xs transition-colors",
+													parseExtractionTime(form.extractionTime) === Number(t)
+														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+												)}
+											>
+												{t}s
+											</button>
+										))}
 										<input
-											type="number"
-											className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
-											step="0.01"
+											type="text"
+											inputMode="decimal"
+											className="w-24 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
 											placeholder="e.g. 28"
 											value={form.extractionTime}
 											onChange={(e) =>
 												setField("extractionTime", e.target.value)
 											}
+											aria-label="Extraction time in seconds"
 										/>
+									</div>
+									<p className="font-Recursive text-xs text-muted-foreground">
+										Seconds, or 1:02 — whatever your scale shows.
+									</p>
+								</div>
+								<div className="space-y-2">
+									<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+										How did it flow?
+									</p>
+									<div className="flex flex-wrap gap-1.5">
+										{DEFAULT_FLOW.map((f) => (
+											<button
+												key={f}
+												type="button"
+												onClick={() =>
+													setField("flow", form.flow === f ? "" : f)
+												}
+												className={cn(
+													"border px-3 py-1.5 font-Recursive text-xs transition-colors",
+													form.flow === f
+														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+												)}
+											>
+												{f}
+											</button>
+										))}
+									</div>
+									<p className="font-Recursive text-xs text-muted-foreground">
+										First read on the shot, before you taste it.
+									</p>
+								</div>
+							</div>
+						</section>
 
-										<div className="space-y-2">
-											<FieldLabel required>Flow</FieldLabel>
-											<OptionChips
-												options={DEFAULT_FLOW}
-												value={form.flow}
-												onChange={(v) => setField("flow", v)}
-											/>
-										</div>
-									</div>
-								</section>
-							)}
-						</div>
-						<div
-							className={`transition-opacity duration-500 space-y-4 ${step === 3 ? "opacity-100" : "opacity-0"}`}
-						>
-							{step === 3 && (
-								<section className="space-y-4">
-									<SectionTitle>{STEPS[step - 1].title}</SectionTitle>
-									<div className="space-y-1.5">
-										<FieldLabel required>Machine</FieldLabel>
-										<div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-											{suggestions.machine.map((machineInfo) => (
-												<QuickMachineCard
-													key={machineInfo.id}
-													selected={selectedMachineId === machineInfo.id}
-													machine={{
-														id: machineInfo.id,
-														name: machineInfo.name,
-														type: machineInfo.type,
-													}}
-													onClick={() => {
-														setField("machineId", machineInfo.id);
-														setSelectedMachineId(machineInfo.id);
-													}}
-												/>
-											))}
-										</div>
-									</div>
-								</section>
-							)}
-						</div>
-						<div
-							className={`transition-opacity duration-200 space-y-4 ${step === 4 ? "opacity-100" : "opacity-0"}`}
-						>
-							{step === 4 && (
-								<section className="space-y-4">
-									<SectionTitle>Summary</SectionTitle>
-									<div className="divide-y divide-border border border-border">
-										<SummaryRow
-											label="Bean"
-											value={selectedBean?.name ?? "—"}
-										/>
-										<SummaryRow
-											label="Machine"
-											value={selectedMachine?.name ?? "—"}
-										/>
-										<SummaryRow label="Grind Size" value={form.grindSize} />
-										<SummaryRow
-											label="Bean Weight"
-											value={`${form.beanWeight} g`}
-										/>
-										<SummaryRow
-											label="Espresso Weight"
-											value={`${form.espressoWeight} g`}
-										/>
-										{espressoRatio && (
-											<SummaryRow label="Ratio" value={`1:${espressoRatio}`} />
-										)}
-										<SummaryRow
-											label="Extraction Time"
-											value={
-												form.extractionTime ? `${form.extractionTime}s` : "—"
-											}
-										/>
-										<SummaryRow label="Flow" value={form.flow || "—"} />
-									</div>
+						{/* 03 — The setup */}
+						<section className="space-y-4">
+							<StepHeading
+								index="03"
+								title="The setup"
+								hint="Which machine pulled it?"
+							/>
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+								{suggestions.machine.map((machineInfo) => (
+									<QuickMachineCard
+										key={machineInfo.id}
+										selected={form.machineId === machineInfo.id}
+										machine={{
+											id: machineInfo.id,
+											name: machineInfo.name,
+											type: machineInfo.type,
+										}}
+										onClick={() => {
+											setField(
+												"machineId",
+												form.machineId === machineInfo.id
+													? undefined
+													: machineInfo.id,
+											);
+										}}
+									/>
+								))}
+							</div>
+						</section>
 
-									<div className="border-t border-border pt-4 space-y-2">
-										{status && (
-											<p className="text-sm text-muted-foreground">{status}</p>
-										)}
-										<button
-											type="submit"
-											disabled={!form.beanId || isSaving}
-											className="w-full border border-border bg-primary-200/15 py-2.5 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
-										>
-											{isSaving ? "Saving…" : "Save Brew"}
-										</button>
-									</div>
-								</section>
-							)}
+						<div className="flex items-center justify-between gap-4 border-t border-border pt-5">
+							<p className="hidden font-Recursive text-xs text-muted-foreground sm:block">
+								{form.beanId ? "Ready when you are." : "Pick a bean to start."}
+							</p>
+							<button
+								type="submit"
+								disabled={!form.beanId || isSaving}
+								className="h-12 flex-1 bg-foreground px-8 font-News text-base italic text-background transition-opacity hover:tracking-wide hover:opacity-90 disabled:opacity-40 sm:flex-none"
+							>
+								{isSaving ? "Saving…" : "Save the shot"}
+							</button>
 						</div>
 					</form>
-					<div className="flex gap-5">
-						<button
-							className="flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
-							type="button"
-							disabled={step === 1}
-							onClick={() => setStep(step - 1)}
-						>
-							Previous
-						</button>
-						<button
-							className="flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50"
-							type="button"
-							disabled={step === STEPS.length}
-							onClick={() => setStep(step + 1)}
-						>
-							Next
-						</button>
-					</div>
 				</section>
 			</div>
 		</div>

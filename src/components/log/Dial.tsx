@@ -33,12 +33,14 @@ export default function Dial({
 	min,
 	max,
 	helpers = true,
+	label = "Weight dial",
 }: {
 	value: number;
 	onChange: (value: number) => void;
 	min: number;
 	max: number;
 	helpers?: boolean;
+	label?: string;
 }) {
 	const dialDrag = useRef<{
 		pointerId: number;
@@ -110,7 +112,10 @@ export default function Dial({
 			<div className="flex items-center justify-center py-1">
 				<button
 					type="button"
-					aria-label="Bean weight dial"
+					aria-label={label}
+					aria-valuenow={value}
+					aria-valuemin={min}
+					aria-valuemax={max}
 					className="ml-2 touch-none rounded-full focus:outline-none focus:ring-1 focus:ring-primary/40"
 					onPointerDown={handlePointerDown}
 					onPointerMove={handlePointerMove}
@@ -162,7 +167,7 @@ export default function Dial({
 			{helpers && (
 				<div className="w-fit flex items-center justify-between gap-4 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 					<span>{min}g</span>
-					<span>Shift + arrows = 0.5g</span>
+					<span className="text-muted-foreground/60">drag or arrow keys</span>
 					<span>{max}g</span>
 				</div>
 			)}
