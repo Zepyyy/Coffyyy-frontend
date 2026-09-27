@@ -6,7 +6,7 @@ export const buttonVariants = cva(
 		variants: {
 			variant: {
 				default: "bg-primary text-primary-foreground hover:bg-primary/90",
-				ink: "bg-foreground text-background font-News text-base italic hover:bg-foreground/85 hover:tracking-wide",
+				ink: "bg-foreground text-background font-display text-base italic hover:bg-foreground/85 hover:tracking-wide",
 				destructive:
 					"bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
 				"subtle-destructive":
@@ -24,18 +24,18 @@ export const buttonVariants = cva(
 					"text-foreground border-none shadow-none inset-shadow-none active:shadow-none active:inset-shadow-none",
 				add: "border border-dashed border-primary/30 bg-primary/5 text-primary-800/80 dark:text-primary-200/80 hover:bg-primary/10 dark:hover:bg-primary/10",
 				option:
-					"border font-Recursive text-sm transition-all border-border bg-background text-muted-foreground hover:border-primary/60 hover:dark:border-primary/40 hover:text-foreground",
+					"border font-sans text-sm transition-all border-border bg-background text-muted-foreground hover:border-primary/60 hover:dark:border-primary/40 hover:text-foreground",
 				chips:
-					"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+					"flex items-center gap-1.5 px-2.5 py-1 font-sans text-xs border font-medium transition-colors border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
 				steps:
-					"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50",
+					"flex items-center gap-1.5 border px-3 py-1.5 font-sans text-sm transition-colors border-border bg-primary-200/15 text-foreground hover:text-foreground hover:bg-primary-200/50 disabled:text-muted-foreground disabled:hover:bg-primary-200/15 disabled:border-border/50",
 			},
 			size: {
-				default: "px-4 py-2 has-[>svg]:px-3 rounded-sm",
-				xs: "px-2 py-0.5 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
-				sm: "px-3 py-1.5 text-xs",
-				md: "px-4 py-2 has-[>svg]:px-3",
-				lg: "px-6 py-4 has-[>svg]:px-4",
+				default: "px-4 py-2 has-[>svg]:px-3 rounded-lg",
+				xs: "px-2 py-0.5 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3 rounded-md",
+				sm: "px-3 py-1.5 text-xs rounded-md",
+				md: "px-4 py-2 has-[>svg]:px-3 rounded-lg",
+				lg: "px-6 py-4 has-[>svg]:px-4 rounded-xl",
 				icon: "size-9",
 				"icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-8",

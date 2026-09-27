@@ -32,6 +32,10 @@ const STRENGTH_HINT: Record<string, string> = {
 	"5": "Very strong. Decrease dose and increase yield.",
 };
 
+/**
+ * A -5..5 axis rendered as an instrument gauge: the crema fill measures the
+ * deviation from balanced (the center), not progress from the left.
+ */
 function AxisSlider({
 	value,
 	onChange,
@@ -49,6 +53,11 @@ function AxisSlider({
 	hint: string;
 	tintClassName: string;
 }) {
+	const centerPct = 50;
+	const thumbPct = ((value + 5) / 10) * 100;
+	const from = Math.min(centerPct, thumbPct);
+	const to = Math.max(centerPct, thumbPct);
+
 	return (
 		<div className="space-y-3">
 			<div className="space-y-2">
@@ -59,9 +68,13 @@ function AxisSlider({
 					step={1}
 					value={value}
 					onChange={(event) => onChange(Number(event.target.value))}
-					className="w-full accent-primary cursor-pointer"
+					aria-label={`${leftLabel} to ${rightLabel}, currently ${hint}`}
+					className="h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-crema [&::-moz-range-thumb]:bg-paper-raised [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-crema [&::-webkit-slider-thumb]:bg-paper-raised [&::-webkit-slider-thumb]:shadow-[0_1px_4px_oklch(0.33_0.03_50/0.3)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+					style={{
+						background: `linear-gradient(to right, transparent 0%, transparent ${from}%, var(--crema) ${from}%, var(--crema) ${to}%, transparent ${to}%, transparent 100%) center / 100% 4px no-repeat`,
+					}}
 				/>
-				<div className="flex justify-between font-Mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground select-none">
+				<div className="flex justify-between font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint select-none">
 					<span>{leftLabel}</span>
 					<span>{centerLabel}</span>
 					<span>{rightLabel}</span>
@@ -69,7 +82,7 @@ function AxisSlider({
 			</div>
 			<p
 				className={cn(
-					"font-Recursive text-xs text-center transition-colors",
+					"font-sans text-xs text-center transition-colors",
 					tintClassName,
 				)}
 			>
@@ -125,16 +138,14 @@ export default function TasteRatingPrompt({
 	}
 
 	return (
-		<div className="border border-primary/30 bg-primary-700/5 p-5 space-y-5 backdrop-blur-sm">
+		<div className="rounded-xl border border-line bg-paper-raised p-5 space-y-5 shadow-card">
 			<div className="flex items-start justify-between gap-4">
 				<div>
-					<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-						How was that cup?
+					<p className="eyebrow">How was that cup?</p>
+					<p className="font-display text-xl italic tracking-tight text-foreground mt-1">
+						{beanName}
 					</p>
-					<p className="font-News text-xl text-foreground/90 mt-0.5">
-						"{beanName}"
-					</p>
-					<p className="font-Mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground mt-1">
+					<p className="eyebrow mt-1.5">
 						{date}
 						{specs ? ` · ${specs}` : ""}
 					</p>
@@ -142,16 +153,14 @@ export default function TasteRatingPrompt({
 				<button
 					type="button"
 					onClick={onDismiss}
-					className="font-Mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+					className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint transition-colors hover:text-foreground shrink-0"
 				>
 					Skip
 				</button>
 			</div>
 
 			<div className="space-y-2">
-				<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-					Overall rating
-				</p>
+				<p className="eyebrow">Overall rating</p>
 				<div className="flex items-center gap-1">
 					{Array.from({ length: 5 }, (_, index) => {
 						const value = index + 1;
@@ -161,15 +170,13 @@ export default function TasteRatingPrompt({
 								key={value}
 								type="button"
 								onClick={() => setOverallRating(value)}
-								className="transition-transform hover:scale-105"
+								className="transition-transform hover:scale-110"
 								aria-label={`Rate ${value} out of 5`}
 							>
 								<Star
 									className={cn(
 										"size-5",
-										active
-											? "fill-primary text-primary"
-											: "text-muted-foreground/25",
+										active ? "fill-crema text-crema" : "text-line-strong",
 									)}
 								/>
 							</button>
@@ -180,9 +187,7 @@ export default function TasteRatingPrompt({
 
 			<div className="grid gap-5 lg:grid-cols-2">
 				<div className="space-y-2">
-					<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-						Taste axis
-					</p>
+					<p className="eyebrow">Taste axis</p>
 					<AxisSlider
 						value={tasteScore}
 						onChange={setTasteScore}
@@ -192,18 +197,16 @@ export default function TasteRatingPrompt({
 						hint={TASTE_HINT[tasteScore]}
 						tintClassName={
 							tasteScore < 0
-								? "text-tag-teal-400"
+								? "text-tag-teal-500"
 								: tasteScore > 0
-									? "text-tag-orange-400"
-									: "text-primary"
+									? "text-tag-orange-500"
+									: "text-crema-deep"
 						}
 					/>
 				</div>
 
 				<div className="space-y-2">
-					<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-						Strength axis
-					</p>
+					<p className="eyebrow">Strength axis</p>
 					<AxisSlider
 						value={strengthScore}
 						onChange={setStrengthScore}
@@ -213,10 +216,10 @@ export default function TasteRatingPrompt({
 						hint={STRENGTH_HINT[strengthScore]}
 						tintClassName={
 							strengthScore < 0
-								? "text-tag-teal-400"
+								? "text-tag-teal-500"
 								: strengthScore > 0
-									? "text-tag-orange-400"
-									: "text-primary"
+									? "text-tag-orange-500"
+									: "text-crema-deep"
 						}
 					/>
 				</div>
@@ -226,7 +229,7 @@ export default function TasteRatingPrompt({
 				type="button"
 				onClick={handleRate}
 				disabled={saving || overallRating < 1}
-				className="w-full h-9 bg-foreground text-background font-Recursive text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-40"
+				className="h-10 w-full rounded-lg bg-ink font-sans text-sm font-semibold text-paper transition-all hover:bg-ink/85 disabled:opacity-40"
 			>
 				{saving ? "Saving…" : "Save rating →"}
 			</button>

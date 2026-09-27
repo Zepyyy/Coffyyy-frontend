@@ -1,4 +1,4 @@
-import { Coffee } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
@@ -13,6 +13,41 @@ import {
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
 import type { Beans } from "@/types/BeanTypes";
+
+function greetingForHour(hour: number) {
+	if (hour < 5) return "Up late?";
+	if (hour < 12) return "Good morning.";
+	if (hour < 18) return "Good afternoon.";
+	return "Good evening.";
+}
+
+/** One honest line about where the journal stands today. */
+function dailyLine(
+	recentBrews: Array<{ id: number; date: Date | string }>,
+	beanCount: number,
+): string {
+	if (beanCount === 0) return "Start the journal — add your first bean.";
+	const startOfToday = new Date();
+	startOfToday.setHours(0, 0, 0, 0);
+	const todayCount = recentBrews.filter(
+		(b) => new Date(b.date).getTime() >= startOfToday.getTime(),
+	).length;
+	if (todayCount > 0)
+		return `${todayCount} shot${todayCount === 1 ? "" : "s"} in the book today.`;
+	if (recentBrews.length === 0) return "The first shot of the story.";
+	const last = new Date(recentBrews[0].date);
+	const yesterday = new Date(startOfToday);
+	yesterday.setDate(yesterday.getDate() - 1);
+	if (last.getTime() >= yesterday.getTime())
+		return "Yesterday's shot is in the book. Today's?";
+	const days = Math.max(
+		1,
+		Math.round(
+			(+startOfToday - +new Date(last).setHours(0, 0, 0, 0)) / 86_400_000,
+		),
+	);
+	return `It's been ${days} days since the last shot.`;
+}
 
 function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -39,12 +74,17 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 	}
 
 	return (
-		<section className="space-y-4 w-full">
-			<div className="flex items-center justify-between">
-				<h2 className="font-News text-2xl text-foreground/90">Beans</h2>
+		<section
+			className="rise space-y-4 w-full"
+			style={{ "--rise-delay": "160ms" } as React.CSSProperties}
+		>
+			<div className="flex items-baseline justify-between">
+				<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
+					Beans
+				</h2>
 				<Link
 					to="/library"
-					className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground hover:text-foreground transition-colors"
+					className="font-data text-[10px] uppercase tracking-[0.16em] text-ink-faint transition-colors hover:text-foreground"
 				>
 					Manage →
 				</Link>
@@ -78,7 +118,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 }
 
 export default function Home() {
-	const recentBrews = useRecentBrews(3);
+	const recentBrews = useRecentBrews(20);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
 	const unratedBrew = useLatestUnratedBrew();
@@ -89,52 +129,72 @@ export default function Home() {
 	const pendingRating =
 		unratedBrew && unratedBrew.id !== dismissedBrewId ? unratedBrew : null;
 
+	const now = new Date();
+
 	return (
-		<div className="w-full mx-auto max-w-5xl px-6 space-y-8">
-			{/* Quick action */}
-			<Link
-				to="/log/brew"
-				className="group relative overflow-hidden flex items-center justify-between border border-primary/20 bg-primary-700/10 px-6 py-5 transition-all hover:bg-primary-700/15 hover:border-primary/30 backdrop-blur-sm"
-			>
+		<div className="w-full mx-auto max-w-5xl px-6 space-y-10">
+			{/* The journal opens by talking to you */}
+			<section className="rise flex flex-col gap-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-						Quick add
+					<p className="eyebrow">
+						{now.toLocaleDateString(undefined, {
+							weekday: "long",
+							month: "long",
+							day: "numeric",
+						})}
 					</p>
-					<p className="mt-0.5 text-3xl tracking-tight font-News text-foreground/90">
-						Log a Brew
+					<h1 className="mt-1 font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
+						{greetingForHour(now.getHours())}
+					</h1>
+					<p className="mt-2 font-sans text-sm text-ink-soft">
+						{dailyLine(recentBrews, allBeans.length)}
 					</p>
 				</div>
-				<Coffee className="size-8 text-primary/20 group-hover:text-primary/30 transition-colors" />
-			</Link>
+				<Link
+					to="/log/brew"
+					className="hover-line group inline-flex shrink-0 items-center gap-2 rounded-xl bg-ink px-6 py-3.5 font-sans text-sm font-semibold text-paper shadow-card hover:bg-ink/85"
+				>
+					Log a brew
+					<ArrowRight className="size-4 text-crema transition-transform duration-300 ease-soft group-hover:translate-x-0.5" />
+				</Link>
+			</section>
 
 			{!import.meta.env.PROD && (
-				<div className="flex gap-4">
+				<div
+					className="rise flex gap-4"
+					style={{ "--rise-delay": "80ms" } as React.CSSProperties}
+				>
 					<Link
 						to="/dev"
-						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
 					>
 						Dev tools →
 					</Link>
 					<Link
 						to="/buttons"
-						className="inline-flex items-center border border-border px-4 py-2 font-Mono text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
 					>
-						Buttons →
+						Design system →
 					</Link>
 				</div>
 			)}
 
 			{/* Taste rating prompt for latest unrated brew */}
 			{pendingRating && (
-				<TasteRatingPrompt
-					brew={pendingRating}
-					beanName={
-						pendingRating.beanId
-							? (beanMap.get(pendingRating.beanId)?.name ?? "Unknown bean")
-							: "Unknown bean"
-					}
-					onDismiss={() => setDismissedBrewId(pendingRating.id)}
-				/>
+				<div
+					className="rise"
+					style={{ "--rise-delay": "120ms" } as React.CSSProperties}
+				>
+					<TasteRatingPrompt
+						brew={pendingRating}
+						beanName={
+							pendingRating.beanId
+								? (beanMap.get(pendingRating.beanId)?.name ?? "Unknown bean")
+								: "Unknown bean"
+						}
+						onDismiss={() => setDismissedBrewId(pendingRating.id)}
+					/>
+				</div>
 			)}
 
 			{/* Bean selection + panel */}
@@ -142,16 +202,21 @@ export default function Home() {
 
 			{/* Empty state */}
 			{isEmpty && (
-				<div className="border border-dashed border-border p-12 text-center space-y-3 w-full">
-					<p className="font-News text-2xl text-foreground/60">No beans</p>
-					<p className="font-Recursive text-sm text-muted-foreground">
-						Add your first bean to get started.
+				<div
+					className="rise rounded-xl border border-dashed border-line-strong bg-paper-raised/60 p-12 text-center space-y-3"
+					style={{ "--rise-delay": "160ms" } as React.CSSProperties}
+				>
+					<p className="font-display text-2xl italic text-foreground/70">
+						No beans yet
+					</p>
+					<p className="font-sans text-sm text-ink-soft">
+						Add your first bean — the story starts there.
 					</p>
 					<Link
 						to="/log/bean"
-						className="inline-block mt-2 border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground hover:bg-primary-200/25 transition-colors"
+						className="mt-2 inline-block rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 					>
-						Log a Bean
+						Add a bean
 					</Link>
 				</div>
 			)}

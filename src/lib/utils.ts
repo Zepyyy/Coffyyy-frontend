@@ -154,43 +154,64 @@ export function clampWeight({
 	return Math.min(max, Math.max(min, value));
 }
 
-type Step = {
-	step: number;
-	title: string;
-	information: string[];
-	description: string;
-};
+/**
+ * Accepts every extraction-time shape the app has ever stored or a user might
+ * type: "28", "28.5", "28s", "0:28", "1:02", "1:02.5". Returns seconds, or
+ * null when nothing numeric can be recovered.
+ */
+export function parseExtractionTime(
+	raw: string | null | undefined,
+): number | null {
+	if (!raw) return null;
+	const value = raw.trim().toLowerCase().replace(/s$/, "");
+	if (!value) return null;
 
-export const STEPS: Step[] = [
-	{
-		step: 1,
-		title: "Bean",
-		information: ["Bean"],
-		description: "Which bean are you brewing?",
-	},
-	{
-		step: 2,
-		title: "Parameters",
-		information: [
-			"GrindSize",
-			"BeanWeight",
-			"EspressoWeight",
-			"ExtractionTime",
-			"Flow",
-		],
-		description:
-			"Grind size; bean weight; espresso weight; extraction time; flow.",
-	},
-	{
-		step: 3,
-		title: "Setup",
-		information: ["Machine"],
-		description: "Which machine did you use?",
-	},
-	{
-		step: 4,
-		title: "Summary",
-		information: [],
-		description: "Review and save.",
-	},
-];
+	if (value.includes(":")) {
+		const [minutes, seconds] = value.split(":");
+		const m = Number(minutes);
+		const s = Number(seconds);
+		if (!Number.isFinite(m) || !Number.isFinite(s)) return null;
+		return m * 60 + s;
+	}
+	const seconds = Number(value);
+	return Number.isFinite(seconds) ? seconds : null;
+}
+
+/** "28" -> "28s", "62" -> "1:02". Sub-second precision is kept when present. */
+export function formatExtractionTime(
+	raw: string | number | null | undefined,
+): string | null {
+	const seconds = parseExtractionTime(
+		typeof raw === "number" ? String(raw) : raw,
+	);
+	if (seconds == null || Number.isNaN(seconds)) return null;
+
+	const whole = Math.floor(seconds);
+	const fraction = seconds - whole;
+	const minutes = Math.floor(whole / 60);
+	const rest = whole % 60;
+	if (minutes === 0) {
+		const body = fraction > 0 ? seconds.toFixed(1) : String(whole);
+		return `${body}s`;
+	}
+	const fractionBody = fraction > 0 ? `.${Math.round(fraction * 10)}` : "";
+	return `${minutes}:${String(rest).padStart(2, "0")}${fractionBody}`;
+}
+
+/** "Today", "Yesterday", or "Sep 25". */
+export function formatRelativeDay(date: Date | string | number): string {
+	const day = new Date(date);
+	day.setHours(0, 0, 0, 0);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const diffDays = Math.round((+today - +day) / (24 * 60 * 60 * 1000));
+	if (diffDays === 0) return "Today";
+	if (diffDays === 1) return "Yesterday";
+	if (diffDays < 0 || diffDays > 6) {
+		return day.toLocaleDateString(undefined, {
+			month: "short",
+			day: "numeric",
+		});
+	}
+	return day.toLocaleDateString(undefined, { weekday: "long" });
+}

@@ -16,22 +16,22 @@ export default function FilterCard({
 	onToggle: (label: string) => void;
 }) {
 	return (
-		<div className="bg-primary-700/10 border border-primary-700/25">
-			<section className=" p-4 space-y-3">
-				<p className="text-2xl text-primary-800 dark:text-primary-100 italic font-News">
+		<div className="rounded-xl border border-line bg-paper-raised shadow-card">
+			<section className="p-4 pb-3">
+				<p className="font-display text-xl italic tracking-tight text-foreground/90">
 					{title}
 				</p>
 			</section>
-			<div className="squiggly-line opacity-30 scale-y-50" />
-			<section className=" p-4 space-y-3">
-				<ul className="space-y-3 grid grid-cols-1">
+			<div className="squiggly-line opacity-25 scale-y-50" />
+			<section className="p-3">
+				<ul className="grid grid-cols-1 space-y-1">
 					{options.map((option) => (
 						<li
 							className={cn(
-								"flex items-center justify-between group cursor-pointer transition-colors gap-12",
+								"group flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-1.5 transition-colors",
 								option.active
-									? "text-foreground"
-									: "text-primary-800/70 dark:text-primary-200 hover:text-foreground hover:dark:text-foreground",
+									? "bg-crema-tint text-foreground"
+									: "text-ink-soft hover:bg-paper-sunken hover:text-foreground",
 							)}
 							key={option.label}
 							onClick={() => onToggle(option.label)}
@@ -41,15 +41,15 @@ export default function FilterCard({
 								}
 							}}
 						>
-							<span className="font-Mono text-sm uppercase">
+							<span className="font-data text-xs uppercase tracking-[0.08em]">
 								{option.label}
 							</span>
 							<span
 								className={cn(
-									"text-[10px] font-Mono px-2 py-0.5 rounded-full",
+									"px-2 py-0.5 font-data text-[10px]",
 									option.active
-										? "bg-primary text-primary-foreground"
-										: "bg-primary/10",
+										? "bg-crema text-paper"
+										: "bg-paper-sunken text-ink-faint",
 								)}
 							>
 								{option.count}

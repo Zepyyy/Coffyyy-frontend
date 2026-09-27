@@ -100,16 +100,16 @@ export default function MachinesLog() {
 			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
 				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-						<div className="border-l-5 border-primary-200 pl-5">
-							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+						<div className="border-l-4 border-crema pl-5">
+							<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
 								Add equipment
 							</h1>
-							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
 								Register a new machine.
 							</p>
 						</div>
 						{import.meta.env.DEV && (
-							<div className="bg-background p-2 border border-primary/20">
+							<div className="rounded-lg border border-line bg-paper-sunken/50 p-2">
 								<p className="text-sm text-foreground py-1">Status: {status}</p>
 								{Object.entries(form).map(([key, value]) => (
 									<div key={key}>
@@ -143,7 +143,7 @@ export default function MachinesLog() {
 							<div className="space-y-1.5">
 								<FieldLabel required>Name</FieldLabel>
 								<input
-									className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+									className="w-full flex-1 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 									placeholder="e.g. Daily Driver, The Beast"
 									value={form.name}
 									onChange={(e) => setField("name", e.target.value)}
@@ -187,7 +187,7 @@ export default function MachinesLog() {
 							<div className="space-y-1.5">
 								<FieldLabel>Grind range</FieldLabel>
 								<input
-									className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+									className="w-full flex-1 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 									placeholder="e.g. 1–40 clicks"
 									value={form.grindRange}
 									onChange={(e) => setField("grindRange", e.target.value)}
@@ -231,7 +231,7 @@ export default function MachinesLog() {
 								<FieldLabel>Purchase date</FieldLabel>
 								<input
 									type="date"
-									className="flex-1 w-full border border-border bg-background px-3 py-1.5 font-Recursive text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+									className="w-full flex-1 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
 									value={form.purchaseDate}
 									onChange={(e) => setField("purchaseDate", e.target.value)}
 								/>
@@ -239,14 +239,14 @@ export default function MachinesLog() {
 						</section>
 
 						{/* Save */}
-						<div className="space-y-3 border-t border-border pt-4">
+						<div className="space-y-3 border-t border-line pt-4">
 							{status && (
 								<p className="text-sm text-muted-foreground">{status}</p>
 							)}
 							<button
 								type="submit"
 								disabled={!form.name.trim() || isSaving}
-								className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
+								className="h-12 w-full rounded-xl bg-ink font-semibold text-sm text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
 							>
 								{isSaving ? "Saving…" : "Save Equipment"}
 							</button>

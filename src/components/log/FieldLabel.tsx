@@ -6,13 +6,10 @@ export default function FieldLabel({
 	required?: boolean;
 }) {
 	return (
-		<label
-			className="font-Lora text-lg font-medium"
-			htmlFor={children as string}
-		>
+		<label className="eyebrow" htmlFor={children as string}>
 			{children}
 			{required && (
-				<span className="ml-1 text-xs text-muted-foreground font-normal">
+				<span className="ml-1.5 font-sans text-[10px] normal-case tracking-normal text-destructive">
 					required
 				</span>
 			)}

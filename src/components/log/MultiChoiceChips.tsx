@@ -46,12 +46,12 @@ export default function MultiChips({
 								type="button"
 								onClick={() => (isPending ? onCustomAdd() : onToggle(s))}
 								className={cn(
-									"flex items-center gap-1.5 px-2.5 py-1 font-Recursive text-xs border font-medium transition-colors",
+									"flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-sans text-xs font-medium transition-colors",
 									selected.includes(s)
-										? "border-primary/30 bg-primary/5 text-primary-800 dark:text-primary-200"
+										? "border-crema bg-crema-tint text-crema-deep dark:text-crema"
 										: isPending
-											? "border-primary/50 border-dashed text-foreground hover:border-primary"
-											: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+											? "border-crema/50 border-dashed text-foreground hover:border-crema"
+											: "border-line bg-paper-raised text-ink-soft hover:border-crema/40 hover:text-foreground",
 								)}
 							>
 								{s}
@@ -69,7 +69,7 @@ export default function MultiChips({
 			)}
 			<div className="flex gap-2">
 				<input
-					className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+					className="flex-1 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 					placeholder={placeholder}
 					value={customInput}
 					onChange={(e) => onCustomChange(e.target.value)}

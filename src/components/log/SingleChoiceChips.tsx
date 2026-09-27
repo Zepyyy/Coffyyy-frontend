@@ -38,7 +38,7 @@ export default function SingleChoiceChips({
 						type="button"
 						onClick={() => onChange(selected === opt ? "" : opt)}
 						className={cn(
-							"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-all",
+							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-sans text-sm transition-all",
 							opt === unknown
 								? selected === opt
 									? "border-primary bg-primary/5 text-primary-900 dark:text-primary-200 border-dashed"
@@ -54,7 +54,7 @@ export default function SingleChoiceChips({
 			</div>
 			<div className="flex gap-2">
 				<input
-					className="flex-1 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-none"
+					className="flex-1 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 					placeholder={placeholder}
 					value={customInput}
 					onChange={(e) => onCustomChange(e.target.value)}

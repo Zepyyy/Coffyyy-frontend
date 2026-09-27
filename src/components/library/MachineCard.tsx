@@ -1,76 +1,66 @@
 import { useState } from "react";
 import { deleteMachineById } from "@/lib/data";
 import type { Machines } from "@/types/MachineTypes";
-import { Separator } from "../ui/separator";
-import Tag from "../ui/tag";
 
+/** Spec-plate card: the machine's details read like its factory plate. */
 export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
+	const specs = [
+		{ label: "Grind range", value: machine.grindRange },
+		{ label: "Capacity", value: machine.capacity },
+		{ label: "Bought", value: machine.purchaseDate },
+	];
+
 	return (
-		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
-			<article className="p-6 relative">
-				<div className="text-2xl font-News font-semibold">
-					{machine.name || "Unnamed bean"}
+		<div className="hover-line relative flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
+			<article className="relative border-b border-line/60 p-5">
+				<div className="font-display text-xl font-semibold tracking-tight text-foreground">
+					{machine.name || "Unnamed machine"}
 				</div>
-				<div className="text-md font-Bricolage font-light dark:text-tag-primary-200 tracking-widest">
-					{machine.brand} {machine.model ? ` · ${machine.model}` : ""}
-				</div>
-				<Tag
-					text={machine.type}
-					size="sm"
-					variant={machine.type === "Espresso" ? "blue" : "purple"}
-					className="absolute top-0 right-3 border-t-0 border-dashed rounded-t-none pt-2"
-				/>
-			</article>
-
-			<Separator />
-
-			<article className="flex flex-row flex-wrap justify-between gap-5 p-6">
-				<div>
-					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
-						grindRange
-					</div>
-					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.grindRange}
-					</div>
-				</div>
-				<div>
-					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
-						Capacity
-					</div>
-					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.capacity}
-					</div>
-				</div>
-				<div>
-					<div className="text-sm font-light dark:text-primary-200 text-primary-800/70 tracking-tighter font-Mono underline decoration-2 decoration-dotted mb-1">
-						Bought
-					</div>
-					<div className="text-foreground font-medium font-Recursive text-sm">
-						{machine.purchaseDate}
-					</div>
+				<div className="mt-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+					{machine.brand}
+					{machine.model ? ` · ${machine.model}` : ""}
+					{machine.type ? ` · ${machine.type}` : ""}
 				</div>
 			</article>
-			<div className="squiggly-line w-full scale-x-150 scale-y-75 opacity-20" />
-			<div className="mt-auto flex justify-end px-6 pb-3">
+
+			<article className="flex flex-1 flex-col gap-3 p-5">
+				{specs.map(
+					(spec) =>
+						spec.value && (
+							<div key={spec.label} className="flex items-baseline gap-2">
+								<span className="eyebrow shrink-0">{spec.label}</span>
+								<span
+									className="mx-1 h-px flex-1 border-b border-dotted border-line-strong"
+									aria-hidden
+								/>
+								<span className="font-data text-xs text-foreground/90">
+									{spec.value}
+								</span>
+							</div>
+						),
+				)}
+			</article>
+
+			<div className="mt-auto flex justify-end px-5 pb-3">
 				{confirmDelete ? (
 					<div className="flex items-center gap-2">
-						<span className="text-xs text-muted-foreground">Sure?</span>
+						<span className="text-xs text-ink-soft">Sure?</span>
 						<button
 							type="button"
 							onClick={() => {
 								if (typeof machine.id === "number")
 									deleteMachineById(machine.id);
 							}}
-							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+							className="rounded-lg bg-destructive px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
 						>
 							Delete
 						</button>
 						<button
 							type="button"
 							onClick={() => setConfirmDelete(false)}
-							className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+							className="rounded-lg bg-paper-sunken px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:text-foreground"
 						>
 							Cancel
 						</button>
@@ -79,7 +69,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 					<button
 						type="button"
 						onClick={() => setConfirmDelete(true)}
-						className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
+						className="rounded-lg px-3 py-1 text-xs text-ink-faint hover:text-destructive transition-colors"
 					>
 						Delete
 					</button>

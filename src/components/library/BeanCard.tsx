@@ -1,71 +1,28 @@
-import {
-	Apple,
-	Cake,
-	Citrus,
-	Cookie,
-	FileQuestion,
-	FireExtinguisher,
-	Flower,
-	Leaf,
-	type LucideIcon,
-	Salad,
-} from "lucide-react";
 import { useState } from "react";
 import { deleteBeanById } from "@/db/crud/delete";
 import { getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
 import RoastDots from "../home/RoastDots";
-import { Separator } from "../ui/separator";
 
-const noteBadge: Partial<
-	Record<
-		Beans["dominantNote"],
-		{
-			icon: LucideIcon;
-			label: string;
-		}
-	>
-> = {
-	Fruity: {
-		icon: Apple,
-		label: "Fruity",
-	},
-	Nutty: {
-		icon: Cookie,
-		label: "Nutty",
-	},
-	Floral: {
-		icon: Flower,
-		label: "Floral",
-	},
-	Green: {
-		icon: Leaf,
-		label: "Green",
-	},
-	Roasted: {
-		icon: FireExtinguisher,
-		label: "Roasted",
-	},
-	Sour: {
-		icon: Citrus,
-		label: "Sour",
-	},
-	Spices: {
-		icon: Salad,
-		label: "Spices",
-	},
-	Sweet: {
-		icon: Cake,
-		label: "Sweet",
-	},
+const noteLabel: Partial<Record<Beans["dominantNote"], string>> = {
+	Fruity: "Fruity",
+	Nutty: "Nutty",
+	Floral: "Floral",
+	Green: "Green",
+	Roasted: "Roasted",
+	Sour: "Sour",
+	Spices: "Spices",
+	Sweet: "Sweet",
 };
+
 interface Parameter {
 	label: string;
-	singleValue?: string;
 	values?: string[];
 }
 
+/** Library card styled as a coffee-bag label: tinted band, spec rows, and a
+ * "Dialed in" stamp once the bean is dialed. */
 export default function BeanCard({
 	bean,
 	dialInState,
@@ -74,7 +31,6 @@ export default function BeanCard({
 	dialInState?: BeanDialInState;
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
-	const NoteIcon = noteBadge[bean.dominantNote]?.icon ?? FileQuestion;
 	const swatch = getColorSwatch(bean.dominantNote);
 
 	const parameters: Parameter[] = [
@@ -84,54 +40,42 @@ export default function BeanCard({
 	];
 
 	return (
-		<div className="relative z-20 flex h-full w-full flex-col overflow-hidden border border-primary/15 bg-background">
-			{/* Header row */}
-			<article className={`p-4 relative w-full ${swatch.bg} overflow-hidden`}>
-				<div
-					className={`text-2xl font-Lora font-semibold leading-tight tracking-wide ${swatch.text}`}
-				>
-					{bean.name || "Unnamed bean"}
-				</div>
-
-				<div
-					className={`text-sm font-Mono uppercase tracking-[0.12em] font-medium ${swatch.secondaryText}`}
-				>
-					{bean.origin.join(", ")} · {bean.brand}
+		<div className="hover-line flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
+			{/* Label band */}
+			<article className="relative w-full border-b border-line/60 bg-paper-sunken/40 p-4">
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0">
+						<p className="font-display text-xl font-semibold leading-tight tracking-tight text-foreground">
+							{bean.name || "Unnamed bean"}
+						</p>
+						<p className="mt-1 flex items-center gap-1.5 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+							<span
+								className={`size-2 shrink-0 ${swatch.stripe}`}
+								aria-hidden
+							/>
+							{noteLabel[bean.dominantNote] ?? "Bean"} · {bean.brand}
+						</p>
+					</div>
 				</div>
 				{dialInState?.isDialedIn && (
-					<div
-						className={`mt-3 absolute bottom-1 right-1 items-center border px-2 py-1 font-Mono text-[9px] uppercase tracking-[0.16em] ${swatch.text} border-current/20 bg-background/40`}
-					>
-						Dialed In
+					<div className="absolute right-3 bottom-2 rotate-[-4deg] border-2 border-ink/50 px-2 py-0.5 font-data text-[9px] font-semibold uppercase tracking-[0.2em] text-ink/80">
+						Dialed in
 					</div>
 				)}
-				{/* Background text effect */}
-				<div
-					className={`text-8xl font-Lora font-bold absolute top-1/2 -translate-y-1/2 left-0 opacity-5 select-none text-nowrap ${swatch.text}`}
-				>
-					{bean.name || "Unnamed bean"}
-				</div>
-				{/* Top left icon */}
-				<NoteIcon
-					strokeWidth={2}
-					className={`size-6 absolute top-5 right-5 ${swatch.text}`}
-				/>
 			</article>
-			<Separator />
 
-			<article className="flex flex-1 flex-col gap-6 py-4 px-4">
+			{/* Spec sheet */}
+			<article className="flex flex-1 flex-col gap-4 px-4 py-4">
 				{parameters.map(
 					(param) =>
 						(param.values?.length ?? 0) > 0 && (
-							<div key={param.label} className="flex flex-col gap-2">
-								<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
-									{param.label}
-								</span>
+							<div key={param.label} className="space-y-1.5">
+								<span className="eyebrow">{param.label}</span>
 								<div className="flex flex-wrap gap-1.5">
 									{param.values?.map((value) => (
 										<span
 											key={value}
-											className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em] border border-primary/15 bg-primary/5 px-2 py-0.5"
+											className="rounded-md border border-line bg-paper-sunken px-2 py-0.5 font-data text-[11px] tracking-[0.04em] text-foreground/85"
 										>
 											{value}
 										</span>
@@ -140,32 +84,29 @@ export default function BeanCard({
 							</div>
 						),
 				)}
-				<div className="flex flex-col gap-2">
-					<span className="font-Mono text-md uppercase text-primary-700 dark:text-primary-200 font-extralight leading-tighter">
-						Roast Level
-					</span>
-					<div className="font-Mono text-xs text-foreground font-medium uppercase tracking-[0.08em]">
-						{bean.roastLevel !== undefined && (
-							<RoastDots level={bean.roastLevel} />
-						)}
+				<div className="space-y-1.5">
+					<span className="eyebrow">Roast level</span>
+					<div className="text-ink-soft">
+						<RoastDots level={bean.roastLevel} />
 					</div>
 				</div>
 			</article>
-			<div className="mt-auto flex justify-end pt-4">
+
+			<div className="mt-auto flex justify-end px-4 pb-3">
 				{confirmDelete ? (
 					<div className="flex items-center gap-2 text-sm">
-						<span className="text-xs text-muted-foreground">Sure?</span>
+						<span className="text-xs text-ink-soft">Sure?</span>
 						<button
 							type="button"
 							onClick={() => setConfirmDelete(false)}
-							className="px-3 py-1 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:text-foreground transition-colors"
+							className="rounded-lg bg-paper-sunken px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:text-foreground"
 						>
 							Cancel
 						</button>
 						<button
 							type="button"
 							onClick={() => deleteBeanById(bean.id)}
-							className="px-3 py-1 rounded-lg bg-destructive text-destructive-foreground text-xs font-medium hover:opacity-90 transition-opacity"
+							className="rounded-lg bg-destructive px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
 						>
 							Delete
 						</button>
@@ -174,7 +115,7 @@ export default function BeanCard({
 					<button
 						type="button"
 						onClick={() => setConfirmDelete(true)}
-						className="px-3 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive transition-colors"
+						className="rounded-lg px-3 py-1 text-xs text-ink-faint transition-colors hover:text-destructive"
 					>
 						Delete
 					</button>

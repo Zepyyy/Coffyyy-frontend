@@ -35,7 +35,7 @@ export function CatchAll() {
 			</button>
 
 			<div className="space-y-1">
-				<p className="text-7xl font-semibold tracking-tight text-muted-foreground/30">
+				<p className="font-display text-7xl italic font-semibold tracking-tight text-ink-faint/40">
 					404
 				</p>
 			</div>
@@ -53,7 +53,7 @@ export function CatchAll() {
 
 			<Link
 				to="/home"
-				className="mt-2 rounded-xl border border-primary/30 bg-primary/10 px-6 py-3 text-sm font-semibold text-foreground transition-all hover:bg-primary/20 hover:scale-[1.02] active:scale-95"
+				className="mt-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-paper shadow-card transition-all hover:bg-ink/85"
 			>
 				Back to the grind →
 			</Link>

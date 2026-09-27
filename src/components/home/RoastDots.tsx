@@ -9,7 +9,7 @@ export default function RoastDots({ level }: { level: number | undefined }) {
 				<span
 					// biome-ignore lint/suspicious/noArrayIndexKey: static list
 					key={i}
-					className={`h-1.5 w-1.5 rounded-full ${i < levelToShow ? "bg-current opacity-70" : "bg-current opacity-15"}`}
+					className={`h-1.5 w-1.5 ${i < levelToShow ? "bg-current opacity-70" : "bg-current opacity-15"}`}
 				/>
 			))}
 		</div>

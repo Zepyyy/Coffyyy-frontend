@@ -1,6 +1,6 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
+import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useAllMachines } from "@/hooks/api/useMachines";
@@ -66,7 +66,7 @@ export default function Bean() {
 	if (!bean) {
 		return (
 			<div className="flex h-64 items-center justify-center">
-				<p className="font-Recursive text-muted-foreground">Loading…</p>
+				<p className="font-sans text-muted-foreground">Loading…</p>
 			</div>
 		);
 	}
@@ -94,7 +94,7 @@ export default function Bean() {
 		<div className="mx-auto w-full max-w-3xl space-y-6">
 			<Link
 				to={`/home?bean=${beanId}`}
-				className="inline-flex items-center gap-1.5 font-Mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+				className="inline-flex items-center gap-1.5 font-data text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
 			>
 				<ArrowLeft size={13} />
 				All beans
@@ -105,18 +105,18 @@ export default function Bean() {
 				className={`${swatch.bg} border border-foreground/15 shadow-sm shadow-foreground/5 ring-1 ring-inset ring-background/50 dark:border-border dark:shadow-none dark:ring-0`}
 			>
 				<div className="px-6 py-5">
-					<p className={`font-Lora text-3xl font-semibold ${swatch.text}`}>
+					<p className={`font-display text-3xl font-semibold ${swatch.text}`}>
 						{bean.name}
 					</p>
 					{bean.brand && (
 						<p
-							className={`mt-0.5 font-Mono text-xs uppercase tracking-[0.16em] ${swatch.secondaryText}`}
+							className={`mt-0.5 font-data text-xs uppercase tracking-[0.16em] ${swatch.secondaryText}`}
 						>
 							{bean.brand}
 						</p>
 					)}
 					<p
-						className={`mt-2 font-Mono text-xs uppercase tracking-[0.12em] ${swatch.secondaryText}`}
+						className={`mt-2 font-data text-xs uppercase tracking-[0.12em] ${swatch.secondaryText}`}
 					>
 						{beanMeta}
 					</p>
@@ -132,7 +132,7 @@ export default function Bean() {
 						{detailChips.map((chip) => (
 							<span
 								key={chip}
-								className={`font-Mono text-[10px] uppercase tracking-widest ${swatch.secondaryText}`}
+								className={`font-data text-[10px] uppercase tracking-widest ${swatch.secondaryText}`}
 							>
 								{chip}
 							</span>
@@ -145,7 +145,7 @@ export default function Bean() {
 						{bean.flavors.map((f) => (
 							<span
 								key={f}
-								className={`rounded-full border ${swatch.borderColor} px-2.5 py-0.5 font-Mono text-[10px] uppercase tracking-widest ${swatch.text}`}
+								className={`border ${swatch.borderColor} px-2.5 py-0.5 font-data text-[10px] uppercase tracking-widest ${swatch.text}`}
 							>
 								{f}
 							</span>
@@ -168,13 +168,13 @@ export default function Bean() {
 
 			{/* Target parameters */}
 			{insights && (
-				<div className="space-y-4 border border-border bg-background/80 p-5 backdrop-blur-md">
+				<div className="space-y-4 rounded-xl border border-line bg-paper-raised p-5 shadow-card">
 					<div className="flex items-center justify-between gap-4">
 						<div>
-							<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+							<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
 								Brew settings
 							</p>
-							<p className="mt-1 font-Recursive text-xs text-muted-foreground">
+							<p className="mt-1 font-sans text-xs text-muted-foreground">
 								Average vs best from{" "}
 								{insights.best
 									? `${insights.best._basedOnCount} ${
@@ -186,7 +186,7 @@ export default function Bean() {
 							</p>
 						</div>
 						{insights._dialIn.isDialedIn && (
-							<span className="inline-flex items-center gap-1.5 font-Mono text-[10px] uppercase tracking-widest text-primary">
+							<span className="inline-flex items-center gap-1.5 font-data text-[10px] uppercase tracking-widest text-primary">
 								<CheckCircle size={12} />
 								Dialed in
 							</span>
@@ -196,30 +196,30 @@ export default function Bean() {
 						{statRows.map(([label, averageValue, bestValue]) => (
 							<div
 								key={label}
-								className="border border-border bg-background/70 p-3 backdrop-blur-sm"
+								className="rounded-lg border border-line bg-paper-raised p-3 shadow-card"
 							>
-								<p className="font-Mono text-[10px] uppercase tracking-widest text-muted-foreground">
+								<p className="font-data text-[10px] uppercase tracking-widest text-muted-foreground">
 									{label}
 								</p>
 								<div className="mt-2 grid grid-cols-2 gap-2">
-									<div className="min-w-0 border border-border/70 bg-muted/20 px-2 py-1.5">
-										<p className="font-Mono text-[9px] uppercase tracking-widest text-muted-foreground">
+									<div className="min-w-0 rounded-md border border-line bg-paper-sunken px-2 py-1.5">
+										<p className="font-data text-[9px] uppercase tracking-widest text-muted-foreground">
 											Avg
 										</p>
-										<p className="truncate font-Recursive text-sm font-medium">
+										<p className="truncate font-sans text-sm font-medium">
 											{averageValue}
 										</p>
 									</div>
-									<div className="min-w-0 border border-border/70 bg-background/80 px-2 py-1.5">
+									<div className="min-w-0 rounded-md border border-line bg-paper-sunken/60 px-2 py-1.5">
 										<div className="flex items-center gap-1.5">
 											<span
-												className={`h-1.5 w-1.5 shrink-0 rounded-full ${swatch.stripe}`}
+												className={`h-1.5 w-1.5 shrink-0 ${swatch.stripe}`}
 											/>
-											<p className="font-Mono text-[9px] uppercase tracking-widest text-muted-foreground">
+											<p className="font-data text-[9px] uppercase tracking-widest text-muted-foreground">
 												Best
 											</p>
 										</div>
-										<p className="truncate font-Recursive text-sm font-semibold">
+										<p className="truncate font-sans text-sm font-semibold">
 											{bestValue}
 										</p>
 									</div>
@@ -232,7 +232,7 @@ export default function Bean() {
 
 			{/* Brew history */}
 			<div className="space-y-3">
-				<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+				<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
 					{brewCount} brew{brewCount !== 1 ? "s" : ""}
 				</p>
 
@@ -241,23 +241,23 @@ export default function Bean() {
 						{[1, 2, 3].map((i) => (
 							<div
 								key={i}
-								className="h-17 animate-pulse rounded border border-border bg-muted/40"
+								className="h-17 animate-pulse rounded border border-line bg-paper-sunken"
 							/>
 						))}
 					</div>
 				)}
 
 				{brews?.length === 0 && (
-					<div className="space-y-3 border border-dashed border-border p-10 text-center">
-						<p className="font-News text-2xl text-foreground/60">
+					<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-10 text-center">
+						<p className="font-display text-2xl text-foreground/60">
 							No brews yet
 						</p>
-						<p className="font-Recursive text-sm text-muted-foreground">
+						<p className="font-sans text-sm text-muted-foreground">
 							Log your first brew with this bean.
 						</p>
 						<Link
 							to="/log/brew"
-							className="mt-2 inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
+							className="mt-2 inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 						>
 							Log a brew
 						</Link>
@@ -265,12 +265,11 @@ export default function Bean() {
 				)}
 
 				{brews && brews.length > 0 && (
-					<div className="space-y-2">
+					<div className="rounded-xl border border-line bg-paper-raised shadow-card">
 						{brews.map((brew) => (
-							<BrewHistoryRow
+							<BrewLedgerRow
 								key={brew.id}
 								brew={brew}
-								beanName={bean.name}
 								machineName={
 									brew.machineId
 										? machineNameById.get(brew.machineId)

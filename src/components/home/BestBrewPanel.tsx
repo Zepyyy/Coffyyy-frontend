@@ -62,19 +62,14 @@ export default function BestBrewPanel({
 	} satisfies ChartConfig;
 
 	return (
-		<div className="border border-border backdrop-blur-sm">
+		<div className="rounded-xl border border-line bg-paper-raised shadow-card">
 			{/* Header */}
 			{withHeader && (
-				<BeanHeader
-					bean={bean}
-					brewCount={brewCount}
-					insights={insights}
-					swatch={swatch}
-				/>
+				<BeanHeader bean={bean} brewCount={brewCount} insights={insights} />
 			)}
 
 			{/* Chart + past data */}
-			<div className="grid sm:grid-cols-[220px_1fr] divide-y sm:divide-y-0 sm:divide-x divide-border">
+			<div className="grid divide-line sm:grid-cols-[220px_1fr] divide-y sm:divide-y-0 sm:divide-x">
 				{withGraph && <BeanGraph ChartData={insights.recentBrewScores} />}
 
 				{withBarChart && (
