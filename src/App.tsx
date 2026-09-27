@@ -25,14 +25,14 @@ export default function App() {
 						Coffyyy
 					</span>
 					<div className="flex">
-						<nav className="items-center gap-8 sm:flex hidden">
+						<nav className="items-center gap-1 sm:gap-8 flex">
 							{NAV_LINKS.map(({ to, label }) => (
 								<NavLink
 									key={to}
 									to={to}
 									className={({ isActive }) =>
 										cn(
-											"relative inline-flex items-center justify-center h-8 text-sm duration-150 tracking-widest font-News mx-3 uppercase",
+											"relative inline-flex items-center justify-center h-8 duration-150 uppercase font-News text-[11px] tracking-[0.12em] sm:text-sm sm:tracking-widest mx-0.5 sm:mx-3",
 											isActive
 												? ""
 												: "text-muted-foreground hover:text-foreground delay-75",
@@ -66,7 +66,7 @@ export default function App() {
 					>
 						<SyncPanel />
 					</div>
-					<div className="flex ml-5 gap-2">
+					<div className="flex ml-1.5 sm:ml-5 gap-1.5 sm:gap-2">
 						<button
 							onClick={() => setShowSyncPanel(!showSyncPanel)}
 							className="flex h-8 w-8 items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
