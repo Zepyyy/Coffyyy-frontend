@@ -1,6 +1,6 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useParams } from "react-router";
-import { BrewHistoryRow } from "@/components/history/BrewHistoryRow";
+import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useAllMachines } from "@/hooks/api/useMachines";
@@ -265,12 +265,11 @@ export default function Bean() {
 				)}
 
 				{brews && brews.length > 0 && (
-					<div className="space-y-2">
+					<div className="border border-border bg-background">
 						{brews.map((brew) => (
-							<BrewHistoryRow
+							<BrewLedgerRow
 								key={brew.id}
 								brew={brew}
-								beanName={bean.name}
 								machineName={
 									brew.machineId
 										? machineNameById.get(brew.machineId)
