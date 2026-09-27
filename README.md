@@ -17,16 +17,6 @@ A more elaborate dashboard and statistics will be added in the future to underst
   <img src="./src/assets/Chart.jpg" alt="Per-bean insights — extraction profile and average rating by grind size" width="800" />
 </p>
 
-More screenshots for reuse (light, dark, mobile — 2× resolution, PNG):
-[`docs/screenshots/`](./docs/screenshots/)
-
-<p align="center">
-  <img src="./docs/screenshots/log-a-brew-light.png" alt="Log a brew — the dial-in page" width="49%" />
-  <img src="./docs/screenshots/dashboard-dark.png" alt="Dashboard, dark mode" width="49%" />
-  <img src="./docs/screenshots/library-light.png" alt="Library — beans and machines" width="49%" />
-  <img src="./docs/screenshots/log-a-brew-mobile.png" alt="Log a brew on mobile" width="24%" />
-</p>
-
 ## Design system
 
 The visual identity is documented in [docs/design-notes.md](./docs/design-notes.md) and lives as a living styleguide at `/buttons` (dev builds only).
