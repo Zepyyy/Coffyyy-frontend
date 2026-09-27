@@ -1,8 +1,9 @@
-import { type ChangeEvent, useState } from "react";
-import FieldLabel from "@/components/log/FieldLabel";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router";
+import BeanLivePreview from "@/components/log/BeanLivePreview";
 import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
-import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import { addBean } from "@/lib/data";
 import { useBeanSuggestions } from "@/hooks/api/useBeans";
@@ -28,23 +29,37 @@ const INITIAL: BeanForm = {
 	flavors: [],
 };
 
-const SAVE_MESSAGES = [
-	"Bean immortalized. The coffee gods are pleased.",
-	"Saved to the sacred bean archive.",
-	"Another one for the collection. Legend.",
-	"Catalogued with love. Next cup awaits.",
-	"A fine addition to the archive.",
-	"Delicious. Documented. Done.",
-	"Saved! May your next cup be even better.",
-];
-
 const ROAST_LEVELS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const REQUIRED_FIELDS: Partial<Record<keyof BeanForm, string>> = {
 	name: "Bean name is required.",
-	flavors: "Pick one flavor.",
+	flavors: "Pick at least one flavor.",
 	process: "Pick at least one process.",
 	origin: "Origin is required.",
 };
+
+function StepHeading({
+	index,
+	title,
+	hint,
+}: {
+	index: string;
+	title: string;
+	hint: string;
+}) {
+	return (
+		<div className="flex items-baseline gap-3">
+			<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+				{index}
+			</span>
+			<h2 className="font-News text-2xl italic tracking-tight text-foreground/90">
+				{title}
+			</h2>
+			<span className="hidden font-Recursive text-xs text-muted-foreground sm:inline">
+				{hint}
+			</span>
+		</div>
+	);
+}
 
 export default function BeansLog() {
 	const [form, setForm] = useState<BeanForm>(INITIAL);
@@ -53,13 +68,13 @@ export default function BeansLog() {
 	const [customFlavor, setCustomFlavor] = useState("");
 	const [customProcess, setCustomProcess] = useState("");
 	const [customBrand, setCustomBrand] = useState("");
-	const [error, setError] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<
 		Partial<Record<keyof BeanForm, string>>
 	>({});
-
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
+	const [savedBeanId, setSavedBeanId] = useState<number | null>(null);
+	const [moreOpen, setMoreOpen] = useState(false);
 
 	const suggestions = useBeanSuggestions();
 
@@ -112,14 +127,20 @@ export default function BeansLog() {
 		clearFn();
 	}
 
-	async function handleSubmit(e: ChangeEvent) {
+	const moreFilled = [
+		form.roastLevel,
+		form.botanic,
+		form.designation,
+		form.variety.length > 0 ? "x" : "",
+	].filter(Boolean).length;
+
+	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		setError("");
 		setStatus("");
 		const nextErrors = validateRequiredFields(form, REQUIRED_FIELDS);
 		if (Object.keys(nextErrors).length > 0) {
 			setFieldErrors(nextErrors);
-			setStatus("Please complete required fields.");
+			setStatus("A couple of fields still need you.");
 			return;
 		}
 
@@ -149,69 +170,110 @@ export default function BeansLog() {
 				flavors: form.flavors,
 				finished: false,
 			});
-			setError(result instanceof Error ? result.message : String(result));
-			setForm(INITIAL);
-			setFieldErrors({});
-			setStatus(
-				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
-			);
+			if (result instanceof Error) {
+				setStatus(result.message);
+			} else {
+				setSavedBeanId(result);
+			}
 		} catch {
-			setStatus("Save failed.");
+			setStatus("Save failed — try again.");
 		} finally {
 			setIsSaving(false);
 		}
 	}
 
-	return (
-		<div className="mx-auto w-full max-w-4/5">
-			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8 bg-background/80 backdrop-blur-md rounded-xl p-6 lg:p-8">
-				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
-					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-						<div className="border-l-5 border-primary-200 pl-5">
-							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
-								Add a Bean
-							</h1>
-							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Catalog a new bean in your library.
-							</p>
-						</div>
-						{import.meta.env.DEV && (
-							<div className="bg-background p-2 border border-primary/20">
-								<p className="text-sm text-foreground py-1">Status: {status}</p>
-								{Object.entries(form).map(([key, value]) => (
-									<div key={key}>
-										<p className="text-sm text-muted-foreground space-x-4">
-											<span>{key}: </span>
-											<span className="font-mono text-foreground">
-												{Array.isArray(value) ? value.join(", ") : value}
-											</span>
-										</p>
-									</div>
-								))}
-							</div>
-						)}
-						<div>
-							{fieldErrors &&
-								Object.entries(fieldErrors).map(([key, value]) => (
-									<p key={key} className="text-xs text-destructive">
-										{value}
-									</p>
-								))}
-						</div>
-						{error && <p className="text-sm text-foreground py-1">{error}</p>}
+	// Success: offer the natural next step.
+	if (savedBeanId != null) {
+		return (
+			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
+				<div className="space-y-6 border border-border bg-background p-6 sm:p-8">
+					<div>
+						<p className="font-Mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+							Bean saved
+						</p>
+						<p className="mt-1 font-News text-3xl italic tracking-tight text-foreground/90">
+							{form.name} is in the library.
+						</p>
+						<p className="mt-2 font-Recursive text-sm text-muted-foreground">
+							You can fill in the rest any time. The fun part is pulling the
+							first shot.
+						</p>
 					</div>
-				</aside>
-				<section className="min-w-0 max-w-4/5">
-					<form onSubmit={handleSubmit} className="space-y-10">
-						{/* Identity */}
-						<section className="space-y-8">
-							<SectionTitle>Identity</SectionTitle>
+					<div className="flex flex-wrap gap-3">
+						<Link
+							to={`/log/brew?bean=${savedBeanId}`}
+							className="inline-flex items-center gap-2 bg-foreground px-5 py-2.5 font-News text-base italic text-background transition-opacity hover:opacity-90"
+						>
+							Pull the first shot
+							<ArrowRight className="size-4" />
+						</Link>
+						<Link
+							to="/library"
+							className="inline-flex items-center border border-border px-5 py-2.5 font-Recursive text-sm text-muted-foreground transition-colors hover:text-foreground"
+						>
+							Back to library
+						</Link>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
+	return (
+		<div className="mx-auto w-full">
+			<div className="mx-6 grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)]">
+				<aside className="space-y-6 lg:sticky lg:top-20 lg:self-start lg:block hidden">
+					<div className="border-l-5 border-primary-200 pl-5">
+						<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+							Add a bean
+						</h1>
+						<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							Name, origin, process, one flavor.
+						</p>
+					</div>
+					<BeanLivePreview form={form} />
+					<p className="font-Recursive text-xs text-muted-foreground">
+						This is the library card you're filling in. The details can wait.
+					</p>
+					{Object.keys(fieldErrors).length > 0 && (
+						<div className="space-y-1">
+							{Object.entries(fieldErrors).map(([key, value]) => (
+								<p
+									key={key}
+									className="font-Recursive text-xs text-destructive"
+								>
+									{value}
+								</p>
+							))}
+						</div>
+					)}
+					{status && (
+						<p className="font-Recursive text-xs text-muted-foreground">
+							{status}
+						</p>
+					)}
+				</aside>
+
+				<section className="border border-border bg-background p-6 lg:p-8 mb-8">
+					<form onSubmit={handleSubmit} className="space-y-12">
+						{/* 01 — Identity */}
+						<section className="space-y-6">
+							<StepHeading
+								index="01"
+								title="Identity"
+								hint="What's in the bag?"
+							/>
 							<div className="space-y-1.5">
-								<FieldLabel required>Bean name</FieldLabel>
+								<label
+									htmlFor="bean-name"
+									className="font-Recursive text-sm text-foreground"
+								>
+									Bean name
+								</label>
 								<input
+									id="bean-name"
 									className={cn(
-										"w-full not-last-of-type:flex-1 border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 rounded-none",
+										"w-full border bg-background px-3 py-2 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 rounded-none",
 										fieldErrors.name
 											? "border-destructive focus:ring-destructive/40"
 											: "border-border focus:ring-primary/40",
@@ -219,7 +281,6 @@ export default function BeansLog() {
 									placeholder="e.g. El Paraiso — Red Berries"
 									value={form.name}
 									onChange={(e) => setField("name", e.target.value)}
-									required
 								/>
 								{fieldErrors.name && (
 									<p className="text-xs text-destructive">{fieldErrors.name}</p>
@@ -227,7 +288,9 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<FieldLabel>Brand / Roaster</FieldLabel>
+								<p className="font-Recursive text-sm text-foreground">
+									Brand / roaster
+								</p>
 								<SingleChoiceChips
 									options={suggestions.brands}
 									selected={form.brand}
@@ -240,12 +303,15 @@ export default function BeansLog() {
 							</div>
 						</section>
 
-						{/* Origin & Processing */}
-						<section className="space-y-8">
-							<SectionTitle>Origin & Processing</SectionTitle>
-
+						{/* 02 — Origin & process */}
+						<section className="space-y-6">
+							<StepHeading
+								index="02"
+								title="Origin & process"
+								hint="Where it grew, how it was handled."
+							/>
 							<div className="space-y-1.5">
-								<FieldLabel required>Origin</FieldLabel>
+								<p className="font-Recursive text-sm text-foreground">Origin</p>
 								<MultiChips
 									suggestions={suggestions.origins}
 									selected={form.origin}
@@ -261,48 +327,9 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<FieldLabel>Roast level</FieldLabel>
-								<div className="flex flex-wrap gap-1.5">
-									{ROAST_LEVELS.map((lvl) => (
-										<button
-											key={lvl}
-											type="button"
-											onClick={() =>
-												setField(
-													"roastLevel",
-													form.roastLevel === lvl ? "" : lvl,
-												)
-											}
-											className={cn(
-												"flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
-												form.roastLevel === lvl
-													? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
-													: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
-											)}
-										>
-											{lvl}
-										</button>
-									))}
-								</div>
-								<div
-									className="h-1 w-full"
-									style={{
-										background:
-											"linear-gradient(to right, oklch(0.916 0.033 221), oklch(0.949 0.032 76), oklch(0.857 0.05 54), oklch(0.425 0.137 25))",
-									}}
-								/>
-								<div className="flex justify-between">
-									<span className="font-Mono text-xs text-muted-foreground uppercase">
-										Light
-									</span>
-									<span className="font-Mono text-xs text-muted-foreground uppercase">
-										Dark
-									</span>
-								</div>
-							</div>
-
-							<div className="space-y-1.5">
-								<FieldLabel required>Process</FieldLabel>
+								<p className="font-Recursive text-sm text-foreground">
+									Process
+								</p>
 								<MultiChips
 									suggestions={suggestions.processes}
 									selected={form.process}
@@ -318,52 +345,19 @@ export default function BeansLog() {
 									requiredField={fieldErrors.process}
 								/>
 							</div>
-
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-								<div className="space-y-1.5">
-									<FieldLabel>Botanic</FieldLabel>
-									<OptionChips
-										options={DEFAULT_BOTANICS}
-										value={form.botanic}
-										onChange={(v) => setField("botanic", v)}
-										unknown="?"
-									/>
-								</div>
-								<div className="space-y-1.5">
-									<FieldLabel>Designation</FieldLabel>
-									<OptionChips
-										options={DEFAULT_DESIGNATIONS}
-										value={form.designation}
-										onChange={(v) => setField("designation", v)}
-										unknown="?"
-									/>
-								</div>
-							</div>
-
-							<div className="space-y-1.5">
-								<FieldLabel>Variety</FieldLabel>
-								<MultiChips
-									suggestions={suggestions.varieties}
-									selected={form.variety}
-									onToggle={(v) => toggleItem("variety", v)}
-									customInput={customVariety}
-									onCustomChange={setCustomVariety}
-									onCustomAdd={() =>
-										addCustom("variety", customVariety, () =>
-											setCustomVariety(""),
-										)
-									}
-									placeholder="e.g. Gesha, Bourbon…"
-								/>
-							</div>
 						</section>
 
-						{/* Flavor Profile */}
-						<section className="space-y-8">
-							<SectionTitle>Flavor Profile</SectionTitle>
-
+						{/* 03 — Flavor */}
+						<section className="space-y-6">
+							<StepHeading
+								index="03"
+								title="Flavor"
+								hint="What the bag promises."
+							/>
 							<div className="space-y-1.5">
-								<FieldLabel required>Dominant note</FieldLabel>
+								<p className="font-Recursive text-sm text-foreground">
+									Dominant note
+								</p>
 								<OptionChips
 									options={DEFAULT_DOMINANT_NOTES}
 									value={form.dominantNote}
@@ -373,7 +367,9 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<FieldLabel required>Flavors</FieldLabel>
+								<p className="font-Recursive text-sm text-foreground">
+									Flavors
+								</p>
 								<MultiChips
 									suggestions={suggestions.flavors}
 									selected={form.flavors}
@@ -391,17 +387,137 @@ export default function BeansLog() {
 							</div>
 						</section>
 
-						{/* Save */}
-						<div className="space-y-3 border-t border-border pt-4">
-							{status && (
-								<p className="text-sm text-muted-foreground">{status}</p>
+						{/* More details — optional, collapsed */}
+						<section className="border-t border-border pt-6">
+							<button
+								type="button"
+								onClick={() => setMoreOpen((o) => !o)}
+								className="flex w-full items-center justify-between gap-3 text-left"
+								aria-expanded={moreOpen}
+							>
+								<span className="flex items-baseline gap-3">
+									<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+										04
+									</span>
+									<span className="font-News text-2xl italic tracking-tight text-foreground/90">
+										More details
+									</span>
+									<span className="font-Recursive text-xs text-muted-foreground">
+										Roast, variety, botanic —{" "}
+										{moreFilled > 0 ? `${moreFilled} filled` : "all optional"}
+									</span>
+								</span>
+								<ChevronDown
+									className={cn(
+										"size-4 shrink-0 text-muted-foreground transition-transform",
+										moreOpen && "rotate-180",
+									)}
+									aria-hidden
+								/>
+							</button>
+
+							{moreOpen && (
+								<div className="mt-8 space-y-6">
+									<div className="space-y-1.5">
+										<p className="font-Recursive text-sm text-foreground">
+											Roast level
+										</p>
+										<div className="flex flex-wrap gap-1.5">
+											{ROAST_LEVELS.map((lvl) => (
+												<button
+													key={lvl}
+													type="button"
+													onClick={() =>
+														setField(
+															"roastLevel",
+															form.roastLevel === lvl ? "" : lvl,
+														)
+													}
+													className={cn(
+														"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2 sm:flex-none sm:px-2",
+														form.roastLevel === lvl
+															? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
+															: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
+													)}
+												>
+													{lvl}
+												</button>
+											))}
+										</div>
+										<div
+											className="h-1 w-full"
+											style={{
+												background:
+													"linear-gradient(to right, oklch(0.916 0.033 221), oklch(0.949 0.032 76), oklch(0.857 0.05 54), oklch(0.425 0.137 25))",
+											}}
+										/>
+										<div className="flex justify-between">
+											<span className="font-Mono text-xs uppercase text-muted-foreground">
+												Light
+											</span>
+											<span className="font-Mono text-xs uppercase text-muted-foreground">
+												Dark
+											</span>
+										</div>
+									</div>
+
+									<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+										<div className="space-y-1.5">
+											<p className="font-Recursive text-sm text-foreground">
+												Botanic
+											</p>
+											<OptionChips
+												options={DEFAULT_BOTANICS}
+												value={form.botanic}
+												onChange={(v) => setField("botanic", v)}
+												unknown="?"
+											/>
+										</div>
+										<div className="space-y-1.5">
+											<p className="font-Recursive text-sm text-foreground">
+												Designation
+											</p>
+											<OptionChips
+												options={DEFAULT_DESIGNATIONS}
+												value={form.designation}
+												onChange={(v) => setField("designation", v)}
+												unknown="?"
+											/>
+										</div>
+									</div>
+
+									<div className="space-y-1.5">
+										<p className="font-Recursive text-sm text-foreground">
+											Variety
+										</p>
+										<MultiChips
+											suggestions={suggestions.varieties}
+											selected={form.variety}
+											onToggle={(v) => toggleItem("variety", v)}
+											customInput={customVariety}
+											onCustomChange={setCustomVariety}
+											onCustomAdd={() =>
+												addCustom("variety", customVariety, () =>
+													setCustomVariety(""),
+												)
+											}
+											placeholder="e.g. Gesha, Bourbon…"
+										/>
+									</div>
+								</div>
 							)}
+						</section>
+
+						<div className="flex items-center justify-between gap-4 border-t border-border pt-5">
+							<p className="hidden font-Recursive text-xs text-muted-foreground sm:block">
+								Name, origin, process and one flavor are enough.
+							</p>
 							<button
 								type="submit"
 								disabled={isSaving}
-								className="w-full h-12 rounded-xl bg-foreground text-background font-semibold text-sm transition-opacity disabled:opacity-40 hover:opacity-90"
+								className="h-12 flex-1 bg-foreground px-8 font-News text-base italic text-background transition-opacity hover:tracking-wide hover:opacity-90 disabled:opacity-40 sm:flex-none"
 							>
-								{isSaving ? "Saving…" : "Save Bean"}
+								{isSaving ? "Saving…" : "Save the bean"}
 							</button>
 						</div>
 					</form>
