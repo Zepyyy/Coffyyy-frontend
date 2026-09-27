@@ -35,54 +35,50 @@ export function BeanChapter({
 	const detailTo = bean?.id != null ? `/beans/${bean.id}` : undefined;
 
 	return (
-		<section className="border border-border bg-background">
-			<header
-				className={`flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-border/60 px-4 py-3 ${swatch.secondaryBg}`}
-			>
+		<section className="rounded-xl border border-line bg-paper-raised shadow-card">
+			<header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line/60 bg-paper-sunken/40 px-4 py-3">
 				<div className="flex items-baseline gap-3 min-w-0">
 					<span
-						className={`h-4 w-1 self-center shrink-0 ${swatch.stripe}`}
+						className={`h-3 w-3 self-center shrink-0 ${swatch.stripe}`}
 						aria-hidden
 					/>
 					{detailTo ? (
 						<Link
 							to={detailTo}
-							className={`truncate font-News text-xl italic tracking-tight hover:underline ${swatch.text}`}
+							className="truncate font-display text-xl italic tracking-tight text-foreground hover:underline"
 						>
 							{beanName}
 						</Link>
 					) : (
-						<span
-							className={`truncate font-News text-xl italic tracking-tight ${swatch.text}`}
-						>
+						<span className="truncate font-display text-xl italic tracking-tight text-foreground">
 							{beanName}
 						</span>
 					)}
-					<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+					<span className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-soft/80">
 						{brews.length} shot{brews.length === 1 ? "" : "s"}
 						{avg != null ? ` · avg ${avg.toFixed(1)}★` : ""}
 					</span>
 				</div>
 				{lastBrew && (
-					<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+					<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 						last {formatRelativeDay(lastBrew.date).toLowerCase()}
 					</span>
 				)}
 			</header>
 
 			{best && (Number(best.overallRating) || 0) >= 4 && (
-				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-border/60 bg-primary-700/5 px-4 py-2.5">
+				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-line/60 bg-crema-tint/60 px-4 py-2.5">
 					<div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-						<span className="font-Mono text-[9px] uppercase tracking-[0.16em] text-primary/80">
+						<span className="font-data text-[9px] font-semibold uppercase tracking-[0.16em] text-crema-deep dark:text-crema">
 							Repeat this
 						</span>
-						<span className="font-Mono text-xs font-semibold text-foreground/90">
+						<span className="font-data text-xs font-semibold text-foreground/90">
 							{recipeLine(best)}
 						</span>
 					</div>
 					<div className="flex items-center gap-2">
 						<RatingStars value={best.overallRating} />
-						<span className="font-Mono text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
+						<span className="font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint">
 							{new Date(best.date).toLocaleDateString(undefined, {
 								month: "short",
 								day: "numeric",

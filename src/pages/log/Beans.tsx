@@ -48,13 +48,13 @@ function StepHeading({
 }) {
 	return (
 		<div className="flex items-baseline gap-3">
-			<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+			<span className="font-data text-[10px] tracking-[0.2em] text-primary/70">
 				{index}
 			</span>
-			<h2 className="font-News text-2xl italic tracking-tight text-foreground/90">
+			<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
 				{title}
 			</h2>
-			<span className="hidden font-Recursive text-xs text-muted-foreground sm:inline">
+			<span className="hidden font-sans text-xs text-muted-foreground sm:inline">
 				{hint}
 			</span>
 		</div>
@@ -186,15 +186,15 @@ export default function BeansLog() {
 	if (savedBeanId != null) {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
-				<div className="space-y-6 border border-border bg-background p-6 sm:p-8">
+				<div className="rise space-y-6 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
 					<div>
-						<p className="font-Mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+						<p className="font-data text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
 							Bean saved
 						</p>
-						<p className="mt-1 font-News text-3xl italic tracking-tight text-foreground/90">
+						<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
 							{form.name} is in the library.
 						</p>
-						<p className="mt-2 font-Recursive text-sm text-muted-foreground">
+						<p className="mt-2 font-sans text-sm text-muted-foreground">
 							You can fill in the rest any time. The fun part is pulling the
 							first shot.
 						</p>
@@ -202,14 +202,14 @@ export default function BeansLog() {
 					<div className="flex flex-wrap gap-3">
 						<Link
 							to={`/log/brew?bean=${savedBeanId}`}
-							className="inline-flex items-center gap-2 bg-foreground px-5 py-2.5 font-News text-base italic text-background transition-opacity hover:opacity-90"
+							className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 						>
 							Pull the first shot
 							<ArrowRight className="size-4" />
 						</Link>
 						<Link
 							to="/library"
-							className="inline-flex items-center border border-border px-5 py-2.5 font-Recursive text-sm text-muted-foreground transition-colors hover:text-foreground"
+							className="inline-flex items-center rounded-lg border border-line px-5 py-2.5 font-sans text-sm text-ink-soft transition-colors hover:text-foreground"
 						>
 							Back to library
 						</Link>
@@ -223,38 +223,33 @@ export default function BeansLog() {
 		<div className="mx-auto w-full">
 			<div className="mx-6 grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)]">
 				<aside className="space-y-6 lg:sticky lg:top-20 lg:self-start lg:block hidden">
-					<div className="border-l-5 border-primary-200 pl-5">
-						<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+					<div className="border-l-4 border-crema pl-5">
+						<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
 							Add a bean
 						</h1>
-						<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
 							Name, origin, process, one flavor.
 						</p>
 					</div>
 					<BeanLivePreview form={form} />
-					<p className="font-Recursive text-xs text-muted-foreground">
+					<p className="font-sans text-xs text-muted-foreground">
 						This is the library card you're filling in. The details can wait.
 					</p>
 					{Object.keys(fieldErrors).length > 0 && (
 						<div className="space-y-1">
 							{Object.entries(fieldErrors).map(([key, value]) => (
-								<p
-									key={key}
-									className="font-Recursive text-xs text-destructive"
-								>
+								<p key={key} className="font-sans text-xs text-destructive">
 									{value}
 								</p>
 							))}
 						</div>
 					)}
 					{status && (
-						<p className="font-Recursive text-xs text-muted-foreground">
-							{status}
-						</p>
+						<p className="font-sans text-xs text-muted-foreground">{status}</p>
 					)}
 				</aside>
 
-				<section className="border border-border bg-background p-6 lg:p-8 mb-8">
+				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-6 shadow-card lg:p-8">
 					<form onSubmit={handleSubmit} className="space-y-12">
 						{/* 01 — Identity */}
 						<section className="space-y-6">
@@ -266,14 +261,14 @@ export default function BeansLog() {
 							<div className="space-y-1.5">
 								<label
 									htmlFor="bean-name"
-									className="font-Recursive text-sm text-foreground"
+									className="font-sans text-sm text-foreground"
 								>
 									Bean name
 								</label>
 								<input
 									id="bean-name"
 									className={cn(
-										"w-full border bg-background px-3 py-2 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 rounded-none",
+										"w-full border bg-background px-3 py-2 font-sans text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 rounded-none",
 										fieldErrors.name
 											? "border-destructive focus:ring-destructive/40"
 											: "border-border focus:ring-primary/40",
@@ -288,7 +283,7 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<p className="font-Recursive text-sm text-foreground">
+								<p className="font-sans text-sm text-foreground">
 									Brand / roaster
 								</p>
 								<SingleChoiceChips
@@ -311,7 +306,7 @@ export default function BeansLog() {
 								hint="Where it grew, how it was handled."
 							/>
 							<div className="space-y-1.5">
-								<p className="font-Recursive text-sm text-foreground">Origin</p>
+								<p className="font-sans text-sm text-foreground">Origin</p>
 								<MultiChips
 									suggestions={suggestions.origins}
 									selected={form.origin}
@@ -327,9 +322,7 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<p className="font-Recursive text-sm text-foreground">
-									Process
-								</p>
+								<p className="font-sans text-sm text-foreground">Process</p>
 								<MultiChips
 									suggestions={suggestions.processes}
 									selected={form.process}
@@ -355,7 +348,7 @@ export default function BeansLog() {
 								hint="What the bag promises."
 							/>
 							<div className="space-y-1.5">
-								<p className="font-Recursive text-sm text-foreground">
+								<p className="font-sans text-sm text-foreground">
 									Dominant note
 								</p>
 								<OptionChips
@@ -367,9 +360,7 @@ export default function BeansLog() {
 							</div>
 
 							<div className="space-y-1.5">
-								<p className="font-Recursive text-sm text-foreground">
-									Flavors
-								</p>
+								<p className="font-sans text-sm text-foreground">Flavors</p>
 								<MultiChips
 									suggestions={suggestions.flavors}
 									selected={form.flavors}
@@ -388,7 +379,7 @@ export default function BeansLog() {
 						</section>
 
 						{/* More details — optional, collapsed */}
-						<section className="border-t border-border pt-6">
+						<section className="border-t border-line pt-6">
 							<button
 								type="button"
 								onClick={() => setMoreOpen((o) => !o)}
@@ -396,13 +387,13 @@ export default function BeansLog() {
 								aria-expanded={moreOpen}
 							>
 								<span className="flex items-baseline gap-3">
-									<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+									<span className="font-data text-[10px] tracking-[0.2em] text-primary/70">
 										04
 									</span>
-									<span className="font-News text-2xl italic tracking-tight text-foreground/90">
+									<span className="font-display text-2xl italic tracking-tight text-foreground/90">
 										More details
 									</span>
-									<span className="font-Recursive text-xs text-muted-foreground">
+									<span className="font-sans text-xs text-muted-foreground">
 										Roast, variety, botanic —{" "}
 										{moreFilled > 0 ? `${moreFilled} filled` : "all optional"}
 									</span>
@@ -419,7 +410,7 @@ export default function BeansLog() {
 							{moreOpen && (
 								<div className="mt-8 space-y-6">
 									<div className="space-y-1.5">
-										<p className="font-Recursive text-sm text-foreground">
+										<p className="font-sans text-sm text-foreground">
 											Roast level
 										</p>
 										<div className="flex flex-wrap gap-1.5">
@@ -434,7 +425,7 @@ export default function BeansLog() {
 														)
 													}
 													className={cn(
-														"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
+														"min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-all border-b-2",
 														form.roastLevel === lvl
 															? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
 															: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
@@ -445,17 +436,17 @@ export default function BeansLog() {
 											))}
 										</div>
 										<div
-											className="h-1 w-full"
+											className="h-1 w-full border border-line"
 											style={{
 												background:
-													"linear-gradient(to right, oklch(0.916 0.033 221), oklch(0.949 0.032 76), oklch(0.857 0.05 54), oklch(0.425 0.137 25))",
+													"linear-gradient(to right, var(--paper-raised), var(--ink))",
 											}}
 										/>
 										<div className="flex justify-between">
-											<span className="font-Mono text-xs uppercase text-muted-foreground">
+											<span className="font-data text-xs uppercase text-muted-foreground">
 												Light
 											</span>
-											<span className="font-Mono text-xs uppercase text-muted-foreground">
+											<span className="font-data text-xs uppercase text-muted-foreground">
 												Dark
 											</span>
 										</div>
@@ -463,7 +454,7 @@ export default function BeansLog() {
 
 									<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 										<div className="space-y-1.5">
-											<p className="font-Recursive text-sm text-foreground">
+											<p className="font-sans text-sm text-foreground">
 												Botanic
 											</p>
 											<OptionChips
@@ -474,7 +465,7 @@ export default function BeansLog() {
 											/>
 										</div>
 										<div className="space-y-1.5">
-											<p className="font-Recursive text-sm text-foreground">
+											<p className="font-sans text-sm text-foreground">
 												Designation
 											</p>
 											<OptionChips
@@ -487,9 +478,7 @@ export default function BeansLog() {
 									</div>
 
 									<div className="space-y-1.5">
-										<p className="font-Recursive text-sm text-foreground">
-											Variety
-										</p>
+										<p className="font-sans text-sm text-foreground">Variety</p>
 										<MultiChips
 											suggestions={suggestions.varieties}
 											selected={form.variety}
@@ -508,14 +497,14 @@ export default function BeansLog() {
 							)}
 						</section>
 
-						<div className="flex items-center justify-between gap-4 border-t border-border pt-5">
-							<p className="hidden font-Recursive text-xs text-muted-foreground sm:block">
+						<div className="flex items-center justify-between gap-4 border-t border-line pt-5">
+							<p className="hidden font-sans text-xs text-muted-foreground sm:block">
 								Name, origin, process and one flavor are enough.
 							</p>
 							<button
 								type="submit"
 								disabled={isSaving}
-								className="h-12 flex-1 bg-foreground px-8 font-News text-base italic text-background transition-opacity hover:tracking-wide hover:opacity-90 disabled:opacity-40 sm:flex-none"
+								className="hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the bean"}
 							</button>

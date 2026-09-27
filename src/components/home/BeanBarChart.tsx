@@ -30,19 +30,16 @@ export default function BeanBarChart({
 
 	return (
 		<div className="p-5">
-			<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+			<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
 				Average rating by grind size
 			</p>
 			{n === 0 ? (
-				<p className="font-Mono text-xs text-muted-foreground mt-4">
+				<p className="font-data text-xs text-muted-foreground mt-4">
 					No brew data yet
 				</p>
 			) : (
 				<div className={`relative`}>
-					<ChartContainer
-						config={chartConfig}
-						className="min-h-20 w-full max-h-54 pt-4"
-					>
+					<ChartContainer config={chartConfig} className="h-64 w-full">
 						<BarChart
 							data={chartData}
 							accessibilityLayer
@@ -77,7 +74,7 @@ export default function BeanBarChart({
 										dataKey="brewCount"
 										fill="var(--color-brewCount)"
 										opacity={0.8}
-										radius={[2, 2, 0, 0]}
+										radius={[0, 0, 0, 0]}
 									>
 										<LabelList
 											position={"top"}
@@ -91,7 +88,7 @@ export default function BeanBarChart({
 							<Bar
 								dataKey="avgRating"
 								fill="var(--color-avgRating)"
-								radius={[2, 2, 0, 0]}
+								radius={[0, 0, 0, 0]}
 							>
 								<LabelList
 									position={"top"}
@@ -101,7 +98,10 @@ export default function BeanBarChart({
 									dataKey={"avgRating"}
 								/>
 							</Bar>
-							<ChartLegend content={<ChartLegendContent />} />
+							<ChartLegend
+								verticalAlign="bottom"
+								content={<ChartLegendContent />}
+							/>
 						</BarChart>
 					</ChartContainer>
 				</div>

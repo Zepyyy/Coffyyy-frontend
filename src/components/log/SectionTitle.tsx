@@ -1,5 +1,3 @@
-import { Separator } from "../ui/separator";
-
 export default function SectionTitle({
 	children,
 }: {
@@ -7,10 +5,8 @@ export default function SectionTitle({
 }) {
 	return (
 		<div className="mb-4">
-			<p className="text-sm font-semibold font-Mono uppercase tracking-widest text-muted-foreground">
-				{children}
-			</p>
-			<Separator className="w-auto border border-b-primary bg-transparent" />
+			<p className="eyebrow">{children}</p>
+			<div className="mt-2 h-px w-8 bg-crema" aria-hidden />
 		</div>
 	);
 }

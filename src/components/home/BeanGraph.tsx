@@ -10,7 +10,7 @@ export default function BeanGraph({
 }) {
 	return (
 		<div className="p-5">
-			<p className="font-Mono text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">
+			<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">
 				Extraction profile
 			</p>
 			<TasteStrengthChart ChartData={ChartData} />

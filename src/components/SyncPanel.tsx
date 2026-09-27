@@ -63,7 +63,7 @@ function BackupActions({
 	return (
 		<div className="flex items-center justify-between gap-3">
 			<div>
-				<p className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+				<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
 					Local backup
 				</p>
 				<p className="mt-0.5 text-xs text-muted-foreground/75">
@@ -164,16 +164,16 @@ export default function SyncPanel() {
 	const isConflict = auth.status === "conflict";
 
 	return (
-		<section className="absolute top-18 right-2 z-50 w-[min(25rem,calc(100vw-2rem))] border border-border bg-background p-5 shadow-md">
+		<section className="absolute top-18 right-2 z-50 w-[min(25rem,calc(100vw-2rem))] rounded-xl border border-line bg-paper-raised p-5 shadow-lift">
 			<div className="space-y-5">
 				<header className="flex items-start justify-between gap-4">
 					<div className="flex min-w-0 items-start gap-2.5">
 						<div className="mt-0.5">{statusIcon(auth.status)}</div>
 						<div className="min-w-0">
-							<h2 className="font-News text-xl leading-none">
+							<h2 className="font-display text-xl leading-none">
 								{statusLabel(auth.status)}
 							</h2>
-							<p className="mt-1 truncate font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+							<p className="mt-1 truncate font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 								{auth.enrollment
 									? `Workspace ${auth.enrollment.workspaceId}`
 									: "Your data stays on this browser"}
@@ -181,7 +181,7 @@ export default function SyncPanel() {
 						</div>
 					</div>
 					{auth.isBusy && (
-						<span className="font-Mono text-[10px] uppercase text-muted-foreground">
+						<span className="font-data text-[10px] uppercase text-muted-foreground">
 							Working…
 						</span>
 					)}
@@ -200,7 +200,7 @@ export default function SyncPanel() {
 						<div className="flex gap-2">
 							<input
 								id="sync-code"
-								className="min-w-0 flex-1 border border-border bg-muted/20 px-3 py-2 font-Mono text-xs outline-none focus:ring-1 focus:ring-primary"
+								className="min-w-0 flex-1 rounded-lg border border-line-strong bg-paper-sunken px-3 py-2 font-data text-xs outline-none focus:ring-1 focus:ring-crema/60"
 								value={pairCode}
 								onChange={(event) => setPairCode(event.target.value)}
 								placeholder="Paste sync code"
@@ -271,9 +271,9 @@ export default function SyncPanel() {
 								Resume sync
 							</Button>
 						) : (
-							<div className="flex items-center justify-between gap-3 rounded-sm border border-border bg-muted/20 p-3">
+							<div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-paper-sunken p-3">
 								<div className="min-w-0">
-									<p className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+									<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
 										Cloud workspace
 									</p>
 									<p className="mt-1 text-xs text-muted-foreground">
@@ -291,11 +291,11 @@ export default function SyncPanel() {
 				{auth.enrollment && (
 					<div className="space-y-3 border-t border-border pt-4">
 						<div className="min-w-0">
-							<p className="font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+							<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
 								Sync code qsd
 							</p>
 							<div className="flex items-center justify-between gap-3">
-								<p className="mt-1 truncate font-Mono text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded">
+								<p className="mt-1 truncate font-data text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded">
 									{codeVisible
 										? auth.enrollment.syncCode
 										: "••••••••••••••••••••••••••••"}
@@ -370,7 +370,7 @@ export default function SyncPanel() {
 				</div>
 
 				{(auth.lastError || message) && (
-					<p className="border-l-2 border-primary pl-3 text-xs text-muted-foreground">
+					<p className="border-l-2 border-crema pl-3 text-xs text-ink-soft">
 						{message ?? auth.lastError}
 					</p>
 				)}

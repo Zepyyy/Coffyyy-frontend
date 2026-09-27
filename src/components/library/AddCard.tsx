@@ -15,15 +15,15 @@ export default function AddCard({
 		<Link
 			to={to}
 			className={cn(
-				`group w-full h-full flex flex-col items-center justify-center gap-2 border border-dashed border-primary/40 bg-background/40 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary-200/10 hover:text-foreground backdrop-blur-xl`,
+				"group flex h-full w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong bg-paper-raised/40 text-ink-faint transition-colors hover:border-crema hover:bg-crema-tint/40 hover:text-foreground",
 				className,
 			)}
 		>
 			<Plus
 				strokeWidth={1.5}
-				className="size-6 transition-transform group-hover:scale-110"
+				className="size-6 transition-transform duration-300 ease-soft group-hover:rotate-90"
 			/>
-			<span className="font-Mono text-[11px] uppercase tracking-[0.16em]">
+			<span className="font-data text-[11px] uppercase tracking-[0.16em]">
 				{label}
 			</span>
 		</Link>

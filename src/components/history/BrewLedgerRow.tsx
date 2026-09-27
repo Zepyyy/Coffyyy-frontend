@@ -34,10 +34,7 @@ export function RatingStars({ value }: { value: number | null | undefined }) {
 				<svg
 					key={i}
 					viewBox="0 0 20 20"
-					className={cn(
-						"size-3",
-						i <= n ? "fill-primary" : "fill-muted-foreground/20",
-					)}
+					className={cn("size-3", i <= n ? "fill-crema" : "fill-line-strong")}
 					aria-hidden
 				>
 					<path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 14.9l-5.3 2.7 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
@@ -79,19 +76,19 @@ export function BrewLedgerRow({
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
 				aria-expanded={expanded}
-				className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left transition-colors hover:bg-primary-200/10 sm:grid-cols-[5rem_minmax(0,1fr)_auto_auto]"
+				className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left transition-colors hover:bg-paper-sunken/60 sm:grid-cols-[5rem_minmax(0,1fr)_auto_auto]"
 			>
-				<span className="font-Mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+				<span className="font-data text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
 					{formatDate(brew.date)}
 				</span>
-				<span className="truncate font-Mono text-xs text-foreground/80">
+				<span className="truncate font-data text-xs text-foreground/80">
 					{recipeLine(brew) || "No recipe saved"}
 				</span>
 				<span className="hidden items-center justify-end gap-1.5 sm:flex">
 					{taste && (
 						<span
 							className={cn(
-								"border border-current/20 px-1.5 py-0.5 font-Mono text-[9px] uppercase tracking-[0.1em]",
+								"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
 								scoreClass(brew.tasteScore),
 							)}
 						>
@@ -101,7 +98,7 @@ export function BrewLedgerRow({
 					{strength && (
 						<span
 							className={cn(
-								"border border-current/20 px-1.5 py-0.5 font-Mono text-[9px] uppercase tracking-[0.1em]",
+								"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
 								scoreClass(brew.strengthScore),
 							)}
 						>
@@ -122,7 +119,7 @@ export function BrewLedgerRow({
 			</button>
 
 			{expanded && (
-				<div className="space-y-3 border-t border-border/40 bg-muted/10 px-4 py-4">
+				<div className="rise space-y-3 border-t border-line/40 bg-paper-sunken/40 px-4 py-4">
 					<div className="flex flex-wrap gap-x-8 gap-y-2">
 						{[
 							[
@@ -147,19 +144,17 @@ export function BrewLedgerRow({
 						].map(([label, value]) =>
 							value ? (
 								<div key={label as string}>
-									<p className="font-Mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+									<p className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
 										{label}
 									</p>
-									<p className="font-Recursive text-sm text-foreground">
-										{value}
-									</p>
+									<p className="font-sans text-sm text-foreground">{value}</p>
 								</div>
 							) : null,
 						)}
 					</div>
 
 					{(taste || strength) && (
-						<p className="font-Recursive text-xs text-muted-foreground">
+						<p className="font-sans text-xs text-muted-foreground">
 							{taste && brew.tasteScore !== 0
 								? `${taste.startsWith("Sour") ? "Sour side: go finer or run longer" : "Bitter side: go coarser or cut the shot"}.`
 								: taste
@@ -176,14 +171,14 @@ export function BrewLedgerRow({
 					<div className="flex justify-end">
 						{confirmDelete ? (
 							<div className="flex items-center gap-2">
-								<span className="font-Recursive text-xs text-muted-foreground">
+								<span className="font-sans text-xs text-muted-foreground">
 									Delete this brew?
 								</span>
 								<button
 									type="button"
 									onClick={handleDelete}
 									disabled={isDeleting}
-									className="inline-flex items-center gap-1.5 bg-destructive px-3 py-1.5 font-Recursive text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+									className="inline-flex items-center gap-1.5 bg-destructive px-3 py-1.5 font-sans text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
 								>
 									<Trash2 className="size-3" />
 									{isDeleting ? "Deleting…" : "Delete"}
@@ -191,7 +186,7 @@ export function BrewLedgerRow({
 								<button
 									type="button"
 									onClick={() => setConfirmDelete(false)}
-									className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 font-Recursive text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+									className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 font-sans text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 								>
 									<X className="size-3" />
 									Cancel
@@ -201,7 +196,7 @@ export function BrewLedgerRow({
 							<button
 								type="button"
 								onClick={() => setConfirmDelete(true)}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:text-destructive"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-destructive"
 							>
 								<Trash2 className="size-3" />
 								Delete

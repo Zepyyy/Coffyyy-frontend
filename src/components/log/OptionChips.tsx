@@ -29,7 +29,7 @@ export default function OptionChips({
 						type="button"
 						onClick={() => onChange(value === opt ? "" : opt)}
 						className={cn(
-							"flex items-center gap-1.5 border px-3 py-1.5 font-Recursive text-sm transition-colors",
+							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
 							opt === unknown
 								? value === opt
 									? "border-primary bg-primary/5 text-primary-900 dark:text-primary-200 border-dashed"
@@ -40,12 +40,7 @@ export default function OptionChips({
 						)}
 					>
 						{withDot && (
-							<span
-								className={cn(
-									"w-2 h-2 rounded-full",
-									getColorSwatch(opt).stripe,
-								)}
-							/>
+							<span className={cn("w-2 h-2", getColorSwatch(opt).stripe)} />
 						)}
 						{opt}
 					</button>

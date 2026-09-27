@@ -110,10 +110,10 @@ export default function DatabaseWorkbench() {
 		<section className="space-y-5 border border-primary/30 bg-background/70 p-5">
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+					<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 						Local IndexedDB
 					</p>
-					<h2 className="mt-1 font-News text-3xl text-foreground/90">
+					<h2 className="mt-1 font-display text-3xl text-foreground/90">
 						Database workbench
 					</h2>
 					<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -138,17 +138,17 @@ export default function DatabaseWorkbench() {
 					["Brews", databaseCounts.brews],
 				].map(([label, count]) => (
 					<div key={label} className="border border-border bg-background p-3">
-						<p className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+						<p className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 							{label}
 						</p>
-						<p className="mt-1 font-News text-2xl">{count}</p>
+						<p className="mt-1 font-display text-2xl">{count}</p>
 					</div>
 				))}
 			</div>
 
 			<div className="space-y-3">
 				<div>
-					<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+					<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 						Reset presets
 					</p>
 					<p className="mt-1 text-xs text-muted-foreground">
@@ -158,11 +158,11 @@ export default function DatabaseWorkbench() {
 				<div className="grid gap-3 md:grid-cols-3">
 					{PRESETS.map((preset) => (
 						<div key={preset.name} className="border border-border p-4">
-							<p className="font-News text-xl">{preset.name}</p>
+							<p className="font-display text-xl">{preset.name}</p>
 							<p className="mt-1 text-xs text-muted-foreground">
 								{preset.description}
 							</p>
-							<p className="mt-3 font-Mono text-[10px] text-foreground/70">
+							<p className="mt-3 font-data text-[10px] text-foreground/70">
 								{formatCounts(preset.counts)}
 							</p>
 							<Button
@@ -180,7 +180,7 @@ export default function DatabaseWorkbench() {
 			</div>
 
 			<div className="border border-border p-4">
-				<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+				<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 					Custom reset
 				</p>
 				<div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -192,7 +192,7 @@ export default function DatabaseWorkbench() {
 						] as Array<[keyof DatabaseSeedCounts, string, number, number]>
 					).map(([field, label, min, max]) => (
 						<label key={field} className="space-y-1">
-							<span className="block font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+							<span className="block font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 								{label}
 							</span>
 							<input
@@ -203,7 +203,7 @@ export default function DatabaseWorkbench() {
 								onChange={(event) =>
 									updateCustomCount(field, event.target.value)
 								}
-								className="h-9 w-full border border-border bg-background px-2 font-Mono text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+								className="h-9 w-full border border-border bg-background px-2 font-data text-sm focus:outline-none focus:ring-1 focus:ring-ring"
 							/>
 						</label>
 					))}
@@ -217,7 +217,7 @@ export default function DatabaseWorkbench() {
 					>
 						Reset with custom data
 					</Button>
-					<span className="font-Mono text-[10px] text-muted-foreground">
+					<span className="font-data text-[10px] text-muted-foreground">
 						Beans 1–50 · Machines 1–12 · Brews 0–500
 					</span>
 				</div>

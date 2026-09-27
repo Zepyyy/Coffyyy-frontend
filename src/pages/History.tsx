@@ -31,7 +31,7 @@ function HistorySkeleton() {
 	);
 }
 
-/** Inline stats sentence + the single best shot so far. */
+/** The ledger's opening balance: a few countable facts, then the CTA. */
 function StoryStrip({
 	brews,
 	beanNames,
@@ -52,36 +52,46 @@ function StoryStrip({
 			)
 		: null;
 	const beansTried = new Set(brews.map((b) => b.beanId)).size;
+	const bestIsReal = best != null && (Number(best.overallRating) || 0) > 0;
+
+	const stats: Array<[string, string]> = [
+		["Shots", String(brews.length)],
+		["Beans", String(beansTried)],
+		["Avg rating", avg != null ? `${avg.toFixed(1)}★` : "—"],
+	];
 
 	return (
 		<div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
-			<p className="flex-1 font-Recursive text-sm leading-relaxed text-muted-foreground sm:self-center">
-				{brews.length} shot{brews.length === 1 ? "" : "s"} across {beansTried}{" "}
-				bean{beansTried === 1 ? "" : "s"}
-				{avg != null ? `, averaging ${avg.toFixed(1)}★` : ""}
-				{best && (Number(best.overallRating) || 0) > 0
-					? ". The one to remember: "
-					: "."}
-				{best && (Number(best.overallRating) || 0) > 0 && (
-					<span className="text-foreground">
-						{beanNames.get(best.beanId ?? -1) ?? "a brew"} at{" "}
-						{best.overallRating}★ — {recipeLine(best)}
-					</span>
-				)}
-			</p>
+			<div className="grid flex-1 grid-cols-3 divide-x divide-line border border-line bg-paper-raised">
+				{stats.map(([label, value]) => (
+					<div key={label} className="px-4 py-3">
+						<p className="eyebrow">{label}</p>
+						<p className="mt-1 font-data text-sm font-semibold text-foreground">
+							{value}
+						</p>
+					</div>
+				))}
+			</div>
+			{bestIsReal && best && (
+				<div className="border border-line bg-paper-raised px-4 py-3 sm:max-w-sm">
+					<p className="eyebrow">The one to remember</p>
+					<p className="mt-1 truncate font-data text-sm font-semibold text-foreground">
+						{beanNames.get(best.beanId ?? -1) ?? "A brew"} ·{" "}
+						{best.overallRating}★ · {recipeLine(best)}
+					</p>
+				</div>
+			)}
 			<Link
 				to="/log/brew"
-				className="group inline-flex shrink-0 items-center justify-between gap-3 border border-primary/20 bg-primary-700/10 px-4 py-3 transition-colors hover:bg-primary-700/15 sm:w-56"
+				className="hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
 			>
 				<span>
-					<span className="block font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-						Next shot
-					</span>
-					<span className="block font-News text-xl italic tracking-tight text-foreground/90">
+					<span className="eyebrow block">Next shot</span>
+					<span className="block font-display text-xl italic tracking-tight text-foreground">
 						Log a brew
 					</span>
 				</span>
-				<Coffee className="size-5 text-primary/30 transition-colors group-hover:text-primary/50" />
+				<Coffee className="size-5 shrink-0 text-crema" />
 			</Link>
 		</div>
 	);
@@ -152,11 +162,11 @@ export default function History() {
 	return (
 		<div className="mx-auto w-full max-w-5xl px-2 sm:px-6">
 			<div className="space-y-6">
-				<div className="border-l-5 border-primary-200 pl-5">
-					<h1 className="font-News text-4xl italic tracking-tight text-foreground/90">
+				<div className="border-l-4 border-crema pl-5">
+					<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
 						History
 					</h1>
-					<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+					<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
 						What worked, and how to repeat it
 					</p>
 				</div>
@@ -164,8 +174,8 @@ export default function History() {
 				<StoryStrip brews={brews} beanNames={beanNameMap} />
 
 				{/* Controls */}
-				<div className="flex flex-col gap-3 border border-border bg-background p-3 sm:flex-row sm:items-center">
-					<div className="flex w-fit items-center border border-border/70 p-0.5">
+				<div className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-3 shadow-card sm:flex-row sm:items-center">
+					<div className="flex w-fit items-center rounded-lg border border-line bg-paper-sunken/60 p-0.5">
 						{(
 							[
 								["bean", "By bean"],
@@ -177,7 +187,7 @@ export default function History() {
 								type="button"
 								onClick={() => setView(mode)}
 								className={cn(
-									"px-3 py-1.5 font-Recursive text-xs transition-colors",
+									"px-3 py-1.5 font-sans text-xs transition-colors",
 									view === mode
 										? "bg-primary/10 text-primary-800 dark:text-primary-200"
 										: "text-muted-foreground hover:text-foreground",
@@ -191,7 +201,7 @@ export default function History() {
 					<label className="relative block min-w-0 flex-1">
 						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 						<input
-							className="h-9 w-full min-w-0 border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="h-9 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 							placeholder="Search beans or machines"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
@@ -200,7 +210,7 @@ export default function History() {
 					</label>
 					<label className="relative block">
 						<select
-							className="h-9 w-full appearance-none border border-border/70 bg-background px-3 font-Recursive text-sm text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="h-9 w-full appearance-none rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
 							value={ratingFilter === "all" ? "all" : String(ratingFilter)}
 							onChange={(e) => {
 								const v = e.target.value;
@@ -222,7 +232,7 @@ export default function History() {
 						<button
 							type="button"
 							onClick={clearFilters}
-							className="w-fit px-2 font-Recursive text-xs text-muted-foreground transition-colors hover:text-foreground"
+							className="w-fit px-2 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 						>
 							Clear
 						</button>
@@ -232,11 +242,11 @@ export default function History() {
 				{brews === undefined && <HistorySkeleton />}
 
 				{brews !== undefined && brews.length === 0 && (
-					<div className="space-y-3 border border-dashed border-border p-10 text-center">
-						<p className="font-News text-2xl text-foreground/60">
+					<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-10 text-center">
+						<p className="font-display text-2xl text-foreground/60">
 							{hasActiveFilters ? "Nothing matches" : "No brews yet"}
 						</p>
-						<p className="font-Recursive text-sm text-muted-foreground">
+						<p className="font-sans text-sm text-muted-foreground">
 							{hasActiveFilters
 								? "Try clearing the search or rating filter."
 								: "Log your first shot and the story starts here."}
@@ -245,14 +255,14 @@ export default function History() {
 							<button
 								type="button"
 								onClick={clearFilters}
-								className="mt-2 inline-block border border-border bg-muted/50 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-muted"
+								className="mt-2 inline-block rounded-lg bg-paper-sunken px-4 py-2 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-line"
 							>
 								Clear filters
 							</button>
 						) : (
 							<Link
 								to="/log/brew"
-								className="mt-2 inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
+								className="mt-2 inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 							>
 								Log a brew
 							</Link>
@@ -262,7 +272,7 @@ export default function History() {
 
 				{brews !== undefined && brews.length > 0 && (
 					<div className="space-y-4">
-						<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+						<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 							{shownCount} brew{shownCount === 1 ? "" : "s"}
 							{view === "bean"
 								? ` in ${chapters.length} bean chapter${chapters.length === 1 ? "" : "s"}`
@@ -283,13 +293,13 @@ export default function History() {
 							timeline.map(([day, dayBrews]) => (
 								<section
 									key={day}
-									className="border border-border bg-background"
+									className="rounded-xl border border-line bg-paper-raised shadow-card"
 								>
-									<header className="flex items-baseline justify-between border-b border-border/60 px-4 py-2.5">
-										<h2 className="font-News text-xl italic tracking-tight text-foreground/90">
+									<header className="flex items-baseline justify-between border-b border-line/60 bg-paper-sunken/40 px-4 py-2.5">
+										<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
 											{day}
 										</h2>
-										<span className="font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+										<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 											{dayBrews.length} shot{dayBrews.length === 1 ? "" : "s"}
 										</span>
 									</header>

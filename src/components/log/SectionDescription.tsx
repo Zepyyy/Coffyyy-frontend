@@ -5,7 +5,7 @@ export default function SectionDescription({
 }) {
 	return (
 		<div className="mb-6">
-			<p className="text-xs text-muted-foreground font-Mono">{children}</p>
+			<p className="font-sans text-xs text-ink-soft">{children}</p>
 		</div>
 	);
 }

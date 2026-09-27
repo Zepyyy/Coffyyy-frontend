@@ -1,30 +1,8 @@
-import {
-	Apple,
-	Cake,
-	Citrus,
-	Cookie,
-	FileQuestion,
-	FireExtinguisher,
-	Flower,
-	Leaf,
-	type LucideIcon,
-	Salad,
-} from "lucide-react";
 import { getColorSwatch } from "@/lib/utils";
-import type { BeanCardProps, Beans } from "@/types/BeanTypes";
+import type { BeanCardProps } from "@/types/BeanTypes";
 import RoastDots from "./RoastDots";
 
-const noteIcon: Partial<Record<Beans["dominantNote"], LucideIcon>> = {
-	Fruity: Apple,
-	Nutty: Cookie,
-	Floral: Flower,
-	Green: Leaf,
-	Roasted: FireExtinguisher,
-	Sour: Citrus,
-	Spices: Salad,
-	Sweet: Cake,
-};
-
+/** Compact bag-label card: origin eyebrow, display name, roast spectrum. */
 export default function BeanSelectorCard({
 	bean,
 	selected,
@@ -35,42 +13,36 @@ export default function BeanSelectorCard({
 	onClick: () => void;
 }) {
 	const swatch = getColorSwatch(bean.dominantNote);
-	const NoteIcon = noteIcon[bean.dominantNote] ?? FileQuestion;
 
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			className={`relative overflow-hidden border text-start transition-all cursor-pointer ${
+			aria-pressed={selected}
+			className={`hover-line group relative cursor-pointer rounded-xl border p-3.5 text-start shadow-card ${
 				selected
-					? `${swatch.bg} border ${swatch.borderColor}`
-					: "border-border bg-background hover:border-primary/30"
+					? "border-crema bg-crema-tint ring-1 ring-crema/40"
+					: "border-line bg-paper-raised hover:border-line-strong"
 			}`}
 		>
-			<div className={`h-1 w-full absolute top-0 mb-1 ${swatch.stripe}`} />
-			<div className="p-3 space-y-2">
-				<div className="flex items-start justify-between gap-2">
-					<p
-						className={`font-Lora text-lg font-semibold leading-snug line-clamp-2 ${selected ? swatch.text : "text-foreground/90"}`}
-					>
+			<div className="flex items-start justify-between gap-2">
+				<div className="min-w-0">
+					<p className="eyebrow">{bean.origin?.[0] ?? "Blend"}</p>
+					<p className="mt-1 line-clamp-2 font-display text-[17px] font-semibold leading-snug tracking-tight text-foreground">
 						{bean.name}
 					</p>
-					<NoteIcon
-						className={`size-5 shrink-0 mt-0.5 ${selected ? swatch.text : "text-muted-foreground/40"}`}
-						strokeWidth={1.5}
-					/>
 				</div>
-				<p
-					className={`font-Mono text-[9px] uppercase tracking-widest ${selected ? swatch.secondaryText : "text-muted-foreground"}`}
-				>
-					{bean.variety?.join(", ")}
-				</p>
-				{/* Roast level bar */}
-				<div
-					className={`${selected ? swatch.text : "text-muted-foreground/50"}`}
-				>
-					<RoastDots level={bean.roastLevel} />
-				</div>
+				<span
+					className={`mt-1 size-2 shrink-0 ${swatch.stripe}`}
+					title={bean.dominantNote ?? undefined}
+					aria-label={bean.dominantNote ?? undefined}
+				/>
+			</div>
+			<p className="mt-1.5 truncate font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+				{bean.variety?.join(", ")}
+			</p>
+			<div className="mt-3 text-ink-faint">
+				<RoastDots level={bean.roastLevel} />
 			</div>
 		</button>
 	);

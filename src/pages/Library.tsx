@@ -178,16 +178,16 @@ export default function Library() {
 			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
 				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-						<div className="border-l-5 border-primary-200 pl-5">
-							<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+						<div className="border-l-4 border-crema pl-5">
+							<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
 								Library
 							</h1>
-							<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
 								Your beans and equipment
 							</p>
 						</div>
 
-						<div className="flex w-full items-center gap-1 bg-background/15 p-1">
+						<div className="flex w-full items-center gap-1 rounded-lg border border-line bg-paper-sunken/60 p-1">
 							{(["beans", "machines"] as Tab[]).map((t) => (
 								<button
 									key={t}
@@ -208,7 +208,7 @@ export default function Library() {
 						</div>
 
 						<input
-							className="h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+							className="h-10 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 							placeholder={`Search ${tab}...`}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
@@ -260,11 +260,11 @@ export default function Library() {
 							{filteredBeans.length === 0 ? (
 								<>
 									{allBeans.length === 0 ? (
-										<div className="border border-dashed border-border p-12 text-center space-y-3 w-full h-full">
-											<p className="font-News text-2xl text-foreground/60">
+										<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+											<p className="font-display text-2xl text-foreground/60">
 												No beans
 											</p>
-											<p className="font-Recursive text-sm text-muted-foreground">
+											<p className="font-sans text-sm text-muted-foreground">
 												Add your first bean to get started.
 											</p>
 											<AddCard
@@ -303,7 +303,7 @@ export default function Library() {
 					{tab === "machines" && (
 						<div>
 							{filteredMachines.length === 0 ? (
-								<div className="rounded-xl border border-dashed border-border p-8 text-center">
+								<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
 									<p className="text-sm text-muted-foreground">
 										{activeMachines.length === 0
 											? "No equipment yet."
@@ -312,7 +312,7 @@ export default function Library() {
 									{activeMachines.length === 0 && (
 										<Link
 											to="/log/machine"
-											className="mt-3 inline-block rounded-lg bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/70"
+											className="mt-3 inline-block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 										>
 											Add your first machine
 										</Link>
