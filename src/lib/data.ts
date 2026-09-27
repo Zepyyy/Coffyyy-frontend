@@ -17,6 +17,8 @@ export {
 export {
 	getRecentBrews,
 	getLatestUnratedBrew,
+	getLastBrew,
+	getLastBrewForBean,
 	getBrewsForHistoryView,
 	getHistorySidebarStats,
 	getBrewsForBeanId,

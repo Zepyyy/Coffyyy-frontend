@@ -3,14 +3,6 @@ import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewSuggestions, Brews } from "@/types/BrewTypes";
 import type { MachineCardProps } from "@/types/MachineTypes";
 
-export type HistorySortMode =
-	| "newest"
-	| "oldest"
-	| "bean-asc"
-	| "bean-desc"
-	| "rating-desc"
-	| "rating-asc";
-
 export type HistorySidebarStats = {
 	total: number;
 	uniqueBeans: number;
@@ -19,30 +11,13 @@ export type HistorySidebarStats = {
 	topMachine: number | null;
 };
 
-function sortBrews(list: Brews[], sort: HistorySortMode): Brews[] {
+function sortBrews(list: Brews[], order: "newest" | "oldest"): Brews[] {
 	const sorted = [...list];
 	const dateMs = (d: Date | string) => +new Date(d);
-	switch (sort) {
-		case "newest":
-			sorted.sort((a, b) => dateMs(b.date) - dateMs(a.date));
-			break;
-		case "oldest":
-			sorted.sort((a, b) => dateMs(a.date) - dateMs(b.date));
-			break;
-		case "bean-asc":
-			sorted.sort((a, b) => (a.beanId ?? 0) - (b.beanId ?? 0));
-			break;
-		case "bean-desc":
-			sorted.sort((a, b) => (b.beanId ?? 0) - (a.beanId ?? 0));
-			break;
-		case "rating-desc":
-			sorted.sort((a, b) => (b.overallRating ?? 0) - (a.overallRating ?? 0));
-			break;
-		case "rating-asc":
-			sorted.sort((a, b) => (a.overallRating ?? 0) - (b.overallRating ?? 0));
-			break;
-		default:
-			break;
+	if (order === "newest") {
+		sorted.sort((a, b) => dateMs(b.date) - dateMs(a.date));
+	} else {
+		sorted.sort((a, b) => dateMs(a.date) - dateMs(b.date));
 	}
 	return sorted;
 }
@@ -76,8 +51,23 @@ export async function getLatestUnratedBrew(): Promise<Brews | null> {
 	);
 }
 
+/** The most recent brew of one bean — the recipe the next shot starts from. */
+export async function getLastBrewForBean(
+	beanId: number | undefined,
+): Promise<Brews | null> {
+	if (!beanId) return null;
+	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	if (brews.length === 0) return null;
+	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date))[0];
+}
+
+/** The most recent brew overall. */
+export async function getLastBrew(): Promise<Brews | null> {
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
+	return brews[0] ?? null;
+}
+
 export async function getBrewsForHistoryView(
-	sort: HistorySortMode,
 	search: string,
 	minRating: number | null,
 ): Promise<Brews[]> {
@@ -103,16 +93,7 @@ export async function getBrewsForHistoryView(
 	if (minRating !== null) {
 		list = list.filter((b) => (b.overallRating ?? 0) >= minRating);
 	}
-	if (sort === "bean-asc" || sort === "bean-desc") {
-		return [...list].sort((a, b) => {
-			const aName = a.beanId != null ? (names.beans.get(a.beanId) ?? "") : "";
-			const bName = b.beanId != null ? (names.beans.get(b.beanId) ?? "") : "";
-			return sort === "bean-asc"
-				? aName.localeCompare(bName)
-				: bName.localeCompare(aName);
-		});
-	}
-	return sortBrews(list, sort);
+	return sortBrews(list, "newest");
 }
 
 export async function getHistorySidebarStats(): Promise<HistorySidebarStats> {
