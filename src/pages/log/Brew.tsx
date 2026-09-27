@@ -451,7 +451,7 @@ export default function BrewLog() {
 												setField("grindSize", form.grindSize === lvl ? 12 : lvl)
 											}
 											className={cn(
-												"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2 sm:flex-none sm:px-2",
+												"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
 												form.grindSize === lvl
 													? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
 													: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
@@ -463,7 +463,7 @@ export default function BrewLog() {
 									<input
 										type="number"
 										step="0.01"
-										className="w-24 border border-border bg-background px-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+										className="w-24 shrink-0 border border-border bg-background px-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
 										placeholder="Other"
 										value={
 											GRIND_SIZES.includes(form.grindSize) ? "" : form.grindSize
@@ -504,13 +504,19 @@ export default function BrewLog() {
 									/>
 								</div>
 								{espressoRatio && (
-									<div className="relative border border-dashed border-border px-6 py-3 text-center">
-										<span className="font-Lora text-5xl font-bold text-primary-700/90 dark:text-primary-200/90">
-											1:{espressoRatio}
-										</span>
-										<span className="absolute -bottom-5 left-1/2 -translate-x-1/2 font-Mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground select-none">
+									<div
+										className="flex select-none flex-col items-center gap-2"
+										aria-live="polite"
+										aria-label={`Ratio 1 to ${espressoRatio}`}
+									>
+										<span className="font-Mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
 											ratio
 										</span>
+										<span className="font-Lora text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
+											1<span className="mx-1 text-primary/40">:</span>
+											{espressoRatio}
+										</span>
+										<div className="squiggly-line w-[100px] opacity-60" />
 									</div>
 								)}
 								<div className="flex flex-col items-center">
