@@ -17,6 +17,17 @@ A more elaborate dashboard and statistics will be added in the future to underst
   <img src="./src/assets/Chart.jpg" alt="Chart" width="800" />
 </p>
 
+## Design system
+
+The visual identity is documented in [docs/design-notes.md](./docs/design-notes.md) and lives as a living styleguide at `/buttons` (dev builds only).
+
+Direction: **"calm instrument"** — neutral paper, near-black ink, hairlines and squares, one dusty caramel accent (the dial's needle, active states). Inspired by precision/editorial tooling; see the revision log in [docs/design-notes.md](./docs/design-notes.md).
+
+- **Color** is built from semantic tokens in `src/index.css`: neutral `paper` surfaces, near-black `ink` text, hairline borders, and a single dusty caramel accent (`crema`) reserved for what is active or true. Flavor-note hues survive only as small square swatches. Dark mode is neutral near-black, no color cast.
+- **Type** uses three faces with strict roles: **Fraunces** speaks (display, brand wordmark, italic voice), **Instrument Sans** works (body, forms, buttons), **Spline Sans Mono** measures (labels, recipes, ledger data). Everything maps through the `font-display` / `font-sans` / `font-data` / `.eyebrow` utilities.
+- **Signature moment:** the brew dial on the log-a-brew page is a machined gauge — knurled collar, caramel arc that tracks the value, spring-settle needle. Echoes: bean cards as label plates (square hue swatch + rotated "Dialed in" stamp), a crema-fill cup animation when a shot is saved, and a time-of-day greeting on the dashboard.
+- **Motion:** 300–500ms rise-and-fade on load with a 45ms stagger, 2px hover lift on cards, all disabled under `prefers-reduced-motion`.
+
 ## Stack & technical choices
 
 I used a modern stack with React and Vite for the frontend, and NestJS for the backend. This stack is modern, fast and is something I feel comfortable with, and enjoy using.
@@ -29,7 +40,7 @@ Hosted on [Vercel](https://vercel.com/)
 Stack:
 - React 19 + Typescript
 - Vite 7
-- Tailwind CSS 4 (with `tw-animate-css`)
+- Tailwind CSS 4 (with `tw-animate-css`) and a semantic token layer (see Design system)
 - Recharts for data visualization
 - Shadcn UI ([shadcn/ui](https://github.com/shadcn/ui)) (component library)
 
@@ -62,6 +73,7 @@ The frontend snapshot-sync implementation is complete on `cloud-sync-feature` an
 - [x] Issue #10 Phase 2: durable enrollment and snapshot sync groundwork
 - [x] Issue #10 Phase 3: backend snapshot migration and deployed contract (backend code complete; staging deployment pending)
 - [x] Issue #10 Phase 4: staging verification, rollout, and cleanup (blocked by staging deployment)
+- [x] Visual identity pass: "roastery notebook" tokens, type system, machined dial, bag-label bean cards, save-shot celebration
 - [ ] The [/history page](https://coffyyy.quentinstubecki.fr/history/) fully designed and implemented.
 
 ## Cloud sync model
