@@ -52,7 +52,7 @@ function StepButton({
 		<button
 			type="button"
 			aria-label={`${label} — ${dir < 0 ? "decrease" : "increase"}`}
-			className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground active:bg-primary/10"
+			className="flex size-7 shrink-0 items-center justify-center border border-line text-ink-faint transition-colors hover:border-ink-faint hover:text-foreground active:bg-paper-sunken"
 			onPointerDown={(e) => {
 				e.preventDefault();
 				onNudge(dir);
@@ -191,6 +191,12 @@ export default function Dial({
 	const [draft, setDraft] = useState<string | null>(null);
 	const activeAngle = valueToAngle(value, min, max);
 
+	// Gauge arc: pathLength=100 turns the fill into a plain percentage.
+	// The 270° sweep is rotated so the arc opens clockwise through 12
+	// o'clock, matching the tick scale.
+	const valueRatio = max === min ? 0 : (value - min) / (max - min);
+	const arcFill = valueRatio * 75;
+
 	return (
 		<div className="flex flex-col items-center gap-2 py-4">
 			<div className="flex items-center gap-2.5">
@@ -203,15 +209,61 @@ export default function Dial({
 					aria-valuenow={value}
 					aria-valuemin={min}
 					aria-valuemax={max}
-					className="ml-1 touch-none rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+					className="ml-1 touch-none rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-crema/60"
 					onPointerDown={handlePointerDown}
 					onPointerMove={handlePointerMove}
 					onPointerUp={handlePointerUp}
 					onKeyDown={handleKeyDown}
 				>
-					<div className="relative size-24">
-						<div className="absolute inset-0 rounded-full border border-primary/20 bg-primary-700/10" />
-						<div className="absolute inset-2 rounded-full border-4 border-primary/15" />
+					<div className="relative size-32">
+						{/* Knurled collar — 48 teeth around the outside */}
+						<div className="absolute inset-0">
+							{Array.from({ length: 48 }, (_, i) => (
+								<div
+									key={i}
+									className="absolute left-1/2 top-1/2 h-[5px] w-[2px] -translate-x-1/2 bg-line-strong"
+									style={{
+										transform: `rotate(${i * 7.5}deg) translateY(-60px)`,
+									}}
+								/>
+							))}
+						</div>
+
+						{/* Metal body */}
+						<div className="absolute inset-[6px] rounded-full border border-line bg-paper-raised shadow-knob" />
+
+						{/* Gauge arc — the crema fill tracks the value */}
+						<svg
+							viewBox="0 0 128 128"
+							className="absolute inset-0 size-full"
+							aria-hidden
+						>
+							<circle
+								cx="64"
+								cy="64"
+								r="50"
+								fill="none"
+								stroke="var(--line-strong)"
+								strokeWidth="2"
+								strokeDasharray="75 100"
+								transform="rotate(225 64 64)"
+								pathLength={100}
+							/>
+							<circle
+								cx="64"
+								cy="64"
+								r="50"
+								fill="none"
+								stroke="var(--crema)"
+								strokeWidth="3"
+								strokeLinecap="round"
+								strokeDasharray={`${arcFill} 100`}
+								transform="rotate(225 64 64)"
+								pathLength={100}
+							/>
+						</svg>
+
+						{/* Tick scale */}
 						<div className="absolute inset-0">
 							{Array.from({ length: 13 }, (_, i) => {
 								const angle = DIAL_START_DEG + (i / 12) * DIAL_SWEEP_DEG;
@@ -226,28 +278,32 @@ export default function Dial({
 										}}
 									>
 										<div
-											className={`border-r bg-transparent ${isMajor ? "h-2.5" : "h-1.5"} ${isMajor ? "w-0.5" : "w-px"} rounded-none ${isActive ? "border-primary/70" : "border-primary/25"}`}
+											className={`${isMajor ? "h-3.5 w-[2px]" : "h-2 w-px"} ${isActive ? "bg-crema-deep" : "bg-line-strong"}`}
 											style={{
-												transform: "translateY(-53px)",
+												transform: "translateY(-40px)",
 											}}
 										/>
 									</div>
 								);
 							})}
 						</div>
+
+						{/* Needle */}
 						<div
-							className="absolute inset-0 flex items-start justify-center"
+							className="absolute inset-0 flex items-start justify-center transition-transform duration-150 ease-soft"
 							style={{
 								transform: `rotate(${activeAngle}deg)`,
 							}}
 						>
-							<div className="mt-1.5 h-7 w-1.5 rounded-full bg-primary shadow-[0_0_14px_rgba(0,0,0,0.15)]" />
+							<div className="mt-[9px] h-7 w-[5px] bg-crema" />
 						</div>
-						<div className="absolute inset-7 flex items-center justify-center rounded-full border border-primary/40 bg-background/95">
+
+						{/* Cap — tap the number to type */}
+						<div className="absolute inset-[34px] flex items-center justify-center rounded-full border border-line bg-paper-raised shadow-[inset_0_2px_6px_oklch(0.235_0.008_60/0.08)]">
 							<input
 								aria-label={`${label} — type a value`}
 								inputMode="decimal"
-								className="w-9 bg-transparent text-center font-News text-[13px] leading-none text-primary-800 outline-none dark:text-primary-100"
+								className="w-12 bg-transparent text-center font-data text-base font-semibold leading-none text-crema-deep outline-none dark:text-crema"
 								value={draft ?? value.toFixed(1)}
 								onFocus={() => setDraft(value.toFixed(1))}
 								onChange={(e) => setDraft(e.target.value)}
@@ -275,9 +331,9 @@ export default function Dial({
 			</div>
 
 			{helpers && (
-				<div className="w-fit flex items-center justify-between gap-4 font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+				<div className="w-fit flex items-center justify-between gap-4 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
 					<span>{min}g</span>
-					<span className="text-muted-foreground/60">drag, scroll or type</span>
+					<span className="text-ink-faint/60">drag, scroll or type</span>
 					<span>{max}g</span>
 				</div>
 			)}

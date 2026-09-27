@@ -1,7 +1,8 @@
-import { Coffee, RotateCcw, Search } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
+import BrewCelebration from "@/components/log/BrewCelebration";
 import Dial from "@/components/log/Dial";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
@@ -48,13 +49,13 @@ function StepHeading({
 }) {
 	return (
 		<div className="flex items-baseline gap-3">
-			<span className="font-Mono text-[10px] tracking-[0.2em] text-primary/70">
+			<span className="font-data text-[10px] tracking-[0.2em] text-crema-deep">
 				{index}
 			</span>
-			<h2 className="font-News text-2xl italic tracking-tight text-foreground/90">
+			<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
 				{title}
 			</h2>
-			<span className="hidden font-Recursive text-xs text-muted-foreground sm:inline">
+			<span className="hidden font-sans text-xs text-muted-foreground sm:inline">
 				{hint}
 			</span>
 		</div>
@@ -72,12 +73,12 @@ function RecipeSegment({
 }) {
 	return (
 		<span className="inline-flex items-baseline gap-1.5">
-			<span className="font-Mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+			<span className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
 				{label}
 			</span>
 			<span
 				className={cn(
-					"font-Mono text-sm font-semibold",
+					"font-data text-sm font-semibold",
 					muted ? "text-muted-foreground/50" : "text-foreground",
 				)}
 			>
@@ -237,17 +238,15 @@ export default function BrewLog() {
 	if (savedBrewId != null) {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
-				<div className="space-y-6 border border-border bg-background p-6 sm:p-8">
+				<div className="rise space-y-6 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
 					<div className="flex items-start justify-between gap-4">
 						<div>
-							<p className="font-Mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-								Shot logged
-							</p>
-							<p className="mt-1 font-News text-3xl italic tracking-tight text-foreground/90">
+							<p className="eyebrow">Shot logged</p>
+							<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
 								{selectedBean?.name ?? "Brew"} in the book.
 							</p>
 						</div>
-						<Coffee className="size-8 text-primary/30" strokeWidth={1.5} />
+						<BrewCelebration />
 					</div>
 
 					{!rated && savedBrewId != null && (
@@ -272,14 +271,14 @@ export default function BrewLog() {
 						<button
 							type="button"
 							onClick={logAnother}
-							className="border border-border bg-primary-200/15 px-5 py-2.5 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/50"
+							className="rounded-lg bg-crema-tint px-5 py-2.5 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-primary-200"
 						>
 							Log another shot
 						</button>
 						<button
 							type="button"
 							onClick={() => navigate("/home")}
-							className="border border-border px-5 py-2.5 font-Recursive text-sm text-muted-foreground transition-colors hover:text-foreground"
+							className="rounded-lg border border-line px-5 py-2.5 font-sans text-sm text-ink-soft transition-colors hover:text-foreground"
 						>
 							Back to dashboard
 						</button>
@@ -293,18 +292,18 @@ export default function BrewLog() {
 		<div className="mx-auto w-full">
 			<div className="mx-6 grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
 				<aside className="lg:sticky lg:top-20 lg:self-start space-y-6 lg:block hidden">
-					<div className="border-l-5 border-primary-200 pl-5">
-						<h1 className="text-4xl font-News italic tracking-tight text-foreground/90">
+					<div className="border-l-4 border-crema pl-5">
+						<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
 							Log a brew
 						</h1>
-						<p className="mt-1 font-Recursive text-xs uppercase tracking-[0.2em] text-muted-foreground">
+						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
 							Twenty seconds, then pour.
 						</p>
 					</div>
 
 					{/* Live recipe line — fills in as the shot is dialed */}
-					<div className="border border-border bg-background p-4 space-y-2">
-						<p className="font-Mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+					<div className="rounded-xl border border-line bg-paper-raised p-4 space-y-2 shadow-card">
+						<p className="font-data text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
 							The recipe
 						</p>
 						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
@@ -330,13 +329,13 @@ export default function BrewLog() {
 
 					{prefill && (
 						<div className="space-y-1.5">
-							<p className="font-Recursive text-xs text-muted-foreground">
+							<p className="font-sans text-xs text-muted-foreground">
 								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
 							</p>
 							<button
 								type="button"
 								onClick={startFresh}
-								className="inline-flex items-center gap-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:text-foreground"
+								className="inline-flex items-center gap-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 							>
 								<RotateCcw className="size-3" />
 								Start fresh
@@ -344,23 +343,21 @@ export default function BrewLog() {
 						</div>
 					)}
 					{saveError && (
-						<p className="font-Recursive text-xs text-destructive">
-							{saveError}
-						</p>
+						<p className="font-sans text-xs text-destructive">{saveError}</p>
 					)}
 				</aside>
 
-				<section className="border border-border bg-background p-6 lg:p-8 mb-8">
+				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-6 shadow-card lg:p-8">
 					{/* Mobile: the aside is hidden, so the prefill note travels with the form */}
 					{prefill && (
 						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
-							<p className="font-Recursive text-xs text-muted-foreground">
+							<p className="font-sans text-xs text-muted-foreground">
 								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
 							</p>
 							<button
 								type="button"
 								onClick={startFresh}
-								className="inline-flex shrink-0 items-center gap-1.5 font-Recursive text-xs text-muted-foreground transition-colors hover:text-foreground"
+								className="inline-flex shrink-0 items-center gap-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 							>
 								<RotateCcw className="size-3" />
 								Start fresh
@@ -376,16 +373,16 @@ export default function BrewLog() {
 								hint="Which bag is open?"
 							/>
 							{isEmpty ? (
-								<div className="border border-dashed border-border p-10 text-center space-y-3">
-									<p className="font-News text-2xl text-foreground/60">
+								<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
+									<p className="font-display text-2xl text-foreground/60">
 										No beans yet
 									</p>
-									<p className="font-Recursive text-sm text-muted-foreground">
+									<p className="font-sans text-sm text-muted-foreground">
 										Add a bean first — it takes a minute.
 									</p>
 									<Link
 										to="/log/bean"
-										className="inline-block border border-primary/30 bg-primary-200/15 px-4 py-2 font-Recursive text-sm text-foreground transition-colors hover:bg-primary-200/25"
+										className="inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
 									>
 										Add a bean
 									</Link>
@@ -396,7 +393,7 @@ export default function BrewLog() {
 										<label className="relative block max-w-xs">
 											<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 											<input
-												className="h-9 w-full border border-border/70 bg-background pl-9 pr-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+												className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 												placeholder="Search your beans…"
 												value={beanSearch}
 												onChange={(e) => setBeanSearch(e.target.value)}
@@ -423,7 +420,7 @@ export default function BrewLog() {
 										))}
 									</div>
 									{!isEmpty && filteredBeans.length === 0 && (
-										<p className="font-Recursive text-sm text-muted-foreground">
+										<p className="font-sans text-sm text-muted-foreground">
 											No bean matches “{beanSearch}”.
 										</p>
 									)}
@@ -439,7 +436,7 @@ export default function BrewLog() {
 								hint="Dial it in — the dials start from last time."
 							/>
 							<div className="space-y-2">
-								<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+								<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 									Grind size
 								</p>
 								<div className="flex flex-wrap gap-1.5">
@@ -451,7 +448,7 @@ export default function BrewLog() {
 												setField("grindSize", form.grindSize === lvl ? 12 : lvl)
 											}
 											className={cn(
-												"min-w-10 flex-1 py-2.5 font-Mono text-xs font-semibold transition-all border-b-2",
+												"min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-all border-b-2",
 												form.grindSize === lvl
 													? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
 													: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
@@ -463,7 +460,7 @@ export default function BrewLog() {
 									<input
 										type="number"
 										step="0.01"
-										className="w-24 shrink-0 border border-border bg-background px-3 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+										className="h-10 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 										placeholder="Other"
 										value={
 											GRIND_SIZES.includes(form.grindSize) ? "" : form.grindSize
@@ -474,14 +471,16 @@ export default function BrewLog() {
 										aria-label="Custom grind size"
 									/>
 								</div>
-								<div
-									className="h-1 w-full"
-									style={{
-										background:
-											"linear-gradient(to right, var(--primary-100), var(--primary))",
-									}}
-								/>
-								<div className="w-full flex items-center justify-between font-Mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+								<div className="relative h-px w-full bg-line-strong">
+									{Array.from({ length: 25 }, (_, i) => (
+										<span
+											key={i}
+											className="absolute top-0 h-1 w-px bg-line-strong"
+											style={{ left: `${(i / 24) * 100}%` }}
+										/>
+									))}
+								</div>
+								<div className="w-full flex items-center justify-between font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
 									<span>Finer</span>
 									<span className="hidden sm:inline">Fine</span>
 									<span>Medium</span>
@@ -492,7 +491,7 @@ export default function BrewLog() {
 
 							<div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-start lg:gap-14">
 								<div className="flex flex-col items-center">
-									<p className="font-Recursive text-sm text-foreground">
+									<p className="font-sans text-sm text-foreground">
 										In — ground coffee
 									</p>
 									<Dial
@@ -509,10 +508,10 @@ export default function BrewLog() {
 										aria-live="polite"
 										aria-label={`Ratio 1 to ${espressoRatio}`}
 									>
-										<span className="font-Mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+										<span className="font-data text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
 											ratio
 										</span>
-										<span className="font-Lora text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
+										<span className="font-display text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
 											1<span className="mx-1 text-primary/40">:</span>
 											{espressoRatio}
 										</span>
@@ -520,7 +519,7 @@ export default function BrewLog() {
 									</div>
 								)}
 								<div className="flex flex-col items-center">
-									<p className="font-Recursive text-sm text-foreground">
+									<p className="font-sans text-sm text-foreground">
 										Out — espresso in the cup
 									</p>
 									<Dial
@@ -535,7 +534,7 @@ export default function BrewLog() {
 
 							<div className="grid gap-6 md:grid-cols-2">
 								<div className="space-y-2">
-									<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 										Extraction time
 									</p>
 									<div className="flex flex-wrap items-center gap-1.5">
@@ -545,7 +544,7 @@ export default function BrewLog() {
 												type="button"
 												onClick={() => setField("extractionTime", t)}
 												className={cn(
-													"border px-3 py-1.5 font-Mono text-xs transition-colors",
+													"border px-3 py-1.5 font-data text-xs transition-colors",
 													parseExtractionTime(form.extractionTime) === Number(t)
 														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
 														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -557,7 +556,7 @@ export default function BrewLog() {
 										<input
 											type="text"
 											inputMode="decimal"
-											className="w-24 border border-border bg-background px-3 py-1.5 font-Recursive text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+											className="w-24 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 											placeholder="e.g. 28"
 											value={form.extractionTime}
 											onChange={(e) =>
@@ -566,12 +565,12 @@ export default function BrewLog() {
 											aria-label="Extraction time in seconds"
 										/>
 									</div>
-									<p className="font-Recursive text-xs text-muted-foreground">
+									<p className="font-sans text-xs text-muted-foreground">
 										Seconds, or 1:02 — whatever your scale shows.
 									</p>
 								</div>
 								<div className="space-y-2">
-									<p className="font-Mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 										How did it flow?
 									</p>
 									<div className="flex flex-wrap gap-1.5">
@@ -583,7 +582,7 @@ export default function BrewLog() {
 													setField("flow", form.flow === f ? "" : f)
 												}
 												className={cn(
-													"border px-3 py-1.5 font-Recursive text-xs transition-colors",
+													"border px-3 py-1.5 font-sans text-xs transition-colors",
 													form.flow === f
 														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
 														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -593,7 +592,7 @@ export default function BrewLog() {
 											</button>
 										))}
 									</div>
-									<p className="font-Recursive text-xs text-muted-foreground">
+									<p className="font-sans text-xs text-muted-foreground">
 										First read on the shot, before you taste it.
 									</p>
 								</div>
@@ -631,13 +630,13 @@ export default function BrewLog() {
 						</section>
 
 						<div className="flex items-center justify-between gap-4 border-t border-border pt-5">
-							<p className="hidden font-Recursive text-xs text-muted-foreground sm:block">
+							<p className="hidden font-sans text-xs text-muted-foreground sm:block">
 								{form.beanId ? "Ready when you are." : "Pick a bean to start."}
 							</p>
 							<button
 								type="submit"
 								disabled={!form.beanId || isSaving}
-								className="h-12 flex-1 bg-foreground px-8 font-News text-base italic text-background transition-opacity hover:tracking-wide hover:opacity-90 disabled:opacity-40 sm:flex-none"
+								className="hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the shot"}
 							</button>
