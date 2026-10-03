@@ -257,19 +257,19 @@ export default function Library() {
 						<div>
 							{filteredBeans.length === 0 ? (
 								<>
-										{allBeans.length === 0 ? (
-											<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
-												<p className="font-display text-2xl text-foreground/60">
-													No beans
-												</p>
-												<p className="font-sans text-sm text-muted-foreground">
-													Add your first bean to get started.
-												</p>
-												<Button asChild variant="ink" className="mt-2">
-													<Link to="/log/bean">Add a bean</Link>
-												</Button>
-											</div>
-										) : (
+									{allBeans.length === 0 ? (
+										<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+											<p className="font-display text-2xl text-foreground/60">
+												No beans
+											</p>
+											<p className="font-sans text-sm text-muted-foreground">
+												Add your first bean to get started.
+											</p>
+											<Button asChild variant="ink" className="mt-2">
+												<Link to="/log/bean">Add a bean</Link>
+											</Button>
+										</div>
+									) : (
 										<p className="text-sm text-muted-foreground">
 											No beans match your search.
 										</p>

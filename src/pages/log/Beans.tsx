@@ -6,6 +6,11 @@ import BeanLivePreview from "@/components/log/BeanLivePreview";
 import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
+import {
+	beanBotanicValues,
+	beanDesignationValues,
+	beanDominantNoteValues,
+} from "@/lib/api/schema.gen";
 import { addBean } from "@/lib/data";
 import { useBeanSuggestions } from "@/hooks/api/useBeans";
 import {
@@ -14,7 +19,7 @@ import {
 	DEFAULT_DOMINANT_NOTES,
 } from "@/lib/defaults";
 import { validateRequiredFields } from "@/lib/formValidation";
-import { cn } from "@/lib/utils";
+import { cn, oneOf } from "@/lib/utils";
 import type { BeanForm } from "@/types/BeanTypes";
 
 const INITIAL: BeanForm = {
@@ -154,20 +159,12 @@ export default function BeansLog() {
 				rating: 0,
 				status: "New",
 				process: form.process,
-				botanic: (form.botanic as "Arabica" | "Robusta" | "") || "",
-				designation: (form.designation || "?") as "Pure Origin" | "Blend" | "",
+				botanic: oneOf(beanBotanicValues, form.botanic, ""),
+				designation: oneOf(beanDesignationValues, form.designation, ""),
 				origin: form.origin,
 				variety: form.variety,
 				roastLevel: Number.isFinite(roast) && roast > 0 ? roast : -1,
-				dominantNote: (form.dominantNote || "?") as
-					| "Fruity"
-					| "Sweet"
-					| "Nutty"
-					| "Floral"
-					| "Sour"
-					| "Spices"
-					| "Roasted"
-					| "Green",
+				dominantNote: oneOf(beanDominantNoteValues, form.dominantNote, ""),
 				flavors: form.flavors,
 				finished: false,
 			});
@@ -421,13 +418,13 @@ export default function BeansLog() {
 															form.roastLevel === lvl ? "" : lvl,
 														)
 													}
-												className={cn(
-													"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
-													form.roastLevel === lvl
-														? "text-primary-800 dark:text-primary-200 bg-primary/10"
-														: "text-muted-foreground hover:text-foreground",
-												)}
-												data-active={form.roastLevel === lvl}
+													className={cn(
+														"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
+														form.roastLevel === lvl
+															? "text-primary-800 dark:text-primary-200 bg-primary/10"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+													data-active={form.roastLevel === lvl}
 												>
 													{lvl}
 												</button>

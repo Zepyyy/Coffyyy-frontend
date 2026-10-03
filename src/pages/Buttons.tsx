@@ -183,8 +183,8 @@ export default function Buttons() {
 					</div>
 					<p className="font-sans text-xs text-ink-faint">
 						the frame draws · the ruler rises · the arms close · the border
-						retraces · the corners mark — and every key presses. quiet keys
-						draw the underline.
+						retraces · the corners mark — and every key presses. quiet keys draw
+						the underline.
 					</p>
 				</div>
 			</Section>

@@ -2,7 +2,7 @@ import type { Beans } from "@/types/BeanTypes";
 
 export const DEFAULT_BOTANICS: Array<string> = ["Arabica", "Robusta", "?"];
 export const DEFAULT_DESIGNATIONS: Array<string> = [
-	"Pure origin",
+	"Pure Origin",
 	"Blend",
 	"?",
 ];

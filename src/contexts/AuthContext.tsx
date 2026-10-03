@@ -12,6 +12,7 @@ import {
 	restoreSession,
 	retryAfterSessionExpiry,
 } from "@/lib/api/sessionRecovery";
+import { mergeSnapshots } from "@/db/sync/merge";
 import {
 	getWorkspaceSnapshot,
 	putWorkspaceSnapshot,
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			await updateEnrollment({
 				cloudVersion: remote.version,
 				lastSyncedHash: hash,
+				baseSnapshot: remote.snapshot,
 			});
 			setConflictSnapshot(null);
 			broadcast("snapshot-updated", (await getEnrollment())?.workspaceId ?? 0);
@@ -68,12 +70,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	);
 
 	const pushSnapshot = useCallback(
-		async (expectedVersion: number) => {
-			const local = await readLocalSnapshot();
+		async (expectedVersion: number, snapshot?: WorkspaceSnapshot) => {
+			const local = snapshot ?? (await readLocalSnapshot());
 			const response = await putWorkspaceSnapshot(local, expectedVersion);
 			await updateEnrollment({
 				cloudVersion: response.version,
 				lastSyncedHash: snapshotHash(response.snapshot),
+				baseSnapshot: response.snapshot,
 			});
 			setConflictSnapshot(null);
 			setStatus("active");
@@ -81,6 +84,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			invalidate();
 		},
 		[broadcast, invalidate],
+	);
+
+	// Both sides changed since the last sync: merge per entity and push, or
+	// surface a conflict when the same entity changed on both sides.
+	const reconcile = useCallback(
+		async (local: WorkspaceSnapshot, remote: WorkspaceResponse) => {
+			const base = (await getEnrollment())?.baseSnapshot;
+			const merged = base && mergeSnapshots(base, local, remote.snapshot);
+			if (!merged || merged.conflicts.length > 0) {
+				await updateEnrollment({ cloudVersion: remote.version });
+				setConflictSnapshot(remote.snapshot);
+				setStatus("conflict");
+				return;
+			}
+			await replaceLocalSnapshot(merged.snapshot);
+			await pushSnapshot(remote.version, merged.snapshot);
+		},
+		[pushSnapshot],
 	);
 
 	const reconnect = useCallback(async () => {
@@ -101,12 +122,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				const localChanged = snapshotHash(local) !== current.lastSyncedHash;
 				const cloudChanged = remote.version !== current.cloudVersion;
 				if (localChanged && cloudChanged) {
-					await updateEnrollment({ cloudVersion: remote.version });
-					setConflictSnapshot(remote.snapshot);
-					setStatus("conflict");
+					await reconcile(local, remote);
 					return;
 				}
-				if (localChanged) await pushSnapshot(remote.version);
+				if (localChanged) await pushSnapshot(remote.version, local);
 				else await syncRemote(remote);
 				setStatus("active");
 			} catch (error) {
@@ -123,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		} finally {
 			reconnecting.current = null;
 		}
-	}, [pushSnapshot, syncRemote]);
+	}, [pushSnapshot, reconcile, syncRemote]);
 
 	const enableSync = useCallback(async () => {
 		const existing = await getEnrollment();

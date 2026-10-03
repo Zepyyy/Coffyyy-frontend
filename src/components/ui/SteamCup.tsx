@@ -4,11 +4,7 @@
  * coffee line inside the rim is the one amber accent. The cup itself stays
  * still; inherits `currentColor` for the porcelain.
  */
-export default function SteamCup({
-	className,
-}: {
-	className?: string;
-}) {
+export default function SteamCup({ className }: { className?: string }) {
 	return (
 		<svg
 			viewBox="0 0 30 30"

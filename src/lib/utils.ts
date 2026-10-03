@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export type Note = Beans["dominantNote"] | "default";
+export type Note = Exclude<Beans["dominantNote"], ""> | "default";
 
 export type Swatch = {
 	bg: string;
@@ -123,6 +123,17 @@ export const colorSwatch: Record<Note, Swatch> = {
 	Sweet: tagColors.yellow,
 	default: tagColors.gray,
 };
+
+/** Narrows free-form UI input to a contract enum, e.g. the "?" chip to "". */
+export function oneOf<T extends string>(
+	values: ReadonlyArray<T>,
+	value: string,
+	fallback: T,
+): T {
+	return (values as ReadonlyArray<string>).includes(value)
+		? (value as T)
+		: fallback;
+}
 
 export function getColorSwatch(note: string | null | undefined): Swatch {
 	return colorSwatch[note as Note] ?? colorSwatch.default;

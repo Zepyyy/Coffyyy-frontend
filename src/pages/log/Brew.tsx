@@ -542,13 +542,15 @@ export default function BrewLog() {
 												key={t}
 												type="button"
 												onClick={() => setField("extractionTime", t)}
-											className={cn(
-												"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
-												parseExtractionTime(form.extractionTime) === Number(t)
-													? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-													: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-											)}
-											data-active={parseExtractionTime(form.extractionTime) === Number(t)}
+												className={cn(
+													"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+													parseExtractionTime(form.extractionTime) === Number(t)
+														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+												)}
+												data-active={
+													parseExtractionTime(form.extractionTime) === Number(t)
+												}
 											>
 												{t}s
 											</button>
@@ -581,13 +583,13 @@ export default function BrewLog() {
 												onClick={() =>
 													setField("flow", form.flow === f ? "" : f)
 												}
-											className={cn(
-												"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
-												form.flow === f
-													? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-													: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-											)}
-											data-active={form.flow === f}
+												className={cn(
+													"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+													form.flow === f
+														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+												)}
+												data-active={form.flow === f}
 											>
 												{f}
 											</button>
