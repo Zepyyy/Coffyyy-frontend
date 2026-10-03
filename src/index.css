@@ -330,6 +330,403 @@
     }
 }
 
+/* The button language — built from the system's own geometry: straight
+   lines, sharp corners, hairlines that draw themselves (the same stroke the
+   nav and view switches use). One mechanism per family:
+   · filled keys draw an inner frame on hover (default, ink, destructive)
+   · quiet keys draw the crema underline on hover (outline, secondary, ghost,
+     option, chips, steps)
+   · slot keys draw their corner marks (add, outline-dashed) — "place here"
+   · everything presses 1px while held. */
+.key-frame {
+    position: relative;
+    --key-frame-c: color-mix(in oklab, var(--ink) 45%, transparent);
+}
+.key-frame.key-frame-light {
+    --key-frame-c: color-mix(in oklab, var(--background) 40%, transparent);
+}
+.key-frame.key-frame-red {
+    --key-frame-c: color-mix(in oklab, white 45%, transparent);
+}
+.key-frame::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border: 1px solid var(--key-frame-c);
+    pointer-events: none;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.45s var(--ease-soft);
+}
+.key-frame:hover::after {
+    clip-path: inset(0 0 0 0);
+}
+.key-line {
+    position: relative;
+    --key-line-c: var(--accent);
+}
+.key-line::after {
+    content: "";
+    position: absolute;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 2px;
+    height: 1px;
+    background: var(--key-line-c);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s var(--ease-soft);
+}
+.key-line:hover::after {
+    transform: scaleX(1);
+}
+.key-ticks {
+    position: relative;
+}
+.key-ticks::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(1.15);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s var(--ease-soft);
+    background:
+        linear-gradient(to right, var(--accent) 0 7px, transparent 7px) left top /
+            7px 1px no-repeat,
+        linear-gradient(to bottom, var(--accent) 0 7px, transparent 7px) left top /
+            1px 7px no-repeat,
+        linear-gradient(to right, var(--accent) 0 7px, transparent 7px) right top /
+            7px 1px no-repeat,
+        linear-gradient(to bottom, var(--accent) 0 7px, transparent 7px) right top /
+            1px 7px no-repeat,
+        linear-gradient(to right, var(--accent) 0 7px, transparent 7px) left bottom /
+            7px 1px no-repeat,
+        linear-gradient(to bottom, var(--accent) 0 7px, transparent 7px) left bottom /
+            1px 7px no-repeat,
+        linear-gradient(to right, var(--accent) 0 7px, transparent 7px) right bottom /
+            7px 1px no-repeat,
+        linear-gradient(to bottom, var(--accent) 0 7px, transparent 7px) right bottom /
+            1px 7px no-repeat;
+}
+.key-ticks:hover::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* The ink key's ruler: a row of measure ticks rises along the bottom edge
+   when the key is addressed — Zed's ruler, in miniature. */
+.key-ruler {
+    position: relative;
+}
+.key-ruler::after {
+    content: "";
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: 3px;
+    height: 4px;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        to right,
+        oklch(1 0 0 / 0.4) 0 1px,
+        transparent 1px 9px
+    );
+    opacity: 0;
+    transform: translateY(3px);
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s var(--ease-soft);
+}
+.dark .key-ruler::after {
+    background-image: repeating-linear-gradient(
+        to right,
+        oklch(0 0 0 / 0.35) 0 1px,
+        transparent 1px 9px
+    );
+}
+.key-ruler:hover::after {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* The destructive key arms: two half-frames close toward the middle, like a
+   circuit being completed before the cut. */
+.key-arm {
+    position: relative;
+}
+.key-arm::before,
+.key-arm::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    width: 50%;
+    pointer-events: none;
+    border-top: 1px solid oklch(1 0 0 / 0.55);
+    border-bottom: 1px solid oklch(1 0 0 / 0.55);
+    transform: scaleX(0);
+    transition: transform 0.4s var(--ease-soft);
+}
+.key-arm::before {
+    left: 2px;
+    border-left: 1px solid oklch(1 0 0 / 0.55);
+    transform-origin: left;
+}
+.key-arm::after {
+    right: 2px;
+    border-right: 1px solid oklch(1 0 0 / 0.55);
+    transform-origin: right;
+}
+.key-arm:hover::before,
+.key-arm:hover::after {
+    transform: scaleX(1);
+}
+
+/* The outline key's border retraces itself: an SVG hairline runs the
+   perimeter once on hover (pathLength-normalized, any button size). */
+.key-trace {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+.key-trace rect {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    transition: stroke-dashoffset 0.55s var(--ease-soft);
+}
+.key-trace-host:hover .key-trace rect {
+    stroke-dashoffset: 0;
+}
+
+/* The dashed slot key comes alive: its dashes march while hovered. */
+.key-march {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.key-march rect {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    stroke-dasharray: 2 2;
+    stroke-dashoffset: 0;
+}
+.key-march-host:hover .key-march {
+    opacity: 1;
+}
+.key-march-host:hover .key-march rect {
+    animation: key-march 1.6s linear infinite;
+}
+@keyframes key-march {
+    to {
+        stroke-dashoffset: -4;
+    }
+}
+
+/* The option keys in the log forms: the bottom hairline draws on hover and
+   stays drawn while the option is true. */
+.opt-key {
+    position: relative;
+}
+.opt-key::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s var(--ease-soft);
+}
+.opt-key:hover::after {
+    transform: scaleX(0.5);
+}
+.opt-key[data-active="true"]::after {
+    transform: scaleX(1);
+}
+/* The framed chips: the crema frame draws around the chip when it is true. */
+.opt-frame {
+    position: relative;
+}
+.opt-frame::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border: 1px solid var(--accent);
+    pointer-events: none;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.4s var(--ease-soft);
+}
+.opt-frame:hover::after {
+    clip-path: inset(0 55% 0 0);
+}
+.opt-frame[data-active="true"]::after {
+    clip-path: inset(0 0 0 0);
+}
+
+/* The censer, softened: the page's own surfaces, the house accent as the one
+   warm light. Light theme: paper face, ink-drawn steam, a breath of warmth
+   behind the cup. Dark theme: crema cup with a faint glow on the theme's own
+   raised surface. It blends in — the motion is the charm, not the contrast. */
+.censer-key {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    color: var(--ink);
+}
+.censer-halo {
+    position: absolute;
+    left: -8%;
+    top: -50%;
+    z-index: 0;
+    width: 58%;
+    height: 200%;
+    background: radial-gradient(
+        closest-side,
+        oklch(0.78 0.08 75 / 0.13),
+        transparent 72%
+    );
+    filter: blur(16px);
+    animation: censer-breathe 7s ease-in-out infinite;
+}
+.dark .censer-halo {
+    background: radial-gradient(
+        closest-side,
+        oklch(0.72 0.09 68 / 0.2),
+        transparent 72%
+    );
+}
+@keyframes censer-breathe {
+    0%,
+    100% {
+        opacity: 0.65;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.09);
+    }
+}
+.censer-key .steam {
+    stroke: var(--ink-soft);
+    stroke-width: 1.5;
+}
+.dark .censer-key .steam {
+    stroke: oklch(0.8 0.07 72);
+    filter: drop-shadow(0 0 4px oklch(0.72 0.09 68 / 0.3));
+}
+.steam-cup .coffee-line {
+    stroke: var(--accent);
+}
+.censer-mote {
+    position: absolute;
+    bottom: 46%;
+    z-index: 1;
+    width: 2px;
+    height: 2px;
+    border-radius: 9999px;
+    background: var(--accent);
+    filter: blur(0.5px);
+    opacity: 0;
+    animation: mote-float 7s ease-in infinite;
+}
+.censer-mote.m1 {
+    left: 17%;
+}
+.censer-mote.m2 {
+    left: 24%;
+    animation-delay: 2.4s;
+    animation-duration: 8.5s;
+}
+.censer-mote.m3 {
+    left: 30%;
+    animation-delay: 4.8s;
+    animation-duration: 6s;
+}
+@keyframes mote-float {
+    0% {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+    25% {
+        opacity: 0.75;
+    }
+    100% {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+}
+
+/* Live word, tamed: the app's own quiet link voice (small mono uppercase).
+   At rest it is exactly the grey link the app already has — the amber band
+   sits fully off the visible window at both rest positions — and on hover
+   one amber light passes through the letters, once. */
+.word-link {
+    background: linear-gradient(
+        100deg,
+        var(--ink-faint) 35%,
+        var(--accent) 45%,
+        oklch(0.87 0.05 80) 50%,
+        var(--accent) 55%,
+        var(--ink-faint) 65%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    transition: background-position 0.75s cubic-bezier(0.45, 0, 0.25, 1);
+}
+.word-link:hover,
+.group:hover .word-link {
+    background-position: 0% 0;
+}
+
+/* The steam: three wisps rise off the rim and dissolve, out of phase. */
+.steam {
+    opacity: 0;
+    animation: steam-rise 3.4s ease-in-out infinite;
+}
+.steam-w2 {
+    animation-duration: 4.2s;
+    animation-delay: 1.6s;
+}
+.steam-w3 {
+    animation-duration: 2.9s;
+    animation-delay: 0.8s;
+}
+@keyframes steam-rise {
+    0% {
+        transform: translateY(2.5px);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.7;
+    }
+    65% {
+        opacity: 0.45;
+    }
+    100% {
+        transform: translateY(-4px);
+        opacity: 0;
+    }
+}
+
 /* The save moment: espresso rises, crema settles on top. */
 @keyframes cup-fill {
     from {
@@ -392,5 +789,41 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+
+    /*
+     * The CTA systems opt back in, by design: the owner runs a reduced-motion
+     * OS and still wants the pulse. Same importance as the blanket nuke
+     * above, higher specificity, so these win.
+     */
+    .censer-key *,
+    .steam-cup * {
+        transition-duration: 400ms !important;
+        animation-duration: 8s !important;
+        animation-iteration-count: infinite !important;
+    }
+    .censer-key .censer-halo {
+        animation-duration: 7s !important;
+    }
+    .censer-key .censer-mote.m1 {
+        animation-duration: 7s !important;
+    }
+    .censer-key .censer-mote.m2 {
+        animation-duration: 8.5s !important;
+    }
+    .censer-key .censer-mote.m3 {
+        animation-duration: 6s !important;
+    }
+    .steam-cup .steam {
+        animation-duration: 3.4s !important;
+    }
+    .steam-cup .steam-w2 {
+        animation-duration: 4.2s !important;
+    }
+    .steam-cup .steam-w3 {
+        animation-duration: 2.9s !important;
+    }
+    .word-link {
+        transition-duration: 0.75s !important;
     }
 }

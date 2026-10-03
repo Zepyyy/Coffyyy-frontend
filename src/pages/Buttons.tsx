@@ -1,5 +1,7 @@
 import Dial from "@/components/log/Dial";
 import { Button } from "@/components/ui/button";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import { useState } from "react";
 
 const PALETTE: Array<{ name: string; className: string; note: string }> = [
 	{ name: "paper", className: "bg-paper", note: "the counter" },
@@ -67,6 +69,8 @@ function Section({
 
 /** The living styleguide — the design system you can poke. /buttons */
 export default function Buttons() {
+	const [view, setView] = useState<"bean" | "timeline">("bean");
+
 	return (
 		<div className="w-full mx-auto max-w-4xl px-6 py-10 space-y-12">
 			<div className="rise">
@@ -155,6 +159,51 @@ export default function Buttons() {
 					<Button variant="transparent" size="md">
 						transparent
 					</Button>
+				</div>
+
+				{/* The language: lines draw themselves, per family. */}
+				<div className="mt-4 space-y-3 rounded-xl border border-line bg-paper-raised p-6 shadow-card">
+					<p className="eyebrow">The language — hover them</p>
+					<div className="flex flex-wrap items-center gap-3">
+						<Button variant="default" size="md">
+							default
+						</Button>
+						<Button variant="ink" size="md">
+							ink
+						</Button>
+						<Button variant="destructive" size="md">
+							destructive
+						</Button>
+						<Button variant="outline" size="md">
+							outline
+						</Button>
+						<Button variant="add" size="md">
+							add
+						</Button>
+					</div>
+					<p className="font-sans text-xs text-ink-faint">
+						the frame draws · the ruler rises · the arms close · the border
+						retraces · the corners mark — and every key presses. quiet keys
+						draw the underline.
+					</p>
+				</div>
+			</Section>
+
+			<Section
+				title="View switch"
+				note="the nav's underline, no track, no nested boxes"
+			>
+				<div className="rounded-xl border border-line bg-paper-raised p-6 shadow-card">
+					<SegmentedControl
+						ariaLabel="Example view switch"
+						className="w-fit"
+						options={[
+							{ value: "bean", label: "By bean" },
+							{ value: "timeline", label: "Timeline" },
+						]}
+						value={view}
+						onChange={setView}
+					/>
 				</div>
 			</Section>
 
