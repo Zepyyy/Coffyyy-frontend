@@ -48,7 +48,7 @@ export default function SegmentedControl<T extends string>({
 						<span
 							aria-hidden
 							className={cn(
-								"absolute inset-x-0 bottom-0 h-px origin-left bg-crema transition-transform duration-300 ease-soft",
+								"seg-underline absolute inset-x-0 bottom-0 h-px origin-left bg-crema transition-transform duration-300 ease-soft",
 								active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50",
 							)}
 						/>

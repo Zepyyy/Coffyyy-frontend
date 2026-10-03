@@ -48,7 +48,7 @@ export default function App() {
 											<span className="inline-block leading-8">{label}</span>
 											<span
 												className={cn(
-													"absolute left-1/2 bottom-1 h-px w-full -translate-x-1/2 origin-center scale-x-0 bg-crema transition-transform duration-300 ease-soft group-hover:scale-x-50",
+													"seg-underline absolute left-1/2 bottom-1 h-px w-full -translate-x-1/2 origin-center scale-x-0 bg-crema transition-transform duration-300 ease-soft group-hover:scale-x-50",
 													isActive && "scale-x-100",
 												)}
 											/>
