@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 
 const EXCUSES = [
 	"This page went to get coffee and never came back.",
@@ -51,12 +52,9 @@ export function CatchAll() {
 				(Click the cup for another excuse)
 			</p>
 
-			<Link
-				to="/home"
-				className="mt-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold text-paper shadow-card transition-all hover:bg-ink/85"
-			>
-				Back to the grind →
-			</Link>
+			<Button asChild variant="ink" size="lg" className="mt-2">
+				<Link to="/home">Back to the grind →</Link>
+			</Button>
 		</div>
 	);
 }

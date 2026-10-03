@@ -6,6 +6,7 @@ import App from "./App.tsx";
 import Bean from "./pages/Bean.tsx";
 import Buttons from "./pages/Buttons.tsx";
 import { CatchAll } from "./pages/CatchAll.tsx";
+import CtaLab from "./pages/CtaLab.tsx";
 import Dev from "./pages/Dev.tsx";
 import History from "./pages/History.tsx";
 import Home from "./pages/Home.tsx";
@@ -36,6 +37,8 @@ createRoot(document.getElementById("root")!).render(
 						<Route path="beans/:BeanId" element={<Bean />} />
 						<Route path="dev" element={<Dev />} />
 						<Route path="buttons" element={<Buttons />} />
+						{/* Temporary: the CTA lab — delete with src/pages/CtaLab.tsx */}
+						<Route path="cta-lab" element={<CtaLab />} />
 						{/*<Route path="beans" element={<Navigate to="/log/bean" replace />} />*/}
 						<Route
 							path="machines"
