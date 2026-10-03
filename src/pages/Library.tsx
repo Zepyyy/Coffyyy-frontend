@@ -4,10 +4,11 @@ import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
+import { Button } from "@/components/ui/button";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
-import { cn } from "@/lib/utils";
 
 type Tab = "beans" | "machines";
 
@@ -187,25 +188,22 @@ export default function Library() {
 							</p>
 						</div>
 
-						<div className="flex w-full items-center gap-1 rounded-lg border border-line bg-paper-sunken/60 p-1">
-							{(["beans", "machines"] as Tab[]).map((t) => (
-								<button
-									key={t}
-									type="button"
-									onClick={() => setTab(t)}
-									className={cn(
-										"flex-1 px-4 py-1.5 text-sm font-medium capitalize transition-opacity",
-										tab === t
-											? "border border-primary-200 border-b-4 bg-primary-200/15 text-foreground"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									{t === "beans"
-										? `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`
-										: `Machines${machinesCount > 0 ? ` (${machinesCount})` : ""}`}
-								</button>
-							))}
-						</div>
+						<SegmentedControl
+							ariaLabel="Library section"
+							className="w-fit"
+							options={[
+								{
+									value: "beans",
+									label: `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`,
+								},
+								{
+									value: "machines",
+									label: `Machines${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
+								},
+							]}
+							value={tab}
+							onChange={setTab}
+						/>
 
 						<input
 							className="h-10 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
@@ -259,28 +257,26 @@ export default function Library() {
 						<div>
 							{filteredBeans.length === 0 ? (
 								<>
-									{allBeans.length === 0 ? (
-										<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
-											<p className="font-display text-2xl text-foreground/60">
-												No beans
-											</p>
-											<p className="font-sans text-sm text-muted-foreground">
-												Add your first bean to get started.
-											</p>
-											<AddCard
-												to="/log/bean"
-												label="Add bean"
-												className="min-h-24"
-											/>
-										</div>
-									) : (
+										{allBeans.length === 0 ? (
+											<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+												<p className="font-display text-2xl text-foreground/60">
+													No beans
+												</p>
+												<p className="font-sans text-sm text-muted-foreground">
+													Add your first bean to get started.
+												</p>
+												<Button asChild variant="ink" className="mt-2">
+													<Link to="/log/bean">Add a bean</Link>
+												</Button>
+											</div>
+										) : (
 										<p className="text-sm text-muted-foreground">
 											No beans match your search.
 										</p>
 									)}
 								</>
 							) : (
-								<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
+								<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
 									{filteredBeans.map((bean) => (
 										<BeanCard
 											key={bean.id ?? `${bean.name}-${bean.brand}`}
@@ -310,16 +306,13 @@ export default function Library() {
 											: "No machines match your search."}
 									</p>
 									{activeMachines.length === 0 && (
-										<Link
-											to="/log/machine"
-											className="mt-3 inline-block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-										>
-											Add your first machine
-										</Link>
+										<Button asChild variant="ink" className="mt-3">
+											<Link to="/log/machine">Add your first machine</Link>
+										</Button>
 									)}
 								</div>
 							) : (
-								<div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-4">
+								<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
 									{filteredMachines.map((machine) => (
 										<MachineCard
 											key={machine.id ?? `${machine.name}-${machine.model}`}

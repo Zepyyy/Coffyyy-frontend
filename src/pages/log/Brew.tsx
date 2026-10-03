@@ -1,6 +1,7 @@
 import { RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { Button } from "@/components/ui/button";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BrewCelebration from "@/components/log/BrewCelebration";
 import Dial from "@/components/log/Dial";
@@ -380,12 +381,9 @@ export default function BrewLog() {
 									<p className="font-sans text-sm text-muted-foreground">
 										Add a bean first — it takes a minute.
 									</p>
-									<Link
-										to="/log/bean"
-										className="inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-									>
-										Add a bean
-									</Link>
+									<Button asChild variant="ink">
+										<Link to="/log/bean">Add a bean</Link>
+									</Button>
 								</div>
 							) : (
 								<>
@@ -448,11 +446,12 @@ export default function BrewLog() {
 												setField("grindSize", form.grindSize === lvl ? 12 : lvl)
 											}
 											className={cn(
-												"min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-all border-b-2",
+												"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
 												form.grindSize === lvl
-													? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
-													: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
+													? "text-primary-800 dark:text-primary-200 bg-primary/10"
+													: "text-muted-foreground hover:text-foreground",
 											)}
+											data-active={form.grindSize === lvl}
 										>
 											{lvl}
 										</button>
@@ -543,12 +542,13 @@ export default function BrewLog() {
 												key={t}
 												type="button"
 												onClick={() => setField("extractionTime", t)}
-												className={cn(
-													"border px-3 py-1.5 font-data text-xs transition-colors",
-													parseExtractionTime(form.extractionTime) === Number(t)
-														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-												)}
+											className={cn(
+												"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+												parseExtractionTime(form.extractionTime) === Number(t)
+													? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+													: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+											)}
+											data-active={parseExtractionTime(form.extractionTime) === Number(t)}
 											>
 												{t}s
 											</button>
@@ -581,12 +581,13 @@ export default function BrewLog() {
 												onClick={() =>
 													setField("flow", form.flow === f ? "" : f)
 												}
-												className={cn(
-													"border px-3 py-1.5 font-sans text-xs transition-colors",
-													form.flow === f
-														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-												)}
+											className={cn(
+												"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+												form.flow === f
+													? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+													: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+											)}
+											data-active={form.flow === f}
 											>
 												{f}
 											</button>
@@ -636,7 +637,7 @@ export default function BrewLog() {
 							<button
 								type="submit"
 								disabled={!form.beanId || isSaving}
-								className="hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
+								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the shot"}
 							</button>

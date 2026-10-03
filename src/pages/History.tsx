@@ -3,9 +3,11 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { BeanChapter } from "@/components/history/BeanChapter";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
+import { Button } from "@/components/ui/button";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import { recipeLine } from "@/lib/brewFormat";
 import { useBrewSuggestions, useHistoryBrews } from "@/hooks/api/useBrews";
-import { cn, formatRelativeDay } from "@/lib/utils";
+import { formatRelativeDay } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 
@@ -82,9 +84,9 @@ function StoryStrip({
 				</div>
 			)}
 			<Link
-				to="/log/brew"
-				className="hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
-			>
+					to="/log/brew"
+					className="key-frame hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
+				>
 				<span>
 					<span className="eyebrow block">Next shot</span>
 					<span className="block font-display text-xl italic tracking-tight text-foreground">
@@ -175,29 +177,16 @@ export default function History() {
 
 				{/* Controls */}
 				<div className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-3 shadow-card sm:flex-row sm:items-center">
-					<div className="flex w-fit items-center rounded-lg border border-line bg-paper-sunken/60 p-0.5">
-						{(
-							[
-								["bean", "By bean"],
-								["timeline", "Timeline"],
-							] as Array<[ViewMode, string]>
-						).map(([mode, label]) => (
-							<button
-								key={mode}
-								type="button"
-								onClick={() => setView(mode)}
-								className={cn(
-									"px-3 py-1.5 font-sans text-xs transition-colors",
-									view === mode
-										? "bg-primary/10 text-primary-800 dark:text-primary-200"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								aria-pressed={view === mode}
-							>
-								{label}
-							</button>
-						))}
-					</div>
+					<SegmentedControl
+						ariaLabel="History view"
+						className="w-fit"
+						options={[
+							{ value: "bean", label: "By bean" },
+							{ value: "timeline", label: "Timeline" },
+						]}
+						value={view}
+						onChange={setView}
+					/>
 					<label className="relative block min-w-0 flex-1">
 						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 						<input
@@ -252,20 +241,18 @@ export default function History() {
 								: "Log your first shot and the story starts here."}
 						</p>
 						{hasActiveFilters ? (
-							<button
+							<Button
 								type="button"
+								variant="secondary"
+								className="mt-2"
 								onClick={clearFilters}
-								className="mt-2 inline-block rounded-lg bg-paper-sunken px-4 py-2 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-line"
 							>
 								Clear filters
-							</button>
+							</Button>
 						) : (
-							<Link
-								to="/log/brew"
-								className="mt-2 inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-							>
-								Log a brew
-							</Link>
+							<Button asChild variant="ink" className="mt-2">
+								<Link to="/log/brew">Log a brew</Link>
+							</Button>
 						)}
 					</div>
 				)}

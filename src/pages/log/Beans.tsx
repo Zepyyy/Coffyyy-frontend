@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 import BeanLivePreview from "@/components/log/BeanLivePreview";
 import MultiChips from "@/components/log/MultiChoiceChips";
 import OptionChips from "@/components/log/OptionChips";
@@ -200,19 +201,15 @@ export default function BeansLog() {
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-3">
-						<Link
-							to={`/log/brew?bean=${savedBeanId}`}
-							className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-						>
-							Pull the first shot
-							<ArrowRight className="size-4" />
-						</Link>
-						<Link
-							to="/library"
-							className="inline-flex items-center rounded-lg border border-line px-5 py-2.5 font-sans text-sm text-ink-soft transition-colors hover:text-foreground"
-						>
-							Back to library
-						</Link>
+						<Button asChild variant="ink">
+							<Link to={`/log/brew?bean=${savedBeanId}`}>
+								Pull the first shot
+								<ArrowRight className="size-4" />
+							</Link>
+						</Button>
+						<Button asChild variant="outline">
+							<Link to="/library">Back to library</Link>
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -424,12 +421,13 @@ export default function BeansLog() {
 															form.roastLevel === lvl ? "" : lvl,
 														)
 													}
-													className={cn(
-														"min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-all border-b-2",
-														form.roastLevel === lvl
-															? "border-primary text-primary-800 dark:text-primary-200 bg-primary/10"
-															: "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/30",
-													)}
+												className={cn(
+													"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
+													form.roastLevel === lvl
+														? "text-primary-800 dark:text-primary-200 bg-primary/10"
+														: "text-muted-foreground hover:text-foreground",
+												)}
+												data-active={form.roastLevel === lvl}
 												>
 													{lvl}
 												</button>
@@ -504,7 +502,7 @@ export default function BeansLog() {
 							<button
 								type="submit"
 								disabled={isSaving}
-								className="hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
+								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the bean"}
 							</button>

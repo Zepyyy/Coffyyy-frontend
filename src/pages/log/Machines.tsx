@@ -246,7 +246,7 @@ export default function MachinesLog() {
 							<button
 								type="submit"
 								disabled={!form.name.trim() || isSaving}
-								className="h-12 w-full rounded-xl bg-ink font-semibold text-sm text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
+								className="key-frame key-frame-light h-12 w-full rounded-xl bg-ink font-semibold text-sm text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
 							>
 								{isSaving ? "Saving…" : "Save Equipment"}
 							</button>

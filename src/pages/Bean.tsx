@@ -1,6 +1,7 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
+import { Button } from "@/components/ui/button";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
 import { useAllMachines } from "@/hooks/api/useMachines";
@@ -255,12 +256,9 @@ export default function Bean() {
 						<p className="font-sans text-sm text-muted-foreground">
 							Log your first brew with this bean.
 						</p>
-						<Link
-							to="/log/brew"
-							className="mt-2 inline-block rounded-lg bg-ink px-4 py-2 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-						>
-							Log a brew
-						</Link>
+						<Button asChild variant="ink" className="mt-2">
+							<Link to="/log/brew">Log a brew</Link>
+						</Button>
 					</div>
 				)}
 

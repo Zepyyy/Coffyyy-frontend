@@ -1,6 +1,8 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Button } from "@/components/ui/button";
+import SteamCup from "@/components/ui/SteamCup";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
@@ -99,7 +101,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 						onClick={() => selectBean(bean.id)}
 					/>
 				))}
-				<AddCard label="Add Bean" to="/log/bean" />
+				<AddCard label="Add Bean" to="/log/bean" className="min-h-32" />
 			</div>
 
 			{selectedBean && beanInsights && (
@@ -150,12 +152,21 @@ export default function Home() {
 						{dailyLine(recentBrews, allBeans.length)}
 					</p>
 				</div>
+				{/* The censer, softened: the page's own paper, the house accent as
+				    the one warm light — steam, halo, embers. It blends in. */}
 				<Link
 					to="/log/brew"
-					className="hover-line group inline-flex shrink-0 items-center gap-2 rounded-xl bg-ink px-6 py-3.5 font-sans text-sm font-semibold text-paper shadow-card hover:bg-ink/85"
+					className="censer-key group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong bg-paper-raised px-6 py-4 active:translate-y-px sm:w-fit"
 				>
-					Log a brew
-					<ArrowRight className="size-4 text-crema transition-transform duration-300 ease-soft group-hover:translate-x-0.5" />
+					<span aria-hidden className="censer-halo" />
+					<span aria-hidden className="censer-mote m1" />
+					<span aria-hidden className="censer-mote m2" />
+					<span aria-hidden className="censer-mote m3" />
+					<SteamCup className="relative z-10 size-9 shrink-0 text-crema" />
+					<span className="relative z-10 font-display text-xl italic tracking-tight">
+						Log a brew
+					</span>
+					<ArrowRight className="relative z-10 size-4 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
 				</Link>
 			</section>
 
@@ -169,6 +180,12 @@ export default function Home() {
 						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
 					>
 						Dev tools →
+					</Link>
+					<Link
+						to="/cta-lab"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
+					>
+						CTA lab →
 					</Link>
 					<Link
 						to="/buttons"
@@ -212,12 +229,9 @@ export default function Home() {
 					<p className="font-sans text-sm text-ink-soft">
 						Add your first bean — the story starts there.
 					</p>
-					<Link
-						to="/log/bean"
-						className="mt-2 inline-block rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
-					>
-						Add a bean
-					</Link>
+						<Button asChild variant="ink" className="mt-2">
+							<Link to="/log/bean">Add a bean</Link>
+						</Button>
 				</div>
 			)}
 		</div>

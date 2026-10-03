@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { updateBrewById } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Brews } from "@/types/BrewTypes";
@@ -225,14 +226,15 @@ export default function TasteRatingPrompt({
 				</div>
 			</div>
 
-			<button
+			<Button
 				type="button"
+				variant="ink"
+				className="h-10 w-full"
 				onClick={handleRate}
 				disabled={saving || overallRating < 1}
-				className="h-10 w-full rounded-lg bg-ink font-sans text-sm font-semibold text-paper transition-all hover:bg-ink/85 disabled:opacity-40"
 			>
 				{saving ? "Saving…" : "Save rating →"}
-			</button>
+			</Button>
 		</div>
 	);
 }
