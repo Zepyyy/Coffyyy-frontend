@@ -84,9 +84,9 @@ function StoryStrip({
 				</div>
 			)}
 			<Link
-					to="/log/brew"
-					className="key-frame hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
-				>
+				to="/log/brew"
+				className="key-frame hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
+			>
 				<span>
 					<span className="eyebrow block">Next shot</span>
 					<span className="block font-display text-xl italic tracking-tight text-foreground">

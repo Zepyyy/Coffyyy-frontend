@@ -1,13 +1,11 @@
-export type Machines = {
+import type { components } from "@/lib/api/schema.gen";
+
+export type SnapshotMachine = components["schemas"]["Machine"];
+
+// Local row: the snapshot contract plus the Dexie primary key.
+export type Machines = Omit<SnapshotMachine, "localId"> & {
 	id: number;
 	localId?: string;
-	name: string;
-	brand: string;
-	type: string;
-	purchaseDate: string;
-	model: string;
-	grindRange: string;
-	capacity: string;
 };
 export type MachineCardProps = {
 	id: number;

@@ -1,36 +1,83 @@
 import { db } from "@/db/db";
-import type { Beans } from "@/types/BeanTypes";
-import type { Brews } from "@/types/BrewTypes";
-import type { Machines } from "@/types/MachineTypes";
+import {
+	beanBotanicValues,
+	beanDesignationValues,
+	beanDominantNoteValues,
+	beanStatusValues,
+	type components,
+} from "@/lib/api/schema.gen";
 import { api } from "@/lib/axios";
+import { oneOf } from "@/lib/utils";
+import type { Beans, SnapshotBean } from "@/types/BeanTypes";
+import type { Brews, SnapshotBrew } from "@/types/BrewTypes";
+import type { Machines, SnapshotMachine } from "@/types/MachineTypes";
 
-export type WorkspaceSnapshot = {
-	schemaVersion: 1;
-	beans: Array<Omit<Beans, "id"> & { localId: string }>;
-	machines: Array<Omit<Machines, "id"> & { localId: string }>;
-	brews: Array<{
-		localId: string;
-		beanLocalId?: string;
-		machineLocalId?: string;
-		beanWeight: number;
-		espressoWeight: number;
-		extractionTime: string | undefined;
-		flow: string | undefined;
-		overallRating?: number;
-		tasteScore?: number;
-		strengthScore?: number;
-		grindSize: number;
-		date: string;
-	}>;
+export type WorkspaceSnapshot = components["schemas"]["Snapshot"];
+export type WorkspaceResponse = components["schemas"]["SnapshotResponse"];
+
+// Exhaustive so that a field added to the backend contract fails to compile
+// here until the local snapshot carries it.
+const BEAN_FIELDS: Record<keyof Omit<SnapshotBean, "localId">, true> = {
+	name: true,
+	rating: true,
+	roastLevel: true,
+	origin: true,
+	process: true,
+	variety: true,
+	brand: true,
+	flavors: true,
+	status: true,
+	dominantNote: true,
+	botanic: true,
+	designation: true,
+	finished: true,
+};
+const MACHINE_FIELDS: Record<keyof Omit<SnapshotMachine, "localId">, true> = {
+	name: true,
+	brand: true,
+	type: true,
+	purchaseDate: true,
+	model: true,
+	grindRange: true,
+	capacity: true,
 };
 
-export type WorkspaceResponse = {
-	snapshot: WorkspaceSnapshot;
-	version: number;
-};
+function pick<T extends object>(record: object, fields: Record<string, true>) {
+	return Object.fromEntries(
+		Object.keys(fields).map((field) => [
+			field,
+			(record as Record<string, unknown>)[field],
+		]),
+	) as T;
+}
 
 function localId(value: { localId?: string }, fallback: string) {
 	return value.localId ?? fallback;
+}
+
+function toSnapshotBean(record: Beans): SnapshotBean {
+	const bean = pick<Omit<SnapshotBean, "localId">>(record, BEAN_FIELDS);
+	// Stored values predate the contract: "?" chips, "Pure origin" label.
+	const designation: string = bean.designation;
+	return {
+		localId: localId(record, `bean:${record.id}`),
+		...bean,
+		status: oneOf(beanStatusValues, bean.status, ""),
+		dominantNote: oneOf(beanDominantNoteValues, bean.dominantNote, ""),
+		botanic: oneOf(beanBotanicValues, bean.botanic, ""),
+		designation: oneOf(
+			beanDesignationValues,
+			designation === "Pure origin" ? "Pure Origin" : designation,
+			"",
+		),
+	};
+}
+
+function toSnapshotMachine(record: Machines): SnapshotMachine {
+	return {
+		localId: localId(record, `machine:${record.id}`),
+		...pick<Omit<SnapshotMachine, "localId">>(record, MACHINE_FIELDS),
+	};
 }
 
 export async function readLocalSnapshot(): Promise<WorkspaceSnapshot> {
@@ -50,51 +97,44 @@ export async function readLocalSnapshot(): Promise<WorkspaceSnapshot> {
 	);
 	return {
 		schemaVersion: 1,
-		beans: beans.map((record) => {
-			const bean = { ...record } as Record<string, unknown>;
-			const id = record.id;
-			delete bean.id;
-			delete bean.serverRevision;
-			delete bean.deletedAt;
-			return { ...bean, localId: localId(record, `bean:${id}`) } as Omit<
-				Beans,
-				"id"
-			> & { localId: string };
-		}),
-		machines: machines.map((record) => {
-			const machine = { ...record } as Record<string, unknown>;
-			const id = record.id;
-			delete machine.id;
-			delete machine.serverRevision;
-			delete machine.deletedAt;
-			return { ...machine, localId: localId(record, `machine:${id}`) } as Omit<
-				Machines,
-				"id"
-			> & { localId: string };
-		}),
-		brews: brews.map((brew) => ({
-			localId: localId(brew, `brew:${brew.id}`),
-			beanLocalId:
-				brew.beanId === undefined ? undefined : beanIds.get(brew.beanId),
-			machineLocalId:
-				brew.machineId === undefined
-					? undefined
-					: machineIds.get(brew.machineId),
-			beanWeight: brew.beanWeight,
-			espressoWeight: brew.espressoWeight,
-			extractionTime: brew.extractionTime,
-			flow: brew.flow,
-			overallRating: brew.overallRating,
-			tasteScore: brew.tasteScore,
-			strengthScore: brew.strengthScore,
-			grindSize: brew.grindSize,
-			date: new Date(brew.date).toISOString(),
-		})),
+		beans: beans.map(toSnapshotBean),
+		machines: machines.map(toSnapshotMachine),
+		brews: brews.map(
+			(brew): SnapshotBrew => ({
+				localId: localId(brew, `brew:${brew.id}`),
+				beanLocalId:
+					brew.beanId === undefined ? undefined : beanIds.get(brew.beanId),
+				machineLocalId:
+					brew.machineId === undefined
+						? undefined
+						: machineIds.get(brew.machineId),
+				beanWeight: brew.beanWeight,
+				espressoWeight: brew.espressoWeight,
+				extractionTime: brew.extractionTime,
+				flow: brew.flow,
+				overallRating: brew.overallRating,
+				tasteScore: brew.tasteScore,
+				strengthScore: brew.strengthScore,
+				grindSize: brew.grindSize,
+				date: new Date(brew.date).toISOString(),
+			}),
+		),
 	};
 }
 
+/** Key-order independent JSON, so JSONB round-trips compare equal. */
+export function canonicalJson(value: unknown): string {
+	return JSON.stringify(value, (_key, entry: unknown) =>
+		entry && typeof entry === "object" && !Array.isArray(entry)
+			? Object.fromEntries(
+					Object.entries(entry).sort(([a], [b]) => a.localeCompare(b)),
+				)
+			: entry,
+	);
+}
+
 export function snapshotHash(snapshot: WorkspaceSnapshot) {
-	return JSON.stringify({
+	return canonicalJson({
 		...snapshot,
 		beans: [...snapshot.beans].sort((a, b) =>
 			a.localId.localeCompare(b.localId),

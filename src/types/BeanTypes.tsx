@@ -1,27 +1,11 @@
-export type Beans = {
+import type { components } from "@/lib/api/schema.gen";
+
+export type SnapshotBean = components["schemas"]["Bean"];
+
+// Local row: the snapshot contract plus the Dexie primary key.
+export type Beans = Omit<SnapshotBean, "localId"> & {
 	id: number;
 	localId?: string;
-	name: string;
-	rating: number;
-	status: "Excellent" | "Good" | "Mid" | "Horrible" | "New" | "";
-	dominantNote:
-		| "Fruity"
-		| "Nutty"
-		| "Floral"
-		| "Sweet"
-		| "Sour"
-		| "Spices"
-		| "Roasted"
-		| "Green";
-	roastLevel: number;
-	origin: string[];
-	process: string[];
-	variety: string[];
-	brand: string;
-	botanic: "Arabica" | "Robusta" | "";
-	designation: "Pure Origin" | "Blend" | "";
-	flavors: string[];
-	finished: boolean;
 };
 export type BeanCardProps = {
 	id: number;

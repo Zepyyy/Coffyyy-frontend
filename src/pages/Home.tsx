@@ -229,9 +229,9 @@ export default function Home() {
 					<p className="font-sans text-sm text-ink-soft">
 						Add your first bean — the story starts there.
 					</p>
-						<Button asChild variant="ink" className="mt-2">
-							<Link to="/log/bean">Add a bean</Link>
-						</Button>
+					<Button asChild variant="ink" className="mt-2">
+						<Link to="/log/bean">Add a bean</Link>
+					</Button>
 				</div>
 			)}
 		</div>

@@ -45,7 +45,9 @@ function Button({
 	// asChild merges everything into the single child element (Slot rejects
 	// siblings), so the outline SVG has to live inside it.
 	if (asChild && isValidElement(children)) {
-		const child = children as React.ReactElement<{ children?: React.ReactNode }>;
+		const child = children as React.ReactElement<{
+			children?: React.ReactNode;
+		}>;
 		return (
 			<Comp
 				data-slot="button"

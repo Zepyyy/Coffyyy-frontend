@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import {
+	readLocalSnapshot,
 	replaceLocalSnapshot,
 	snapshotHash,
 	validateSnapshot,
@@ -128,6 +129,35 @@ describe("workspace snapshot seam", () => {
 		expect(() => validateSnapshot(invalid)).toThrow("duplicate IDs");
 		await db.Beans.add({ ...snapshot.beans[0], id: 7 });
 		expect(await db.Beans.get(7)).toBeDefined();
+	});
+
+	it("hashes the same content independent of key order", () => {
+		const reordered = {
+			...snapshot,
+			beans: snapshot.beans.map(
+				(bean) =>
+					Object.fromEntries(
+						Object.entries(bean).reverse(),
+					) as (typeof snapshot.beans)[number],
+			),
+		};
+		expect(snapshotHash(snapshot)).toBe(snapshotHash(reordered));
+	});
+
+	it("reads only contract fields and normalizes legacy enum values", async () => {
+		await db.Beans.add({
+			...snapshot.beans[0],
+			id: 1,
+			botanic: "?",
+			designation: "Pure origin",
+			serverRevision: 4,
+		} as never);
+
+		const [bean] = (await readLocalSnapshot()).beans;
+
+		expect(bean).not.toHaveProperty("serverRevision");
+		expect(bean.botanic).toBe("");
+		expect(bean.designation).toBe("Pure Origin");
 	});
 
 	it("hashes the same content independent of record order", () => {

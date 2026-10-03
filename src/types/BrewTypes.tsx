@@ -1,17 +1,16 @@
+import type { components } from "@/lib/api/schema.gen";
 import type { BeanCardProps } from "./BeanTypes";
 import type { MachineCardProps } from "./MachineTypes";
 
-export type Brews = {
+export type SnapshotBrew = components["schemas"]["Brew"];
+
+// Local row: Dexie keys replace snapshot localId references, date is a Date.
+export type Brews = Omit<
+	SnapshotBrew,
+	"localId" | "beanLocalId" | "machineLocalId" | "date"
+> & {
 	id: number;
 	localId?: string;
-	beanWeight: number;
-	espressoWeight: number;
-	extractionTime: string | undefined;
-	flow: string | undefined;
-	overallRating?: number;
-	tasteScore?: number; // -5 (sour/under-extracted) to +5 (bitter/over-extracted), 0 = balanced
-	strengthScore?: number; // -5 (weak) to +5 (strong), 0 = balanced
-	grindSize: number;
 	date: Date;
 	beanId: number | undefined;
 	machineId: number | undefined;

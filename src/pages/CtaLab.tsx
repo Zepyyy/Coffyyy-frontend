@@ -17,8 +17,8 @@ export default function CtaLab() {
 					CTA lab
 				</h1>
 				<p className="mt-2 max-w-xl font-sans text-sm text-ink-soft">
-					Two survivors. The everyday-button upgrades — key press, light
-					sweep, plate texture, hint chips — live on the design system page.
+					Two survivors. The everyday-button upgrades — key press, light sweep,
+					plate texture, hint chips — live on the design system page.
 				</p>
 			</div>
 
