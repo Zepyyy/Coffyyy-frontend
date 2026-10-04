@@ -51,6 +51,12 @@ The initial release was local-only: the browser's IndexedDB stored application d
 
 The frontend communicates only with the NestJS API hosted on [Railway](https://railway.app/). NestJS uses Prisma to access the PostgreSQL database hosted on [Supabase](https://supabase.com/), which remains private behind the backend. Frontend code must not use `supabase-js`, Supabase service keys, or the Supabase Data API directly.
 
+Production is the default backend. Requests use `/api`, proxied to Railway by
+Vercel (or Vite locally), so session and CSRF cookies belong to the frontend
+origin and work with third-party cookies blocked. `/dev` can select staging or
+localhost explicitly. Existing saved selections are retained. Vite's production
+proxy adapts cookies for local HTTP development.
+
 Stack:
 - NestJS
 - Swagger UI ([nestjs/swagger](https://github.com/nestjs/swagger)) (API documentation)
