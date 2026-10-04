@@ -1,13 +1,14 @@
 import { useState } from "react";
 import DatabaseWorkbench from "@/components/dev/DatabaseWorkbench";
-import { API_ENV_KEY, BACKENDS, type BackendEnv } from "@/lib/axios";
+import {
+	API_ENV_KEY,
+	BACKENDS,
+	type BackendEnv,
+	readBackendEnv,
+} from "@/lib/axios";
 
 export default function Dev() {
-	const [env, setEnvState] = useState<BackendEnv>(readEnv);
-
-	function readEnv(): BackendEnv {
-		return (localStorage.getItem(API_ENV_KEY) ?? "staging") as BackendEnv;
-	}
+	const [env, setEnvState] = useState<BackendEnv>(readBackendEnv);
 
 	function switchEnv(next: BackendEnv) {
 		localStorage.setItem(API_ENV_KEY, next);

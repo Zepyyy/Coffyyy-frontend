@@ -1,3 +1,13 @@
 {
-    "routes": [{ "src": "/[^.]+", "dest": "/", "status": 200 }]
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "https://coffyyy-backend-production.up.railway.app/api/$1",
+            "headers": {
+                "Cache-Control": "no-store",
+                "Vercel-CDN-Cache-Control": "no-store"
+            }
+        },
+        { "src": "/[^.]+", "dest": "/", "status": 200 }
+    ]
 }

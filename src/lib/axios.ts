@@ -9,13 +9,21 @@ import { getCsrfToken, setCsrfToken } from "./csrf";
 export const BACKENDS = {
 	staging: "https://coffyyy-backend-staging.up.railway.app/api",
 	dev: "http://localhost:3000/api",
-	production: "https://coffyyy-backend-production.up.railway.app/api",
+	// Same-origin proxy keeps session/CSRF cookies usable when third-party cookies are blocked.
+	production: "/api",
 } as const;
 
 export type BackendEnv = keyof typeof BACKENDS;
 
 export const API_ENV_KEY = "api_env";
 export const AUTH_UNAUTHORIZED_EVENT = "coffyyy:auth-unauthorized";
+
+export function readBackendEnv(): BackendEnv {
+	const stored = localStorage.getItem(API_ENV_KEY);
+	return stored && Object.hasOwn(BACKENDS, stored)
+		? (stored as BackendEnv)
+		: "production";
+}
 
 export class ApiError extends Error {
 	readonly status?: number;
@@ -57,8 +65,7 @@ type RetriableRequest = Parameters<AxiosInstance["request"]>[0] & {
 };
 
 api.interceptors.request.use((config) => {
-	const env = (localStorage.getItem(API_ENV_KEY) ?? "staging") as BackendEnv;
-	config.baseURL = BACKENDS[env] ?? BACKENDS.staging;
+	config.baseURL = BACKENDS[readBackendEnv()];
 	config.headers = AxiosHeaders.from(config.headers);
 
 	// if (isMutating(config)) {
