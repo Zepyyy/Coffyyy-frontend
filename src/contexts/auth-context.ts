@@ -15,6 +15,8 @@ export type AuthContextValue = {
 	session: authApi.SessionState | null;
 	enrollment: { workspaceId: number; syncCode: string } | null;
 	isBusy: boolean;
+	hasPendingChanges: boolean;
+	lastSyncedAt: number | null;
 	lastError: string | null;
 	conflictSnapshot: WorkspaceSnapshot | null;
 	enableSync: () => Promise<void>;

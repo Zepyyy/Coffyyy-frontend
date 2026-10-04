@@ -11,7 +11,9 @@ import {
 	ShieldMinus,
 	ShieldQuestionMark,
 	Unlink,
+	X,
 } from "lucide-react";
+import { Popover } from "radix-ui";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { AuthStatus } from "@/contexts/auth-context";
@@ -20,7 +22,7 @@ import { exportLocalSnapshot, importLocalSnapshot } from "@/lib/api/backup";
 
 function statusLabel(status: AuthStatus) {
 	return status === "active"
-		? "Sync active"
+		? "Cloud sync"
 		: status === "conflict"
 			? "Sync conflict"
 			: status === "paused"
@@ -115,12 +117,22 @@ export default function SyncPanel() {
 	async function importFile(file: File) {
 		if (
 			!window.confirm(
-				"Replace this browser's local workspace with the imported snapshot?",
+				auth.status === "active"
+					? "Replace this browser's workspace with this backup? It will also save to the cloud."
+					: "Replace this browser's local workspace with the imported snapshot?",
 			)
 		)
 			return;
-		await importLocalSnapshot(await file.text());
-		setMessage("Snapshot imported. Push local when ready.");
+		try {
+			await importLocalSnapshot(await file.text());
+			setMessage(
+				"Workspace restored. Changes save automatically when sync is active.",
+			);
+		} catch {
+			setMessage(
+				"Could not restore this file. Choose a Coffyyy workspace backup.",
+			);
+		}
 	}
 
 	async function reconnect() {
@@ -164,7 +176,7 @@ export default function SyncPanel() {
 	const isConflict = auth.status === "conflict";
 
 	return (
-		<section className="absolute top-18 right-2 z-50 w-[min(25rem,calc(100vw-2rem))] rounded-xl border border-line bg-paper-raised p-5 shadow-lift">
+		<section>
 			<div className="space-y-5">
 				<header className="flex items-start justify-between gap-4">
 					<div className="flex min-w-0 items-start gap-2.5">
@@ -173,18 +185,22 @@ export default function SyncPanel() {
 							<h2 className="font-display text-xl leading-none">
 								{statusLabel(auth.status)}
 							</h2>
-							<p className="mt-1 truncate font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+							<p className="mt-1 text-xs text-muted-foreground">
 								{auth.enrollment
-									? `Workspace ${auth.enrollment.workspaceId}`
+									? "Your coffee journal, across your devices."
 									: "Your data stays on this browser"}
 							</p>
 						</div>
 					</div>
-					{auth.isBusy && (
-						<span className="font-data text-[10px] uppercase text-muted-foreground">
-							Working…
-						</span>
-					)}
+					<Popover.Close asChild>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							aria-label="Close cloud sync"
+						>
+							<X size={16} />
+						</Button>
+					</Popover.Close>
 				</header>
 
 				{isLocal && (
@@ -213,7 +229,7 @@ export default function SyncPanel() {
 											"Replace this browser's local workspace with the connected cloud snapshot?",
 										)
 									)
-										void auth.pairSyncCode(pairCode);
+										void auth.pairSyncCode(pairCode).catch(() => undefined);
 								}}
 								disabled={!pairCode.trim() || auth.isBusy}
 							>
@@ -225,7 +241,7 @@ export default function SyncPanel() {
 						</p>
 						<Button
 							className="w-full"
-							onClick={() => void auth.enableSync()}
+							onClick={() => void auth.enableSync().catch(() => undefined)}
 							disabled={auth.isBusy}
 						>
 							Enable sync
@@ -246,10 +262,14 @@ export default function SyncPanel() {
 									</p>
 								</div>
 								<div className="grid grid-cols-2 gap-2">
-									<Button variant="outline" onClick={() => void pull()}>
+									<Button
+										variant="outline"
+										disabled={auth.isBusy}
+										onClick={() => void pull()}
+									>
 										<CloudDownload /> Pull cloud
 									</Button>
-									<Button onClick={() => void push()}>
+									<Button disabled={auth.isBusy} onClick={() => void push()}>
 										<CloudUpload /> Push local
 									</Button>
 								</div>
@@ -265,7 +285,7 @@ export default function SyncPanel() {
 						) : auth.status === "paused" ? (
 							<Button
 								className="w-full"
-								onClick={() => void auth.resumeSync()}
+								onClick={() => void auth.resumeSync().catch(() => undefined)}
 								disabled={auth.isBusy}
 							>
 								Resume sync
@@ -274,14 +294,25 @@ export default function SyncPanel() {
 							<div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-paper-sunken p-3">
 								<div className="min-w-0">
 									<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-										Cloud workspace
+										{auth.isBusy
+											? "Saving to cloud…"
+											: auth.hasPendingChanges
+												? "Saved on this browser"
+												: "Everything saved"}
 									</p>
 									<p className="mt-1 text-xs text-muted-foreground">
-										Ready for an explicit snapshot push.
+										{auth.hasPendingChanges
+											? "Your changes will reach the cloud shortly."
+											: "Changes save automatically. Go make a coffee."}
 									</p>
 								</div>
-								<Button variant="outline" size="sm" onClick={() => void push()}>
-									<CloudUpload /> Push local
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={auth.isBusy}
+									onClick={() => void reconnect()}
+								>
+									<RefreshCcw /> Sync now
 								</Button>
 							</div>
 						)}
@@ -292,7 +323,7 @@ export default function SyncPanel() {
 					<div className="space-y-3 border-t border-border pt-4">
 						<div className="min-w-0">
 							<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-								Sync code qsd
+								Connect another device
 							</p>
 							<div className="flex items-center justify-between gap-3">
 								<p className="mt-1 truncate font-data text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded">
@@ -325,7 +356,14 @@ export default function SyncPanel() {
 											variant="ghost"
 											size="icon-sm"
 											aria-label="Replace sync code"
-											onClick={() => void auth.replaceSyncCode()}
+											disabled={auth.isBusy}
+											onClick={() =>
+												void auth
+													.replaceSyncCode()
+													.catch(() =>
+														setMessage("Could not replace sync code."),
+													)
+											}
 										>
 											<RefreshCcw />
 										</Button>
@@ -338,13 +376,14 @@ export default function SyncPanel() {
 								variant="ghost"
 								size="sm"
 								onClick={() => void auth.pauseSync()}
-								disabled={auth.status !== "active"}
+								disabled={auth.status !== "active" || auth.isBusy}
 							>
 								<CloudLightning /> Pause sync
 							</Button>
 							<Button
 								variant="subtle-destructive"
 								size="sm"
+								disabled={auth.isBusy}
 								onClick={() => {
 									if (
 										window.confirm(
@@ -371,7 +410,7 @@ export default function SyncPanel() {
 
 				{(auth.lastError || message) && (
 					<p className="border-l-2 border-crema pl-3 text-xs text-ink-soft">
-						{message ?? auth.lastError}
+						{auth.lastError ?? message}
 					</p>
 				)}
 			</div>

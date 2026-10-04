@@ -49,13 +49,13 @@ One complete representation of beans, machines, brews, stable local IDs, and the
 _Avoid_: change feed, sync batch
 
 **Push**:
-An explicit replacement of the cloud workspace with the current local snapshot.
-_Avoid_: upload changes, auto-sync
+A version-checked replacement of the cloud workspace with the current local snapshot. Automatic after edits; explicit when resolving a sync conflict.
+_Avoid_: upload changes
 
 **Pull**:
 An automatic or explicit replacement of the local workspace with the current cloud snapshot.
 _Avoid_: merge, recovery
 
 **Sync conflict**:
-A local snapshot and cloud snapshot both changed since the last common state, requiring a choice between Push local, Pull cloud, or Cancel.
+A local snapshot and cloud snapshot changed the same entity differently since the last common state, requiring a choice between Push local, Pull cloud, or dismissal. Independent entity changes merge automatically.
 _Avoid_: merge conflict, recovery case

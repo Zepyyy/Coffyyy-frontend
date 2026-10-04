@@ -23,13 +23,27 @@ export async function saveEnrollment(
 export async function updateEnrollment(
 	changes: Partial<Omit<Enrollment, "id">>,
 ) {
-	const current = await getEnrollment();
-	if (!current) return undefined;
-	const next = { ...current, ...changes, updatedAt: Date.now() };
-	await db.Enrollment.put(next);
-	return next;
+	return db.transaction("rw", db.Enrollment, async () => {
+		const current = await getEnrollment();
+		if (!current) return undefined;
+		const next = { ...current, ...changes, updatedAt: Date.now() };
+		await db.Enrollment.put(next);
+		return next;
+	});
 }
 
 export async function forgetEnrollment() {
 	await db.Enrollment.delete(ENROLLMENT_ID);
+}
+
+/** Atomic across tabs, including browsers without Web Locks. */
+export async function claimAutoSync(cooldown: number) {
+	return db.transaction("rw", db.Enrollment, async () => {
+		const current = await getEnrollment();
+		if (!current || current.paused) return false;
+		const now = Date.now();
+		if (now - (current.lastAutoSyncAt ?? 0) < cooldown) return false;
+		await db.Enrollment.update(ENROLLMENT_ID, { lastAutoSyncAt: now });
+		return true;
+	});
 }

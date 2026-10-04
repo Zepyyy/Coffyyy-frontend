@@ -1,8 +1,7 @@
 import { Analytics } from "@vercel/analytics/react";
-import { Moon, Sun, Wifi } from "lucide-react";
-import { useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
-import SyncPanel from "./components/SyncPanel";
+import SyncControl from "./components/SyncControl";
 import { useTheme } from "./contexts/ThemeContext";
 import { cn } from "./lib/utils";
 
@@ -14,8 +13,6 @@ const NAV_LINKS = [
 
 export default function App() {
 	const { theme, toggleTheme } = useTheme();
-
-	const [showSyncPanel, setShowSyncPanel] = useState(false);
 
 	return (
 		<div className="min-h-screen text-foreground flex flex-col blueprint-grid">
@@ -58,18 +55,8 @@ export default function App() {
 							))}
 						</nav>
 					</div>
-					<div
-						className={`flex justify-center ${!showSyncPanel ? "hidden" : "flex"}`}
-					>
-						<SyncPanel />
-					</div>
 					<div className="flex ml-1.5 sm:ml-5 gap-1.5 sm:gap-2">
-						<button
-							onClick={() => setShowSyncPanel(!showSyncPanel)}
-							className="flex h-8 w-8 items-center justify-center text-ink-faint transition-colors hover:bg-paper-sunken hover:text-foreground"
-						>
-							<Wifi size={16} />
-						</button>
+						<SyncControl />
 						<button
 							type="button"
 							onClick={toggleTheme}

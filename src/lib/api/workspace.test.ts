@@ -160,6 +160,28 @@ describe("workspace snapshot seam", () => {
 		expect(bean.designation).toBe("Pure Origin");
 	});
 
+	it("preserves an edit made while an automatic pull was in flight", async () => {
+		await replaceLocalSnapshot(snapshot);
+		const expectedHash = snapshotHash(await readLocalSnapshot());
+		await db.Beans.toCollection().modify({ name: "Edited during sync" });
+		const applied = await replaceLocalSnapshot(snapshot, expectedHash);
+		expect(applied).toBe(false);
+		expect((await readLocalSnapshot()).beans[0].name).toBe(
+			"Edited during sync",
+		);
+	});
+
+	it("applies an automatic pull when its local snapshot is still current", async () => {
+		await replaceLocalSnapshot(snapshot);
+		const expectedHash = snapshotHash(await readLocalSnapshot());
+		const next = {
+			...snapshot,
+			beans: snapshot.beans.map((bean) => ({ ...bean, name: "Cloud edit" })),
+		};
+		expect(await replaceLocalSnapshot(next, expectedHash)).toBe(true);
+		expect((await readLocalSnapshot()).beans[0].name).toBe("Cloud edit");
+	});
+
 	it("hashes the same content independent of record order", () => {
 		const reordered = {
 			...snapshot,
