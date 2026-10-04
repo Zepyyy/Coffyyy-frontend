@@ -1,6 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { liveQuery } from "dexie";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+	claimAutoSync,
 	forgetEnrollment,
 	getEnrollment,
 	saveEnrollment,
@@ -13,6 +15,7 @@ import {
 	retryAfterSessionExpiry,
 } from "@/lib/api/sessionRecovery";
 import { mergeSnapshots } from "@/db/sync/merge";
+import { createSyncScheduler, SYNC_COOLDOWN_MS } from "@/db/sync/scheduler";
 import {
 	getWorkspaceSnapshot,
 	putWorkspaceSnapshot,
@@ -34,7 +37,7 @@ function errorMessage(error: unknown) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const queryClient = useQueryClient();
-	const [status, setStatus] = useState<AuthStatus>("loading");
+	const [status, setStatusState] = useState<AuthStatus>("loading");
 	const [session, setSession] = useState<authApi.SessionState | null>(null);
 	const [enrollment, setEnrollment] =
 		useState<Awaited<ReturnType<typeof getEnrollment>>>(undefined);
@@ -42,8 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		useState<WorkspaceSnapshot | null>(null);
 	const [isBusy, setIsBusy] = useState(false);
 	const [lastError, setLastError] = useState<string | null>(null);
+	const [hasPendingChanges, setHasPendingChanges] = useState(false);
+	const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+	const busy = useRef(false);
+	const currentStatus = useRef<AuthStatus>("loading");
+	const scheduler = useRef<ReturnType<typeof createSyncScheduler> | null>(null);
 	const reconnecting = useRef<Promise<void> | null>(null);
 	const channel = useRef<BroadcastChannel | null>(null);
+	const setStatus = useCallback((value: AuthStatus) => {
+		currentStatus.current = value;
+		setStatusState(value);
+		scheduler.current?.resume();
+	}, []);
+	const setBusy = useCallback((value: boolean) => {
+		busy.current = value;
+		setIsBusy(value);
+		if (!value) scheduler.current?.resume();
+	}, []);
 
 	const broadcast = useCallback((type: string, workspaceId: number) => {
 		channel.current?.postMessage({ type, workspaceId });
@@ -54,15 +72,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		[queryClient],
 	);
 	const syncRemote = useCallback(
-		async (remote: WorkspaceResponse) => {
-			await replaceLocalSnapshot(remote.snapshot);
+		async (remote: WorkspaceResponse, expectedHash?: string) => {
+			if (!(await replaceLocalSnapshot(remote.snapshot, expectedHash))) {
+				scheduler.current?.changed();
+				return;
+			}
 			const hash = snapshotHash(remote.snapshot);
 			await updateEnrollment({
 				cloudVersion: remote.version,
+				conflictVersion: undefined,
 				lastSyncedHash: hash,
 				baseSnapshot: remote.snapshot,
+				lastSyncedAt: Date.now(),
 			});
 			setConflictSnapshot(null);
+			setLastError(null);
 			broadcast("snapshot-updated", (await getEnrollment())?.workspaceId ?? 0);
 			invalidate();
 		},
@@ -75,15 +99,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const response = await putWorkspaceSnapshot(local, expectedVersion);
 			await updateEnrollment({
 				cloudVersion: response.version,
+				conflictVersion: undefined,
 				lastSyncedHash: snapshotHash(response.snapshot),
 				baseSnapshot: response.snapshot,
+				lastSyncedAt: Date.now(),
 			});
 			setConflictSnapshot(null);
+			setLastError(null);
 			setStatus("active");
 			broadcast("snapshot-updated", (await getEnrollment())?.workspaceId ?? 0);
 			invalidate();
 		},
-		[broadcast, invalidate],
+		[broadcast, invalidate, setStatus],
 	);
 
 	// Both sides changed since the last sync: merge per entity and push, or
@@ -93,23 +120,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			const base = (await getEnrollment())?.baseSnapshot;
 			const merged = base && mergeSnapshots(base, local, remote.snapshot);
 			if (!merged || merged.conflicts.length > 0) {
-				await updateEnrollment({ cloudVersion: remote.version });
+				await updateEnrollment({ conflictVersion: remote.version });
 				setConflictSnapshot(remote.snapshot);
 				setStatus("conflict");
 				return;
 			}
-			await replaceLocalSnapshot(merged.snapshot);
+			if (!(await replaceLocalSnapshot(merged.snapshot, snapshotHash(local)))) {
+				scheduler.current?.changed();
+				return;
+			}
 			await pushSnapshot(remote.version, merged.snapshot);
 		},
-		[pushSnapshot],
+		[pushSnapshot, setStatus],
 	);
 
 	const reconnect = useCallback(async () => {
 		if (reconnecting.current) return reconnecting.current;
+		if (busy.current) return;
 		const run = (async () => {
 			const current = await getEnrollment();
 			if (!current || current.paused) return;
-			setIsBusy(true);
+			setBusy(true);
 			setLastError(null);
 			try {
 				const restore = () => restoreSession(current.syncCode, authApi);
@@ -126,14 +157,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 					return;
 				}
 				if (localChanged) await pushSnapshot(remote.version, local);
-				else await syncRemote(remote);
+				else if (cloudChanged) await syncRemote(remote, snapshotHash(local));
+				else await updateEnrollment({ lastSyncedAt: Date.now() });
 				setStatus("active");
 			} catch (error) {
 				setStatus("disconnected");
 				setLastError(errorMessage(error));
 				throw error;
 			} finally {
-				setIsBusy(false);
+				setBusy(false);
 			}
 		})();
 		reconnecting.current = run;
@@ -142,15 +174,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		} finally {
 			reconnecting.current = null;
 		}
-	}, [pushSnapshot, reconcile, syncRemote]);
+	}, [pushSnapshot, reconcile, syncRemote, setBusy, setStatus]);
 
 	const enableSync = useCallback(async () => {
 		const existing = await getEnrollment();
 		if (existing) return reconnect();
-		setIsBusy(true);
+		setBusy(true);
 		setLastError(null);
 		try {
-			await authApi.bootstrapCsrf();
 			const result = await authApi.enableSync();
 			await saveEnrollment({
 				workspaceId: result.workspaceId,
@@ -168,13 +199,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
-			setIsBusy(false);
+			setBusy(false);
 		}
-	}, [pushSnapshot, reconnect]);
+	}, [pushSnapshot, reconnect, setBusy, setStatus]);
 
 	const pairSyncCode = useCallback(
 		async (code: string) => {
-			setIsBusy(true);
+			setBusy(true);
 			setLastError(null);
 			try {
 				const result = await authApi.pairSync(code.trim());
@@ -194,17 +225,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				setLastError(errorMessage(error));
 				throw error;
 			} finally {
-				setIsBusy(false);
+				setBusy(false);
 			}
 		},
-		[syncRemote],
+		[syncRemote, setBusy, setStatus],
 	);
 
 	const pauseSync = useCallback(async () => {
 		await updateEnrollment({ paused: true });
 		setEnrollment(await getEnrollment());
 		setStatus("paused");
-	}, []);
+	}, [setStatus]);
 
 	const resumeSync = useCallback(async () => {
 		await updateEnrollment({ paused: false });
@@ -215,13 +246,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const pushLocal = useCallback(async () => {
 		const current = await getEnrollment();
 		if (!current) throw new Error("Sync is not enrolled");
-		setIsBusy(true);
+		setBusy(true);
 		try {
-			await pushSnapshot(current.cloudVersion);
+			await retryAfterSessionExpiry(
+				() => pushSnapshot(current.conflictVersion ?? current.cloudVersion),
+				async () => setSession(await restoreSession(current.syncCode, authApi)),
+			);
 		} catch (error) {
 			if (error instanceof ApiError && error.status === 409) {
 				try {
-					setConflictSnapshot((await getWorkspaceSnapshot()).snapshot);
+					const remote = await getWorkspaceSnapshot();
+					await updateEnrollment({ conflictVersion: remote.version });
+					setConflictSnapshot(remote.snapshot);
 				} catch {
 					/* keep the conflict state */
 				}
@@ -230,22 +266,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
-			setIsBusy(false);
+			setBusy(false);
 		}
-	}, [pushSnapshot]);
+	}, [pushSnapshot, setBusy, setStatus]);
 
 	const pullCloud = useCallback(async () => {
-		setIsBusy(true);
+		const current = await getEnrollment();
+		if (!current) throw new Error("Sync is not enrolled");
+		setBusy(true);
 		try {
-			await syncRemote(await getWorkspaceSnapshot());
+			await syncRemote(
+				await retryAfterSessionExpiry(getWorkspaceSnapshot, async () =>
+					setSession(await restoreSession(current.syncCode, authApi)),
+				),
+			);
 			setStatus("active");
 		} catch (error) {
 			setLastError(errorMessage(error));
 			throw error;
 		} finally {
-			setIsBusy(false);
+			setBusy(false);
 		}
-	}, [syncRemote]);
+	}, [syncRemote, setBusy, setStatus]);
 
 	const forget = useCallback(async () => {
 		await forgetEnrollment();
@@ -253,7 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setSession(null);
 		setConflictSnapshot(null);
 		setStatus("local");
-	}, []);
+	}, [setStatus]);
 
 	const replaceSyncCode = useCallback(async () => {
 		const result = await authApi.rotateSyncCode();
@@ -261,6 +303,142 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		setEnrollment(await getEnrollment());
 		return result.syncCode;
 	}, []);
+
+	const autoSync = useCallback(
+		async (checkCloud: boolean) => {
+			const run = async () => {
+				const current = await getEnrollment();
+				if (!current || current.paused || busy.current) return false;
+				if (
+					currentStatus.current === "conflict" ||
+					currentStatus.current === "local"
+				)
+					return false;
+				const local = await readLocalSnapshot();
+				const dirty = snapshotHash(local) !== current.lastSyncedHash;
+				if (!dirty && !checkCloud && currentStatus.current !== "disconnected")
+					return false;
+				if (!(await claimAutoSync(SYNC_COOLDOWN_MS))) {
+					scheduler.current?.defer(checkCloud);
+					return false;
+				}
+				if (
+					busy.current ||
+					!navigator.onLine ||
+					document.visibilityState !== "visible" ||
+					(currentStatus.current !== "active" &&
+						currentStatus.current !== "disconnected")
+				) {
+					scheduler.current?.defer(checkCloud);
+					return false;
+				}
+				if (currentStatus.current === "disconnected") {
+					await reconnect();
+					return true;
+				}
+				setBusy(true);
+				setLastError(null);
+				const restore = async () =>
+					setSession(await restoreSession(current.syncCode, authApi));
+				try {
+					if (dirty) {
+						try {
+							await retryAfterSessionExpiry(
+								() => pushSnapshot(current.cloudVersion, local),
+								restore,
+							);
+							return true;
+						} catch (error) {
+							if (!(error instanceof ApiError) || error.status !== 409)
+								throw error;
+						}
+					}
+					const remote = await retryAfterSessionExpiry(
+						getWorkspaceSnapshot,
+						restore,
+					);
+					// Re-read after the request: the user may have saved another brew.
+					const latest = await readLocalSnapshot();
+					const hash = snapshotHash(latest);
+					if (hash !== current.lastSyncedHash) await reconcile(latest, remote);
+					else if (remote.version !== current.cloudVersion)
+						await syncRemote(remote, hash);
+					return true;
+				} catch (error) {
+					setStatus("disconnected");
+					setLastError(errorMessage(error));
+					throw error;
+				} finally {
+					setBusy(false);
+				}
+			};
+			if (navigator.locks) {
+				return navigator.locks.request(
+					"coffyyy:automatic-sync",
+					{ ifAvailable: true },
+					async (lock) => {
+						if (lock) return run();
+						scheduler.current?.defer(checkCloud);
+						return false;
+					},
+				);
+			} else return run();
+		},
+		[pushSnapshot, reconcile, reconnect, setBusy, syncRemote, setStatus],
+	);
+
+	useEffect(() => {
+		const next = createSyncScheduler({
+			canRun: () =>
+				!busy.current &&
+				navigator.onLine &&
+				document.visibilityState === "visible" &&
+				(currentStatus.current === "active" ||
+					currentStatus.current === "disconnected"),
+			run: autoSync,
+		});
+		scheduler.current = next;
+		const subscription = liveQuery(async () => ({
+			current: await getEnrollment(),
+			hash: snapshotHash(await readLocalSnapshot()),
+		})).subscribe({
+			next: ({ current, hash }) => {
+				setEnrollment(current);
+				setLastSyncedAt(current?.lastSyncedAt ?? null);
+				const dirty = !!current && hash !== current.lastSyncedHash;
+				setHasPendingChanges(dirty);
+				if (!current && currentStatus.current !== "loading") setStatus("local");
+				else if (current?.paused) setStatus("paused");
+				else if (current?.conflictVersion !== undefined) setStatus("conflict");
+				else if (
+					current &&
+					!busy.current &&
+					(currentStatus.current === "paused" ||
+						currentStatus.current === "local")
+				) {
+					setStatus("disconnected");
+					next.wake();
+				}
+				if (dirty) next.changed();
+			},
+			error: (error: unknown) => setLastError(errorMessage(error)),
+		});
+		const wake = () => {
+			if (document.visibilityState === "visible" && navigator.onLine)
+				next.wake();
+		};
+		window.addEventListener("focus", wake);
+		window.addEventListener("online", wake);
+		document.addEventListener("visibilitychange", wake);
+		return () => {
+			next.stop();
+			subscription.unsubscribe();
+			window.removeEventListener("focus", wake);
+			window.removeEventListener("online", wake);
+			document.removeEventListener("visibilitychange", wake);
+			scheduler.current = null;
+		};
+	}, [autoSync, setStatus]);
 
 	useEffect(() => {
 		if (typeof BroadcastChannel === "undefined") return;
@@ -289,29 +467,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				setStatus("paused");
 				return;
 			}
-			void reconnect().catch(() => undefined);
+			if (current.conflictVersion !== undefined) {
+				setStatus("conflict");
+				return;
+			}
+			setStatus("disconnected");
+			scheduler.current?.wake();
 		});
 		return () => {
 			active = false;
 		};
-	}, [reconnect]);
+	}, [setStatus]);
 
 	useEffect(() => {
 		const onUnauthorized = () => {
-			if (enrollment && status === "active")
-				void reconnect().catch(() => undefined);
-		};
-		const onOnline = () => {
-			if (enrollment && status === "active")
-				void reconnect().catch(() => undefined);
+			if (enrollment && status === "active" && !busy.current) {
+				setStatus("disconnected");
+				scheduler.current?.changed();
+			}
 		};
 		window.addEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
-		window.addEventListener("online", onOnline);
 		return () => {
 			window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
-			window.removeEventListener("online", onOnline);
 		};
-	}, [enrollment, reconnect, status]);
+	}, [enrollment, status, setStatus]);
 
 	const value = useMemo<AuthContextValue>(
 		() => ({
@@ -321,6 +500,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				? { workspaceId: enrollment.workspaceId, syncCode: enrollment.syncCode }
 				: null,
 			isBusy,
+			hasPendingChanges,
+			lastSyncedAt,
 			lastError,
 			conflictSnapshot,
 			enableSync,
@@ -339,6 +520,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			session,
 			enrollment,
 			isBusy,
+			hasPendingChanges,
+			lastSyncedAt,
 			lastError,
 			conflictSnapshot,
 			enableSync,

@@ -80,7 +80,15 @@ function toSnapshotMachine(record: Machines): SnapshotMachine {
 	};
 }
 
-export async function readLocalSnapshot(): Promise<WorkspaceSnapshot> {
+export function readLocalSnapshot(): Promise<WorkspaceSnapshot> {
+	return db.transaction(
+		"r",
+		[db.Beans, db.Machines, db.Brews],
+		readSnapshotRecords,
+	);
+}
+
+async function readSnapshotRecords(): Promise<WorkspaceSnapshot> {
 	const [beans, machines, brews] = await Promise.all([
 		db.Beans.toArray(),
 		db.Machines.toArray(),
@@ -182,9 +190,18 @@ export function validateSnapshot(snapshot: WorkspaceSnapshot) {
 	}
 }
 
-export async function replaceLocalSnapshot(snapshot: WorkspaceSnapshot) {
+export async function replaceLocalSnapshot(
+	snapshot: WorkspaceSnapshot,
+	expectedHash?: string,
+) {
 	validateSnapshot(snapshot);
-	await db.transaction("rw", [db.Beans, db.Machines, db.Brews], async () => {
+	return db.transaction("rw", [db.Beans, db.Machines, db.Brews], async () => {
+		// Automatic pulls/merges must preserve edits made while a request was in flight.
+		if (
+			expectedHash !== undefined &&
+			snapshotHash(await readLocalSnapshot()) !== expectedHash
+		)
+			return false;
 		await db.Beans.clear();
 		await db.Machines.clear();
 		await db.Brews.clear();
@@ -215,6 +232,7 @@ export async function replaceLocalSnapshot(snapshot: WorkspaceSnapshot) {
 					: undefined,
 			})) as Brews[],
 		);
+		return true;
 	});
 }
 

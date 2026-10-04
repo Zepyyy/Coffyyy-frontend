@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import {
+	claimAutoSync,
 	forgetEnrollment,
 	getEnrollment,
 	saveEnrollment,
@@ -43,6 +44,26 @@ describe("durable enrollment seam", () => {
 			syncCode: "code",
 			paused: true,
 		});
+	});
+
+	it("shares the automatic cooldown across concurrent callers", async () => {
+		await saveEnrollment({
+			workspaceId: 42,
+			syncCode: "code",
+			paused: false,
+			cloudVersion: 0,
+			lastSyncedHash: "",
+		});
+		const results = await Promise.all([
+			claimAutoSync(15_000),
+			claimAutoSync(15_000),
+		]);
+		expect(results.filter(Boolean)).toHaveLength(1);
+		expect(await claimAutoSync(15_000)).toBe(false);
+		await updateEnrollment({ lastAutoSyncAt: Date.now() - 15_001 });
+		expect(await claimAutoSync(15_000)).toBe(true);
+		await updateEnrollment({ paused: true, lastAutoSyncAt: 0 });
+		expect(await claimAutoSync(15_000)).toBe(false);
 	});
 
 	it("forgets only the browser enrollment", async () => {
