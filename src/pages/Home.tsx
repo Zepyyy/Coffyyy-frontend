@@ -1,13 +1,13 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { Button } from "@/components/ui/button";
-import SteamCup from "@/components/ui/SteamCup";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
 import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
 import AddCard from "@/components/library/AddCard";
+import { Button } from "@/components/ui/button";
+import SteamCup from "@/components/ui/SteamCup";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import { useLatestUnratedBrew, useRecentBrews } from "@/hooks/api/useBrews";
 import {
@@ -86,9 +86,9 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 				</h2>
 				<Link
 					to="/library"
-					className="font-data text-[10px] uppercase tracking-[0.16em] text-ink-faint transition-colors hover:text-foreground"
+					className="group inline-flex items-center gap-2 font-data text-[10px] uppercase tracking-[0.16em] text-ink-faint transition-colors hover:text-foreground word-link"
 				>
-					Manage →
+					<span className="word-link">Manage →</span>
 				</Link>
 			</div>
 
