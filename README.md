@@ -25,8 +25,12 @@ Direction: **"calm instrument"** — neutral paper, near-black ink, hairlines an
 
 - **Color** is built from semantic tokens in `src/index.css`: neutral `paper` surfaces, near-black `ink` text, hairline borders, and a single dusty caramel accent (`crema`) reserved for what is active or true. Flavor-note hues survive only as small square swatches. Dark mode is neutral near-black, no color cast.
 - **Type** uses three faces with strict roles: **Fraunces** speaks (display, brand wordmark, italic voice), **Instrument Sans** works (body, forms, buttons), **Spline Sans Mono** measures (labels, recipes, ledger data). Everything maps through the `font-display` / `font-sans` / `font-data` / `.eyebrow` utilities.
-- **Signature moment:** the brew dial on the log-a-brew page is a machined gauge — knurled collar, caramel arc that tracks the value, spring-settle needle. Echoes: bean cards as label plates (square hue swatch + rotated "Dialed in" stamp), a crema-fill cup animation when a shot is saved, and a time-of-day greeting on the dashboard.
+- **Signature moment:** the brew dial on the log-a-brew page is a machined gauge — knurled collar, caramel arc that tracks the value, spring-settle needle. Echoes: bean cards as label plates (square hue swatch + rotated "Dialed in" stamp), a crema-fill cup animation when a shot is saved, and the censer — the home "Log a brew" CTA with living steam, ember motes, and a breathing halo.
 - **Motion:** a 500ms rise-and-fade on load with a 45ms stagger; hover answers with a border shift, nothing moves; all disabled under `prefers-reduced-motion`.
+
+<p align="center">
+  <img src="./docs/screenshots/censer-loop.gif" alt="The censer — the Log a brew CTA with living steam, ember motes, and a breathing halo" width="360" />
+</p>
 
 ## Stack & technical choices
 
