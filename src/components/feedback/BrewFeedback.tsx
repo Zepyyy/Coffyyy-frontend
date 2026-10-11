@@ -206,7 +206,7 @@ export default function BrewFeedback({
 												current === value ? 0 : value,
 											)
 										}
-										className="transition-transform hover:scale-110"
+										className="transition-transform hover:scale-110 p-1.5 -m-1.5"
 										aria-label={`Rate ${value} out of 5`}
 									>
 										<Star
