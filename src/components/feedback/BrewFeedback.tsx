@@ -73,7 +73,10 @@ function AxisSlider({
 					aria-label={`${leftLabel} to ${rightLabel}, currently ${hint}`}
 					className="h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-crema [&::-moz-range-thumb]:bg-paper-raised [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-crema [&::-webkit-slider-thumb]:bg-paper-raised [&::-webkit-slider-thumb]:shadow-[0_1px_4px_oklch(0.33_0.03_50/0.3)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
 					style={{
-						background: `linear-gradient(to right, transparent 0%, transparent ${from}%, var(--crema) ${from}%, var(--crema) ${to}%, transparent ${to}%, transparent 100%) center / 100% 4px no-repeat`,
+						// The crema fill measures deviation from balanced, so it is
+						// zero-width at center — a permanent hairline rail keeps the
+						// gauge readable at rest.
+						background: `linear-gradient(to right, transparent 0%, transparent ${from}%, var(--color-crema) ${from}%, var(--color-crema) ${to}%, transparent ${to}%, transparent 100%) center / 100% 4px no-repeat, linear-gradient(var(--color-line-strong), var(--color-line-strong)) center / 100% 1px no-repeat`,
 					}}
 				/>
 				<div className="flex justify-between font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint select-none">

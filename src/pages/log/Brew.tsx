@@ -1,11 +1,11 @@
-import { RotateCcw, Search } from "lucide-react";
+import { ArrowRight, RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
-import BrewCelebration from "@/components/log/BrewCelebration";
 import Dial from "@/components/log/Dial";
 import GrindHistoryStrip from "@/components/log/GrindHistoryStrip";
+import BrewMeasure from "@/components/log/BrewMeasure";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { addBrew } from "@/lib/data";
@@ -91,6 +91,44 @@ function RecipeSegment({
 				{value}
 			</span>
 		</span>
+	);
+}
+
+/**
+ * A next step after saving, spoken in the ledger's voice: a hairline row
+ * with the action in italic serif and the promise in mono. Hover draws the
+ * crema underline (the nav's stroke) and slides the arrow.
+ */
+function NextStepRow({
+	label,
+	hint,
+	onClick,
+}: {
+	label: string;
+	hint: string;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className="group relative flex w-full items-center justify-between gap-3 border-t border-line py-3.5 text-left"
+		>
+			<span className="font-display text-lg italic tracking-tight text-ink-soft transition-colors group-hover:text-foreground">
+				{label}
+			</span>
+			<span className="flex items-center gap-2 font-data text-[10px] uppercase tracking-[0.14em] text-ink-faint transition-colors group-hover:text-foreground">
+				{hint}
+				<ArrowRight
+					className="size-3.5 transition-transform duration-300 ease-soft group-hover:translate-x-1"
+					aria-hidden
+				/>
+			</span>
+			<span
+				aria-hidden
+				className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-crema transition-transform duration-300 ease-soft group-hover:scale-x-100"
+			/>
+		</button>
 	);
 }
 
@@ -254,20 +292,19 @@ export default function BrewLog() {
 	if (savedBrewId != null) {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
-				<div className="rise space-y-6 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
-					<div className="flex items-start justify-between gap-4">
-						<div>
-							<p className="eyebrow">Shot logged</p>
-							<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
-								{selectedBean?.name ?? "Brew"} in the book.
-							</p>
-							<p className="mt-2 font-sans text-sm text-muted-foreground">
-								Taste it first. The notes can wait until you know what you
-								think.
-							</p>
-						</div>
-						<BrewCelebration />
+				<div className="rise space-y-5 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
+					<div>
+						<p className="eyebrow">Shot logged</p>
+						<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
+							{selectedBean?.name ?? "Brew"} in the book.
+						</p>
 					</div>
+
+					<BrewMeasure />
+
+					<p className="font-sans text-sm text-muted-foreground">
+						Taste it first. The notes can wait until you know what you think.
+					</p>
 
 					{feedbackOpen && (
 						<BrewFeedback
@@ -296,30 +333,30 @@ export default function BrewLog() {
 						/>
 					)}
 
-					<div className="flex flex-wrap items-center gap-3 pt-1">
-						<button
-							type="button"
+					<div className="space-y-5 pt-1">
+						<Button
+							variant="ink"
 							onClick={() => navigate("/home")}
-							className="rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
+							className="group h-12 w-full gap-3 sm:w-auto sm:min-w-56"
 						>
 							Done
-						</button>
-						{!feedbackOpen && (
-							<button
-								type="button"
-								onClick={() => setFeedbackOpen(true)}
-								className="rounded-lg bg-crema-tint px-5 py-2.5 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-primary-200"
-							>
-								{feedbackSaved ? "Edit taste notes" : "Add taste notes"}
-							</button>
-						)}
-						<button
-							type="button"
-							onClick={logAnother}
-							className="rounded-lg border border-line px-5 py-2.5 font-sans text-sm text-ink-soft transition-colors hover:text-foreground"
-						>
-							Log another shot
-						</button>
+							<ArrowRight className="size-4 transition-transform duration-300 ease-soft group-hover:translate-x-1" />
+						</Button>
+
+						<div className="border-b border-line">
+							{!feedbackOpen && (
+								<NextStepRow
+									label={feedbackSaved ? "Edit taste notes" : "Add taste notes"}
+									hint={feedbackSaved ? "saved" : "after tasting"}
+									onClick={() => setFeedbackOpen(true)}
+								/>
+							)}
+							<NextStepRow
+								label="Log another shot"
+								hint="same bean"
+								onClick={logAnother}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>
