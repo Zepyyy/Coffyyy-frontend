@@ -40,3 +40,12 @@ export const useLastBrew = () => {
 export const useBrewsForBeanId = (beanId: number | undefined) => {
 	return useLiveQuery(() => brewStatsApi.getBrewsForBeanId(beanId), [beanId]);
 };
+
+export const useGrindSettingsForBean = (beanId: number | undefined) => {
+	return (
+		useLiveQuery(
+			() => brewStatsApi.getGrindSettingsForBean(beanId),
+			[beanId],
+		) ?? []
+	);
+};

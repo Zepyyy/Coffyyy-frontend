@@ -254,7 +254,7 @@ export default function Dial({
 								cy="64"
 								r="50"
 								fill="none"
-								stroke="var(--crema)"
+								stroke="var(--color-crema)"
 								strokeWidth="3"
 								strokeLinecap="round"
 								strokeDasharray={`${arcFill} 100`}

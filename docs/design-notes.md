@@ -365,3 +365,29 @@ note: Lightning CSS wraps `color-mix(... var(...))` inside gradients in a
 nested `@supports` fallback that Chromium drops, which silently deleted the
 ruler's ticks — gradients with var-ed color-mix now use explicit oklch +
 `.dark` overrides instead (see `.key-ruler`).
+
+## Revision 12 — the measure, not the cup (current)
+
+The owner's verdict on the crema-fill cup ("god damn it's ugly") closed the
+last revision-1 literal-coffee survivor, and inspection showed it had been
+broken since revision 2 anyway: the SVG painted `var(--roast)` and
+`var(--crema)`, raw token names the revision-2 sweep removed, so the cup had
+been animating an invisible fill.
+
+- **The save moment is now the censer's steaming cup** (`SteamCup`, the one
+  coffee visual that survived every review since revision 7): it sits at the
+  headline's right, quietly steaming while the entry sits in the ledger. No
+  new animation was invented — an abstract self-drawing "measure" strip was
+  prototyped first and killed by the owner on sight ("random measuring strip
+  in the middle of the page"); the lesson holds: nothing new gets designed
+  for this app while the censer's language already answers.
+- **The post-save actions** became one ink key ("Done", arrow slides, ruler
+  ticks on hover) over hairline ledger rows for the secondary steps ("Add
+  taste notes · after tasting", "Log another shot · same bean"). Hover draws
+  the nav's crema underline; no more three colored buttons in a row.
+- **The taste/strength gauges got their rail back**: two dead references
+  (`var(--crema)` in the AxisSlider inline gradient, and the same name in
+  the Dial's ideal-zone arc), plus a design bug — the crema deviation
+  segment is zero-width at balanced, so the slider showed nothing at rest.
+  The gauge now sits on a permanent 1px line-strong rail with the crema fill
+  measuring deviation on top.

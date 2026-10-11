@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { deleteBeanById } from "@/db/crud/delete";
 import { getColorSwatch } from "@/lib/utils";
+import { verdictOption } from "@/lib/verdict";
 import type { Beans } from "@/types/BeanTypes";
 import type { BeanDialInState } from "@/types/BrewTypes";
 import RoastDots from "../home/RoastDots";
@@ -22,7 +24,7 @@ interface Parameter {
 }
 
 /** Library card styled as a coffee-bag label: tinted band, spec rows, and a
- * "Dialed in" stamp once the bean is dialed. */
+ * "Dialed in" stamp once the bean is dialed. The whole card opens the bean. */
 export default function BeanCard({
 	bean,
 	dialInState,
@@ -32,6 +34,7 @@ export default function BeanCard({
 }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const swatch = getColorSwatch(bean.dominantNote);
+	const verdict = verdictOption(bean.status);
 
 	const parameters: Parameter[] = [
 		{ label: "Variety", values: bean.variety },
@@ -40,7 +43,16 @@ export default function BeanCard({
 	];
 
 	return (
-		<div className="hover-line flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
+		<div className="hover-line relative flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
+			{/* Whole-card link; controls sit above it */}
+			{bean.id != null && (
+				<Link
+					to={`/beans/${bean.id}`}
+					className="absolute inset-0 z-0 rounded-xl focus-visible:ring-2 focus-visible:ring-crema/60 focus-visible:outline-none"
+					aria-label={`Open ${bean.name || "bean"}`}
+				/>
+			)}
+
 			{/* Label band */}
 			<article className="relative w-full border-b border-line/60 bg-paper-sunken/40 p-4">
 				<div className="flex items-start justify-between gap-3">
@@ -53,9 +65,20 @@ export default function BeanCard({
 								className={`size-2 shrink-0 ${swatch.stripe}`}
 								aria-hidden
 							/>
-							{noteLabel[bean.dominantNote] ?? "Bean"} · {bean.brand}
+							{verdict ? (
+								<span className={verdict.text}>{verdict.label}</span>
+							) : (
+								(noteLabel[bean.dominantNote] ?? "Bean")
+							)}
+							{" · "}
+							{bean.brand}
 						</p>
 					</div>
+					{bean.finished && (
+						<span className="shrink-0 border border-line-strong px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint">
+							Bag empty
+						</span>
+					)}
 				</div>
 				{dialInState?.isDialedIn && (
 					<div className="absolute right-3 bottom-2 rotate-[-4deg] border-2 border-ink/50 px-2 py-0.5 font-data text-[9px] font-semibold uppercase tracking-[0.2em] text-ink/80">
@@ -92,7 +115,7 @@ export default function BeanCard({
 				</div>
 			</article>
 
-			<div className="mt-auto flex justify-end px-4 pb-3">
+			<div className="relative z-10 mt-auto flex justify-end px-4 pb-3">
 				{confirmDelete ? (
 					<div className="flex items-center gap-2 text-sm">
 						<span className="text-xs text-ink-soft">Sure?</span>

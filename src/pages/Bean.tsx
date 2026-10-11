@@ -1,5 +1,6 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useParams } from "react-router";
+import BeanVerdictPicker from "@/components/feedback/BeanVerdictPicker";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
@@ -155,6 +156,17 @@ export default function Bean() {
 				)}
 			</div>
 
+			{/* Verdict + next shot */}
+			<div className="flex flex-col gap-4 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:flex-row sm:items-center sm:justify-between">
+				<div className="space-y-2">
+					<p className="eyebrow">Your verdict on this bean</p>
+					<BeanVerdictPicker beanId={bean.id} status={bean.status} />
+				</div>
+				<Button asChild variant="ink" className="shrink-0">
+					<Link to={`/log/brew?bean=${beanId}`}>Log a brew with this bean</Link>
+				</Button>
+			</div>
+
 			{/* Charts */}
 			{insights && (
 				<BestBrewPanel
@@ -273,6 +285,7 @@ export default function Bean() {
 										? machineNameById.get(brew.machineId)
 										: undefined
 								}
+								bean={bean}
 							/>
 						))}
 					</div>

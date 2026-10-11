@@ -1,4 +1,5 @@
 import type { Beans } from "@/types/BeanTypes";
+import { randomId } from "@/lib/randomId";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
 import { db } from "@/db/db";
@@ -205,7 +206,7 @@ export async function resetDatabaseWithSeed(
 			beanIds.push(
 				await db.Beans.add({
 					...createBean(index),
-					localId: crypto.randomUUID(),
+					localId: randomId(),
 				}),
 			);
 		}
@@ -215,7 +216,7 @@ export async function resetDatabaseWithSeed(
 			machineIds.push(
 				await db.Machines.add({
 					...createMachine(index),
-					localId: crypto.randomUUID(),
+					localId: randomId(),
 				}),
 			);
 		}
@@ -227,7 +228,7 @@ export async function resetDatabaseWithSeed(
 					beanIds[index % beanIds.length],
 					machineIds[index % machineIds.length],
 				),
-				localId: crypto.randomUUID(),
+				localId: randomId(),
 			});
 		}
 

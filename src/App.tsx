@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Moon, Sun } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
+import BottomNav from "./components/BottomNav";
 import SyncControl from "./components/SyncControl";
 import { useTheme } from "./contexts/ThemeContext";
 import { cn } from "./lib/utils";
@@ -25,7 +26,7 @@ export default function App() {
 					>
 						Coffyyy
 					</Link>
-					<div className="flex">
+					<div className="hidden sm:flex">
 						<nav className="items-center gap-1 sm:gap-8 flex">
 							{NAV_LINKS.map(({ to, label }) => (
 								<NavLink
@@ -55,7 +56,7 @@ export default function App() {
 							))}
 						</nav>
 					</div>
-					<div className="flex ml-1.5 sm:ml-5 gap-1.5 sm:gap-2">
+					<div className="ml-auto flex gap-1.5 sm:ml-5 sm:gap-2">
 						<SyncControl />
 						<button
 							type="button"
@@ -69,9 +70,11 @@ export default function App() {
 				</div>
 			</header>
 
-			<main className="flex-1 mx-auto w-full px-4 py-6 relative">
+			<main className="flex-1 mx-auto w-full px-4 py-6 pb-28 sm:pb-6 relative">
 				<Outlet />
 			</main>
+
+			<BottomNav />
 
 			<Analytics />
 		</div>

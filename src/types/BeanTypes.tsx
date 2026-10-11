@@ -15,6 +15,7 @@ export type BeanCardProps = {
 	process?: string[];
 	roastLevel?: number;
 	variety?: string[];
+	status?: Beans["status"];
 };
 
 export type MultiTagInputProps = {

@@ -1,13 +1,16 @@
 import { ChevronDown, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { deleteBrewById } from "@/lib/data";
 import {
+	flowClass,
 	recipeLine,
 	scoreClass,
 	strengthLabel,
 	tasteLabel,
 } from "@/lib/brewFormat";
 import { cn, formatExtractionTime } from "@/lib/utils";
+import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 
 function formatDate(date: Date | string | undefined): string {
@@ -44,12 +47,27 @@ export function RatingStars({ value }: { value: number | null | undefined }) {
 	);
 }
 
+function RowTag({ label, className }: { label: string; className?: string }) {
+	return (
+		<span
+			className={cn(
+				"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
+				className,
+			)}
+		>
+			{label}
+		</span>
+	);
+}
+
 export function BrewLedgerRow({
 	brew,
 	machineName,
+	bean,
 }: {
 	brew: Brews;
 	machineName: string | undefined;
+	bean?: { id: number; name?: string; status?: Beans["status"] } | null;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
@@ -58,6 +76,11 @@ export function BrewLedgerRow({
 	const taste = tasteLabel(brew.tasteScore);
 	const strength = strengthLabel(brew.strengthScore);
 	const time = formatExtractionTime(brew.extractionTime);
+	const ratio =
+		brew.beanWeight && brew.espressoWeight
+			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
+			: null;
+	const needsNotes = brew.overallRating == null;
 
 	async function handleDelete() {
 		if (typeof brew.id !== "number") return;
@@ -76,37 +99,46 @@ export function BrewLedgerRow({
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
 				aria-expanded={expanded}
-				className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left transition-colors hover:bg-paper-sunken/60 sm:grid-cols-[5rem_minmax(0,1fr)_auto_auto]"
+				className="flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-left transition-colors hover:bg-paper-sunken/60"
 			>
-				<span className="font-data text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+				<span className="w-11 shrink-0 font-data text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
 					{formatDate(brew.date)}
 				</span>
-				<span className="truncate font-data text-xs text-foreground/80">
-					{recipeLine(brew) || "No recipe saved"}
-				</span>
-				<span className="hidden items-center justify-end gap-1.5 sm:flex">
-					{taste && (
-						<span
-							className={cn(
-								"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
-								scoreClass(brew.tasteScore),
-							)}
-						>
-							{taste}
+				<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+					{/* The dial decision, front and center */}
+					<span className="inline-flex items-baseline gap-1.5">
+						<span className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+							grind
+						</span>
+						<span className="font-data text-lg font-bold leading-none text-foreground">
+							{brew.grindSize ?? "—"}
+						</span>
+					</span>
+					<span className="font-data text-xs text-foreground/80">
+						{[ratio, time].filter(Boolean).join(" · ") || recipeLine(brew)}
+					</span>
+					{brew.flow ? (
+						<RowTag
+							label={brew.flow.toLowerCase()}
+							className={flowClass(brew.flow)}
+						/>
+					) : null}
+					{taste ? (
+						<RowTag label={taste} className={scoreClass(brew.tasteScore)} />
+					) : null}
+					{strength ? (
+						<RowTag
+							label={strength}
+							className={scoreClass(brew.strengthScore)}
+						/>
+					) : null}
+					{needsNotes && (
+						<span className="border border-dashed border-line-strong px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em] text-ink-faint">
+							needs notes
 						</span>
 					)}
-					{strength && (
-						<span
-							className={cn(
-								"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
-								scoreClass(brew.strengthScore),
-							)}
-						>
-							{strength}
-						</span>
-					)}
 				</span>
-				<span className="flex items-center justify-end gap-2">
+				<span className="ml-auto flex items-center justify-end gap-2">
 					<RatingStars value={brew.overallRating} />
 					<ChevronDown
 						className={cn(
@@ -119,7 +151,9 @@ export function BrewLedgerRow({
 			</button>
 
 			{expanded && (
-				<div className="rise space-y-3 border-t border-line/40 bg-paper-sunken/40 px-4 py-4">
+				<div className="rise space-y-4 border-t border-line/40 bg-paper-sunken/40 px-4 py-4">
+					<BrewFeedback brew={brew} bean={bean ?? null} bare />
+
 					<div className="flex flex-wrap gap-x-8 gap-y-2">
 						{[
 							[
@@ -128,8 +162,6 @@ export function BrewLedgerRow({
 									? `${brew.beanWeight}g in → ${brew.espressoWeight ?? "?"}g out`
 									: null,
 							],
-							["Grind", brew.grindSize != null ? String(brew.grindSize) : null],
-							["Extraction", time],
 							["Flow", brew.flow ?? null],
 							["Machine", machineName ?? null],
 							[
@@ -152,21 +184,6 @@ export function BrewLedgerRow({
 							) : null,
 						)}
 					</div>
-
-					{(taste || strength) && (
-						<p className="font-sans text-xs text-muted-foreground">
-							{taste && brew.tasteScore !== 0
-								? `${taste.startsWith("Sour") ? "Sour side: go finer or run longer" : "Bitter side: go coarser or cut the shot"}.`
-								: taste
-									? "Taste balanced."
-									: "Taste not rated yet."}{" "}
-							{strength && brew.strengthScore !== 0
-								? `${strength.startsWith("Weak") ? "Weak: raise dose or lower yield" : "Strong: lower dose or raise yield"}.`
-								: strength
-									? "Strength balanced."
-									: "Strength not rated yet."}
-						</p>
-					)}
 
 					<div className="flex justify-end">
 						{confirmDelete ? (

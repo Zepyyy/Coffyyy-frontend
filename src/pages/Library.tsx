@@ -1,5 +1,12 @@
-import { type Dispatch, type SetStateAction, useMemo, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useMemo,
+	useState,
+	type ReactNode,
+} from "react";
 import { Link } from "react-router";
+import { SlidersHorizontal } from "lucide-react";
 import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
@@ -9,12 +16,17 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
+import { cn } from "@/lib/utils";
+import { verdictRank } from "@/lib/verdict";
 
 type Tab = "beans" | "machines";
+type BeanSort = "order" | "verdict";
 
 export default function Library() {
 	const [tab, setTab] = useState<Tab>("beans");
+	const [beanSort, setBeanSort] = useState<BeanSort>("order");
 	const [search, setSearch] = useState("");
+	const [filtersOpen, setFiltersOpen] = useState(false);
 	const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
 	const [selectedBrand, setSelectedBrand] = useState<string[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -114,6 +126,16 @@ export default function Library() {
 		});
 	}, [search, selectedCountries, selectedBrand, allBeans]);
 
+	// Verdict sort puts beans you love ahead of beans you avoid.
+	const sortedBeans = useMemo(() => {
+		if (beanSort === "order") return filteredBeans;
+		return [...filteredBeans].sort(
+			(a, b) =>
+				verdictRank(a.status) - verdictRank(b.status) ||
+				a.name.localeCompare(b.name),
+		);
+	}, [beanSort, filteredBeans]);
+
 	const filteredMachines = useMemo(() => {
 		const q = search.trim().toLowerCase();
 		return activeMachines.filter((m) => {
@@ -174,20 +196,57 @@ export default function Library() {
 		[brandsCounts, selectedBrands],
 	);
 
-	return (
-		<div className="mx-auto w-full max-w-4/5">
-			<div className="grid gap-6 lg:grid-cols-[24rem_minmax(0,1fr)] lg:gap-8">
-				<aside className="lg:sticky lg:top-20 lg:self-start max-w-fit lg:block hidden">
-					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-						<div className="border-l-4 border-crema pl-5">
-							<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
-								Library
-							</h1>
-							<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Your beans and equipment
-							</p>
-						</div>
+	const beanFilters = (
+		<>
+			<FilterCard
+				title="Countries"
+				options={beanCountryOptions}
+				onToggle={(value) => toggleSelection(value, setSelectedCountries)}
+			/>
+			<FilterCard
+				title="Brand"
+				options={beanBrandOptions}
+				onToggle={(value) => toggleSelection(value, setSelectedBrand)}
+			/>
+		</>
+	);
 
+	const machineFilters = (
+		<>
+			<FilterCard
+				title="Type"
+				options={machineTypeOptions}
+				onToggle={(value) => toggleSelection(value, setSelectedTypes)}
+			/>
+			<FilterCard
+				title="Brand"
+				options={machineBrandOptions}
+				onToggle={(value) => toggleSelection(value, setSelectedBrands)}
+			/>
+		</>
+	);
+
+	const filtersNode: ReactNode = tab === "beans" ? beanFilters : machineFilters;
+	const activeFilterCount =
+		selectedCountries.length +
+		selectedBrand.length +
+		(tab === "machines" ? selectedTypes.length + selectedBrands.length : 0);
+
+	return (
+		<div className="mx-auto w-full max-w-6xl">
+			<div className="space-y-6">
+				{/* Header: title, section switch, and search stay reachable on phones */}
+				<div className="space-y-4">
+					<div className="border-l-4 border-crema pl-5">
+						<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
+							Library
+						</h1>
+						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							Your beans and equipment
+						</p>
+					</div>
+
+					<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
 						<SegmentedControl
 							ariaLabel="Library section"
 							className="w-fit"
@@ -204,131 +263,142 @@ export default function Library() {
 							value={tab}
 							onChange={setTab}
 						/>
-
-						<input
-							className="h-10 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-							placeholder={`Search ${tab}...`}
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-
-						<div className="space-y-4">
-							{tab === "beans" ? (
-								<>
-									<FilterCard
-										title="Countries"
-										options={beanCountryOptions}
-										onToggle={(value) =>
-											toggleSelection(value, setSelectedCountries)
-										}
-									/>
-									<FilterCard
-										title="Brand"
-										options={beanBrandOptions}
-										onToggle={(value) =>
-											toggleSelection(value, setSelectedBrand)
-										}
-									/>
-								</>
-							) : (
-								<>
-									<FilterCard
-										title="Type"
-										options={machineTypeOptions}
-										onToggle={(value) =>
-											toggleSelection(value, setSelectedTypes)
-										}
-									/>
-									<FilterCard
-										title="Brand"
-										options={machineBrandOptions}
-										onToggle={(value) =>
-											toggleSelection(value, setSelectedBrands)
-										}
-									/>
-								</>
-							)}
-						</div>
+						<label className="relative block min-w-0 flex-1">
+							<input
+								className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+								placeholder={`Search ${tab}...`}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+						</label>
+						{tab === "beans" && (
+							<SegmentedControl
+								ariaLabel="Sort beans"
+								className="w-fit"
+								options={[
+									{ value: "order", label: "In order" },
+									{ value: "verdict", label: "By verdict" },
+								]}
+								value={beanSort}
+								onChange={setBeanSort}
+							/>
+						)}
 					</div>
-				</aside>
 
-				<section className="min-w-0">
-					{tab === "beans" && (
-						<div>
-							{filteredBeans.length === 0 ? (
-								<>
-									{allBeans.length === 0 ? (
-										<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
-											<p className="font-display text-2xl text-foreground/60">
-												No beans
+					{/* Filters live on the sidebar on desktop, in a drawer here */}
+					<div className="lg:hidden">
+						<button
+							type="button"
+							onClick={() => setFiltersOpen((o) => !o)}
+							aria-expanded={filtersOpen}
+							className={cn(
+								"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
+								filtersOpen
+									? "border-crema bg-crema-tint text-foreground"
+									: "border-line-strong bg-paper-raised text-ink-soft hover:text-foreground",
+							)}
+						>
+							<SlidersHorizontal className="size-3.5" aria-hidden />
+							Filters
+							{activeFilterCount > 0 && (
+								<span className="rounded-full bg-ink px-1.5 font-data text-[10px] font-semibold text-paper">
+									{activeFilterCount}
+								</span>
+							)}
+						</button>
+						{filtersOpen && (
+							<div className="rise mt-3 grid gap-4 sm:grid-cols-2">
+								{filtersNode}
+							</div>
+						)}
+					</div>
+				</div>
+
+				<div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
+					<aside className="hidden lg:sticky lg:top-20 lg:block lg:self-start">
+						<div className="space-y-4 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+							{filtersNode}
+						</div>
+					</aside>
+
+					<section className="min-w-0">
+						{tab === "beans" && (
+							<div>
+								{sortedBeans.length === 0 ? (
+									<>
+										{allBeans.length === 0 ? (
+											<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+												<p className="font-display text-2xl text-foreground/60">
+													No beans
+												</p>
+												<p className="font-sans text-sm text-muted-foreground">
+													Add your first bean to get started.
+												</p>
+												<Button asChild variant="ink" className="mt-2">
+													<Link to="/log/bean">Add a bean</Link>
+												</Button>
+											</div>
+										) : (
+											<p className="text-sm text-muted-foreground">
+												No beans match your search.
 											</p>
-											<p className="font-sans text-sm text-muted-foreground">
-												Add your first bean to get started.
-											</p>
-											<Button asChild variant="ink" className="mt-2">
-												<Link to="/log/bean">Add a bean</Link>
-											</Button>
-										</div>
-									) : (
+										)}
+									</>
+								) : (
+									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+										{sortedBeans.map((bean) => (
+											<BeanCard
+												key={bean.id ?? `${bean.name}-${bean.brand}`}
+												bean={bean}
+												dialInState={
+													bean.id ? beanDialInStateMap.get(bean.id) : undefined
+												}
+											/>
+										))}
+										<AddCard
+											to="/log/bean"
+											label="Add bean"
+											className="h-32 min-h-0 self-start"
+										/>
+									</div>
+								)}
+							</div>
+						)}
+
+						{tab === "machines" && (
+							<div>
+								{filteredMachines.length === 0 ? (
+									<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
 										<p className="text-sm text-muted-foreground">
-											No beans match your search.
+											{activeMachines.length === 0
+												? "No equipment yet."
+												: "No machines match your search."}
 										</p>
-									)}
-								</>
-							) : (
-								<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-									{filteredBeans.map((bean) => (
-										<BeanCard
-											key={bean.id ?? `${bean.name}-${bean.brand}`}
-											bean={bean}
-											dialInState={
-												bean.id ? beanDialInStateMap.get(bean.id) : undefined
-											}
+										{activeMachines.length === 0 && (
+											<Button asChild variant="ink" className="mt-3">
+												<Link to="/log/machine">Add your first machine</Link>
+											</Button>
+										)}
+									</div>
+								) : (
+									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+										{filteredMachines.map((machine) => (
+											<MachineCard
+												key={machine.id ?? `${machine.name}-${machine.model}`}
+												machine={machine}
+											/>
+										))}
+										<AddCard
+											to="/log/machine"
+											label="Add machine"
+											className="h-32 self-start"
 										/>
-									))}
-									<AddCard
-										to="/log/bean"
-										label="Add bean"
-										className="h-32 min-h-0 self-start"
-									/>
-								</div>
-							)}
-						</div>
-					)}
-
-					{tab === "machines" && (
-						<div>
-							{filteredMachines.length === 0 ? (
-								<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
-									<p className="text-sm text-muted-foreground">
-										{activeMachines.length === 0
-											? "No equipment yet."
-											: "No machines match your search."}
-									</p>
-									{activeMachines.length === 0 && (
-										<Button asChild variant="ink" className="mt-3">
-											<Link to="/log/machine">Add your first machine</Link>
-										</Button>
-									)}
-								</div>
-							) : (
-								<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-									{filteredMachines.map((machine) => (
-										<MachineCard
-											key={machine.id ?? `${machine.name}-${machine.model}`}
-											machine={machine}
-										/>
-									))}
-									<AddCard
-										to="/log/machine"
-										label="Add machine"
-										className="h-32 self-start"
-									/>
-								</div>
-							)}
-						</div>
-					)}
-				</section>
+									</div>
+								)}
+							</div>
+						)}
+					</section>
+				</div>
 			</div>
 		</div>
 	);

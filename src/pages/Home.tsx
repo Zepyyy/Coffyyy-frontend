@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
-import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
+import BrewFeedback from "@/components/feedback/BrewFeedback";
 import AddCard from "@/components/library/AddCard";
 import { Button } from "@/components/ui/button";
 import SteamCup from "@/components/ui/SteamCup";
@@ -14,6 +14,10 @@ import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
+import {
+	dismissFeedbackBrew,
+	getDismissedFeedbackBrewIds,
+} from "@/lib/feedbackDismiss";
 import type { Beans } from "@/types/BeanTypes";
 
 function greetingForHour(hour: number) {
@@ -124,12 +128,21 @@ export default function Home() {
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
 	const unratedBrew = useLatestUnratedBrew();
-	const [dismissedBrewId, setDismissedBrewId] = useState<number | null>(null);
+	const [dismissedBrewIds, setDismissedBrewIds] = useState<number[]>(() =>
+		getDismissedFeedbackBrewIds(),
+	);
 
 	const isEmpty = recentBrews.length === 0 && allBeans.length === 0;
 
 	const pendingRating =
-		unratedBrew && unratedBrew.id !== dismissedBrewId ? unratedBrew : null;
+		unratedBrew && !dismissedBrewIds.includes(unratedBrew.id)
+			? unratedBrew
+			: null;
+
+	function dismissFeedback(id: number) {
+		dismissFeedbackBrew(id);
+		setDismissedBrewIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+	}
 
 	const now = new Date();
 
@@ -196,20 +209,21 @@ export default function Home() {
 				</div>
 			)}
 
-			{/* Taste rating prompt for latest unrated brew */}
+			{/* Taste feedback for the latest brew that still needs notes */}
 			{pendingRating && (
 				<div
 					className="rise"
 					style={{ "--rise-delay": "120ms" } as React.CSSProperties}
 				>
-					<TasteRatingPrompt
+					<BrewFeedback
 						brew={pendingRating}
-						beanName={
-							pendingRating.beanId
-								? (beanMap.get(pendingRating.beanId)?.name ?? "Unknown bean")
-								: "Unknown bean"
+						bean={
+							pendingRating.beanId != null
+								? (beanMap.get(pendingRating.beanId) ?? null)
+								: null
 						}
-						onDismiss={() => setDismissedBrewId(pendingRating.id)}
+						onSaved={() => dismissFeedback(pendingRating.id)}
+						onDismiss={() => dismissFeedback(pendingRating.id)}
 					/>
 				</div>
 			)}
