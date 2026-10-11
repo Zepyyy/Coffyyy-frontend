@@ -98,6 +98,7 @@ export function BeanChapter({
 								? machineNames.get(brew.machineId)
 								: undefined
 						}
+						bean={bean ?? null}
 					/>
 				))}
 			</div>

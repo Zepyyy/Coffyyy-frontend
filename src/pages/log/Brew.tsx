@@ -5,10 +5,15 @@ import { Button } from "@/components/ui/button";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BrewCelebration from "@/components/log/BrewCelebration";
 import Dial from "@/components/log/Dial";
+import GrindHistoryStrip from "@/components/log/GrindHistoryStrip";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
-import TasteRatingPrompt from "@/components/home/TasteRatingPrompt";
+import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { addBrew } from "@/lib/data";
-import { useBrewSuggestions, useLastBrewForBean } from "@/hooks/api/useBrews";
+import {
+	useBrewSuggestions,
+	useLastBrewForBean,
+	useGrindSettingsForBean,
+} from "@/hooks/api/useBrews";
 import {
 	DEFAULT_FLOW,
 	MAX_BEAN_WEIGHT,
@@ -94,7 +99,8 @@ export default function BrewLog() {
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState("");
 	const [savedBrewId, setSavedBrewId] = useState<number | null>(null);
-	const [rated, setRated] = useState(false);
+	const [feedbackOpen, setFeedbackOpen] = useState(false);
+	const [feedbackSaved, setFeedbackSaved] = useState(false);
 	const [beanSearch, setBeanSearch] = useState("");
 
 	const [searchParams] = useSearchParams();
@@ -102,6 +108,7 @@ export default function BrewLog() {
 
 	const suggestions = useBrewSuggestions();
 	const lastBrewForBean = useLastBrewForBean(form.beanId);
+	const grindSettings = useGrindSettingsForBean(form.beanId);
 
 	// Deep link: /log/brew?bean=12 selects the bean up front.
 	useEffect(() => {
@@ -117,6 +124,8 @@ export default function BrewLog() {
 	const [prefill, setPrefill] = useState<{
 		from: string;
 		date: Date;
+		flow?: string | null;
+		overallRating?: number | null;
 	} | null>(null);
 	const prefillSourceId = useMemo(
 		() => (lastBrewForBean?.beanId === form.beanId ? form.beanId : undefined),
@@ -137,6 +146,8 @@ export default function BrewLog() {
 		setPrefill({
 			from: `your last shot of this bean`,
 			date: new Date(lastBrewForBean.date),
+			flow: lastBrewForBean.flow,
+			overallRating: lastBrewForBean.overallRating,
 		});
 	}, [lastBrewForBean, prefillSourceId, form.beanId]);
 
@@ -179,7 +190,8 @@ export default function BrewLog() {
 				setSaveError(result.message);
 			} else {
 				setSavedBrewId(result);
-				setRated(false);
+				setFeedbackOpen(false);
+				setFeedbackSaved(false);
 			}
 		} finally {
 			setIsSaving(false);
@@ -188,6 +200,8 @@ export default function BrewLog() {
 
 	function logAnother() {
 		setSavedBrewId(null);
+		setFeedbackOpen(false);
+		setFeedbackSaved(false);
 		setForm((f) => ({
 			...f,
 			date: new Date(),
@@ -235,7 +249,8 @@ export default function BrewLog() {
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
 	const isEmpty = suggestions.bean.length === 0;
 
-	// Success: the shot is logged, rate it now or move on.
+	// Success: the shot is logged. Taste notes come later, when there is
+	// something in the cup to judge.
 	if (savedBrewId != null) {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
@@ -246,12 +261,16 @@ export default function BrewLog() {
 							<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
 								{selectedBean?.name ?? "Brew"} in the book.
 							</p>
+							<p className="mt-2 font-sans text-sm text-muted-foreground">
+								Taste it first. The notes can wait until you know what you
+								think.
+							</p>
 						</div>
 						<BrewCelebration />
 					</div>
 
-					{!rated && savedBrewId != null && (
-						<TasteRatingPrompt
+					{feedbackOpen && (
+						<BrewFeedback
 							brew={{
 								id: savedBrewId,
 								date: new Date(),
@@ -263,25 +282,43 @@ export default function BrewLog() {
 								flow: form.flow,
 								extractionTime: form.extractionTime,
 							}}
-							beanName={selectedBean?.name ?? "the brew"}
-							onDismiss={() => setRated(true)}
+							bean={
+								form.beanId
+									? {
+											id: form.beanId,
+											name: selectedBean?.name,
+											status: selectedBean?.status,
+										}
+									: null
+							}
+							onSaved={() => setFeedbackSaved(true)}
+							onDismiss={() => setFeedbackOpen(false)}
 						/>
 					)}
 
-					<div className="flex flex-wrap gap-3 pt-1">
-						<button
-							type="button"
-							onClick={logAnother}
-							className="rounded-lg bg-crema-tint px-5 py-2.5 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-primary-200"
-						>
-							Log another shot
-						</button>
+					<div className="flex flex-wrap items-center gap-3 pt-1">
 						<button
 							type="button"
 							onClick={() => navigate("/home")}
+							className="rounded-lg bg-ink px-5 py-2.5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85"
+						>
+							Done
+						</button>
+						{!feedbackOpen && (
+							<button
+								type="button"
+								onClick={() => setFeedbackOpen(true)}
+								className="rounded-lg bg-crema-tint px-5 py-2.5 font-sans text-sm font-semibold text-foreground transition-colors hover:bg-primary-200"
+							>
+								{feedbackSaved ? "Edit taste notes" : "Add taste notes"}
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={logAnother}
 							className="rounded-lg border border-line px-5 py-2.5 font-sans text-sm text-ink-soft transition-colors hover:text-foreground"
 						>
-							Back to dashboard
+							Log another shot
 						</button>
 					</div>
 				</div>
@@ -332,6 +369,10 @@ export default function BrewLog() {
 						<div className="space-y-1.5">
 							<p className="font-sans text-xs text-muted-foreground">
 								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
+								{prefill.flow ? ` · ${prefill.flow.toLowerCase()}` : ""}
+								{prefill.overallRating != null
+									? ` · ${prefill.overallRating}★`
+									: ""}
 							</p>
 							<button
 								type="button"
@@ -354,6 +395,10 @@ export default function BrewLog() {
 						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
 							<p className="font-sans text-xs text-muted-foreground">
 								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
+								{prefill.flow ? ` · ${prefill.flow.toLowerCase()}` : ""}
+								{prefill.overallRating != null
+									? ` · ${prefill.overallRating}★`
+									: ""}
 							</p>
 							<button
 								type="button"
@@ -433,6 +478,13 @@ export default function BrewLog() {
 								title="The recipe"
 								hint="Dial it in — the dials start from last time."
 							/>
+							{form.beanId && (
+								<GrindHistoryStrip
+									settings={grindSettings}
+									selectedGrind={form.grindSize}
+									onPick={(grindSize) => setField("grindSize", grindSize)}
+								/>
+							)}
 							<div className="space-y-2">
 								<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
 									Grind size

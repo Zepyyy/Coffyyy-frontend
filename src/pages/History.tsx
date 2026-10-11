@@ -300,6 +300,11 @@ export default function History() {
 														? machineNameMap.get(brew.machineId)
 														: undefined
 												}
+												bean={
+													brew.beanId != null
+														? (beanMap.get(brew.beanId) ?? null)
+														: null
+												}
 											/>
 										))}
 									</div>

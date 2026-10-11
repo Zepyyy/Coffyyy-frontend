@@ -39,16 +39,51 @@ export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 	return brews.slice(0, limit);
 }
 
+/** How long a saved-but-unrated brew keeps asking for taste notes. */
+const FEEDBACK_WINDOW_MS = 72 * 60 * 60 * 1000;
+
 export async function getLatestUnratedBrew(): Promise<Brews | null> {
+	const cutoff = Date.now() - FEEDBACK_WINDOW_MS;
 	const brews = await db.Brews.orderBy("date").reverse().toArray();
 	return (
 		brews.find(
 			(b) =>
-				b.tasteScore == null ||
-				b.strengthScore == null ||
-				b.overallRating == null,
+				+new Date(b.date) >= cutoff &&
+				(b.tasteScore == null ||
+					b.strengthScore == null ||
+					b.overallRating == null),
 		) ?? null
 	);
+}
+
+export type GrindSettingSummary = {
+	grindSize: number;
+	/** Newest brew made at this setting. */
+	lastBrew: Brews;
+	shotCount: number;
+};
+
+/** One entry per grind setting used on a bean, newest use first. */
+export async function getGrindSettingsForBean(
+	beanId: number | undefined,
+): Promise<GrindSettingSummary[]> {
+	if (!beanId) return [];
+	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	const byGrind = new Map<number, Brews[]>();
+	for (const brew of brews) {
+		if (brew.grindSize == null) continue;
+		const list = byGrind.get(brew.grindSize) ?? [];
+		list.push(brew);
+		byGrind.set(brew.grindSize, list);
+	}
+	return [...byGrind.entries()]
+		.map(([grindSize, list]) => ({
+			grindSize,
+			lastBrew: list.sort((a, b) => +new Date(b.date) - +new Date(a.date))[0],
+			shotCount: list.length,
+		}))
+		.sort((a, b) => +new Date(b.lastBrew.date) - +new Date(a.lastBrew.date))
+		.slice(0, 6);
 }
 
 /** The most recent brew of one bean — the recipe the next shot starts from. */
@@ -162,6 +197,7 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 			dominantNote: b.dominantNote,
 			process: b.process,
 			roastLevel: b.roastLevel,
+			status: b.status,
 		})),
 	);
 	const machines = await db.Machines.toArray().then((b) =>

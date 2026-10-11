@@ -23,7 +23,9 @@ export {
 	getHistorySidebarStats,
 	getBrewsForBeanId,
 	getBrewSuggestions,
+	getGrindSettingsForBean,
 } from "./api/brews";
+export type { GrindSettingSummary } from "./api/brews";
 export {
 	getAllMachines,
 	getMachineCount,

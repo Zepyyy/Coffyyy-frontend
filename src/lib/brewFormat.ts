@@ -19,6 +19,19 @@ export function scoreClass(value: number | undefined | null): string {
 	return value < 0 ? "text-tag-teal-500" : "text-tag-orange-500";
 }
 
+/**
+ * Extraction behavior color: how the shot ran, independent of how it
+ * tasted. Struggling means the puck choked up; uneven means channeling.
+ */
+export function flowClass(flow: string | undefined | null): string {
+	if (!flow) return "text-muted-foreground";
+	const normalized = flow.toLowerCase();
+	if (normalized === "struggling") return "text-destructive";
+	if (normalized === "uneven") return "text-tag-orange-500";
+	if (normalized === "perfect" || normalized === "even") return "text-primary";
+	return "text-foreground/80";
+}
+
 /** One-line recipe, e.g. "grind 12 · 18g → 36g · 1:2 · 28s · even". */
 export function recipeLine(brew: Brews): string {
 	const ratio =

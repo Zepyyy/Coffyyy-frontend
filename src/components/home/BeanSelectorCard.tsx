@@ -1,4 +1,5 @@
 import { getColorSwatch } from "@/lib/utils";
+import { verdictOption } from "@/lib/verdict";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import RoastDots from "./RoastDots";
 
@@ -13,6 +14,7 @@ export default function BeanSelectorCard({
 	onClick: () => void;
 }) {
 	const swatch = getColorSwatch(bean.dominantNote);
+	const verdict = verdictOption(bean.status);
 
 	return (
 		<button
@@ -32,14 +34,23 @@ export default function BeanSelectorCard({
 						{bean.name}
 					</p>
 				</div>
-				<span
-					className={`mt-1 size-2 shrink-0 ${swatch.stripe}`}
-					title={bean.dominantNote ?? undefined}
-					aria-label={bean.dominantNote ?? undefined}
-				/>
+				<div className="mt-1 flex shrink-0 flex-col items-center gap-1.5">
+					<span
+						className={`size-2 ${swatch.stripe}`}
+						title={bean.dominantNote ?? undefined}
+						aria-label={bean.dominantNote ?? undefined}
+					/>
+					{verdict && (
+						<span
+							className={`size-2 rounded-full ${verdict.dot}`}
+							title={verdict.label}
+							aria-label={verdict.label}
+						/>
+					)}
+				</div>
 			</div>
 			<p className="mt-1.5 truncate font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
-				{bean.variety?.join(", ")}
+				{verdict ? verdict.label : (bean.variety?.join(", ") ?? "")}
 			</p>
 			<div className="mt-3 text-ink-faint">
 				<RoastDots level={bean.roastLevel} />
