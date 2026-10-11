@@ -2,10 +2,10 @@ import { ArrowRight, RotateCcw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
+import SteamCup from "@/components/ui/SteamCup";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import Dial from "@/components/log/Dial";
 import GrindHistoryStrip from "@/components/log/GrindHistoryStrip";
-import BrewMeasure from "@/components/log/BrewMeasure";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { addBrew } from "@/lib/data";
@@ -293,18 +293,21 @@ export default function BrewLog() {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
 				<div className="rise space-y-5 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
-					<div>
-						<p className="eyebrow">Shot logged</p>
-						<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
-							{selectedBean?.name ?? "Brew"} in the book.
-						</p>
+					<div className="flex items-start justify-between gap-4">
+						<div>
+							<p className="eyebrow">Shot logged</p>
+							<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
+								{selectedBean?.name ?? "Brew"} in the book.
+							</p>
+							<p className="mt-2 font-sans text-sm text-muted-foreground">
+								Taste it first. The notes can wait until you know what you
+								think.
+							</p>
+						</div>
+						{/* The cup is still fresh: the censer's steaming cup, quietly
+						    looping while the entry sits in the ledger. */}
+						<SteamCup className="size-14 shrink-0 text-crema" />
 					</div>
-
-					<BrewMeasure />
-
-					<p className="font-sans text-sm text-muted-foreground">
-						Taste it first. The notes can wait until you know what you think.
-					</p>
 
 					{feedbackOpen && (
 						<BrewFeedback

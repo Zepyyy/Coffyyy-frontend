@@ -750,59 +750,6 @@
     }
 }
 
-/* The save moment: the measure draws itself — baseline, ticks, then the
-   crema reading sweeps the span and the entry is committed. */
-.measure-baseline {
-    stroke-dasharray: 1;
-    animation: measure-draw 0.5s ease-out both;
-}
-
-.measure-tick {
-    transform-box: fill-box;
-    transform-origin: 50% 100%;
-    animation: measure-tick 0.4s var(--ease-soft) both;
-    animation-delay: calc(80ms + var(--tick-i) * 12ms);
-}
-
-.measure-crema {
-    stroke-dasharray: 1;
-    animation: measure-draw 0.45s var(--ease-soft) 0.55s both;
-}
-
-.measure-cap {
-    transform-box: fill-box;
-    animation: measure-cap 0.3s var(--ease-soft) 0.95s both;
-}
-
-@keyframes measure-draw {
-    from {
-        stroke-dashoffset: 1;
-    }
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-
-@keyframes measure-tick {
-    from {
-        transform: scaleY(0);
-    }
-    to {
-        transform: scaleY(1);
-    }
-}
-
-@keyframes measure-cap {
-    from {
-        opacity: 0;
-        transform: translateY(3px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .rise {
         animation: none;
@@ -815,14 +762,6 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-    }
-
-    /* The measure lands complete: no staggered entrance either. */
-    .measure-tick,
-    .measure-baseline,
-    .measure-crema,
-    .measure-cap {
-        animation-delay: 0s !important;
     }
 
     /*
