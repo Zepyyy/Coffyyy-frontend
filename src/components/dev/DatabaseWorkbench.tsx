@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { clearDatabase, resetDatabaseWithSeed } from "@/lib/data";
 import { useDatabaseCounts } from "@/hooks/api/useDatabase";
 import type { DatabaseSeedCounts } from "@/lib/data";
+import { clearDatabase, resetDatabaseWithSeed } from "@/lib/data";
 
 const PRESETS: Array<{
 	name: string;

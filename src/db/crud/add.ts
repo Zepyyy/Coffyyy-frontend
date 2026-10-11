@@ -1,3 +1,4 @@
+import { randomId } from "@/lib/randomId";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
@@ -8,7 +9,7 @@ async function addBean(bean: Omit<Beans, "id">): Promise<number | Error> {
 		const existing = await db.Beans.where("name").equals(bean.name).first();
 		if (existing)
 			return new Error(`Bean with name ${bean.name} already exists`);
-		return await db.Beans.add({ ...bean, localId: crypto.randomUUID() });
+		return await db.Beans.add({ ...bean, localId: randomId() });
 	} catch (error) {
 		return error instanceof Error ? error : new Error(String(error));
 	}
@@ -16,7 +17,7 @@ async function addBean(bean: Omit<Beans, "id">): Promise<number | Error> {
 
 async function addBrew(brew: Omit<Brews, "id">): Promise<number | Error> {
 	try {
-		return await db.Brews.add({ ...brew, localId: crypto.randomUUID() });
+		return await db.Brews.add({ ...brew, localId: randomId() });
 	} catch (error) {
 		return error instanceof Error ? error : new Error(String(error));
 	}
@@ -31,7 +32,7 @@ async function addMachine(
 			.first();
 		if (existing)
 			return new Error(`Machine with name ${machine.name} already exists`);
-		return await db.Machines.add({ ...machine, localId: crypto.randomUUID() });
+		return await db.Machines.add({ ...machine, localId: randomId() });
 	} catch (error) {
 		return error instanceof Error ? error : new Error(String(error));
 	}

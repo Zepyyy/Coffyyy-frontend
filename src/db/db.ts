@@ -1,4 +1,5 @@
 import { Dexie, type EntityTable } from "dexie";
+import { randomId } from "@/lib/randomId";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
@@ -66,7 +67,7 @@ db.version(6)
 		for (const tableName of ["Beans", "Machines", "Brews"] as const) {
 			const table = tx.table(tableName);
 			await table.toCollection().modify((record) => {
-				if (!record.localId) record.localId = crypto.randomUUID();
+				if (!record.localId) record.localId = randomId();
 			});
 		}
 	});
