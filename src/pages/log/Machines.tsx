@@ -2,6 +2,11 @@ import { type ChangeEvent, useState } from "react";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
+import {
+	BREW_METHODS,
+	methodConfig,
+	methodFromMachineType,
+} from "@/lib/brewMethods";
 import { addMachine } from "@/lib/data";
 import { useMachineSuggestions } from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
@@ -11,7 +16,7 @@ const INITIAL: MachineForm = {
 	name: "",
 	brand: "",
 	model: "",
-	type: "",
+	method: "espresso",
 	grindRange: "",
 	capacity: "",
 	purchaseDate: "",
@@ -27,8 +32,10 @@ const SAVE_MESSAGES = [
 
 const REQUIRED_FIELDS: Partial<Record<keyof MachineForm, string>> = {
 	brand: "Enter a brand for this machine.",
-	type: "Enter a type for this machine.",
 };
+
+// TODO(multi-method): replace the chips with a method segmented control.
+const METHOD_LABELS = BREW_METHODS.map((method) => methodConfig(method).label);
 
 function normalizeOptional(value: string) {
 	const trimmed = value.trim();
@@ -78,7 +85,7 @@ export default function MachinesLog() {
 				name: normalizeOptional(form.name) ?? "",
 				brand: normalizeOptional(form.brand) ?? "",
 				model: normalizeOptional(form.model) ?? "",
-				type: form.type,
+				method: form.method,
 				grindRange: normalizeOptional(form.grindRange) ?? "",
 				capacity: normalizeOptional(form.capacity) ?? "",
 				purchaseDate: normalizeOptional(form.purchaseDate) ?? "",
@@ -197,14 +204,18 @@ export default function MachinesLog() {
 								<div className="space-y-1.5">
 									<FieldLabel required>Type</FieldLabel>
 									<SingleChoiceChips
-										options={suggestions.types}
-										selected={form.type}
-										onChange={(v) => setField("type", v)}
+										options={METHOD_LABELS}
+										selected={methodConfig(form.method).label}
+										onChange={(v) =>
+											setField("method", methodFromMachineType(v))
+										}
 										placeholder="E.g. Espresso"
 										customInput={customType}
 										onCustomChange={setCustomType}
-										onCustomAdd={() => selectCustom("type", customType)}
-										requiredField={fieldErrors.type}
+										onCustomAdd={() =>
+											setField("method", methodFromMachineType(customType))
+										}
+										requiredField={fieldErrors.method}
 									/>
 								</div>
 								<div className="space-y-1.5">

@@ -19,9 +19,16 @@ export const useMachineSuggestions = () => {
 			names: [""],
 			brands: [""],
 			models: [""],
-			types: [""],
 			grindRanges: [""],
 			capacities: [""],
 		}
+	);
+};
+
+/** Brews logged with a Brewer; its method is locked when > 0. */
+export const useMachineBrewCount = (machineId: number | undefined) => {
+	return useLiveQuery(
+		() => machineStatsApi.getMachineBrewCount(machineId),
+		[machineId],
 	);
 };

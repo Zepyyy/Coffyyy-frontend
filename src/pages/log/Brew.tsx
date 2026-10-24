@@ -14,13 +14,12 @@ import {
 	useLastBrewForBean,
 	useGrindSettingsForBean,
 } from "@/hooks/api/useBrews";
+import { DEFAULT_FLOW } from "@/lib/defaults";
 import {
-	DEFAULT_FLOW,
-	MAX_BEAN_WEIGHT,
-	MAX_ESPRESSO_WEIGHT,
-	MIN_BEAN_WEIGHT,
-	MIN_ESPRESSO_WEIGHT,
-} from "@/lib/defaults";
+	DEFAULT_GRIND_SIZE,
+	GRIND_PRESETS,
+	methodConfig,
+} from "@/lib/brewMethods";
 import {
 	clampWeight,
 	cn,
@@ -30,19 +29,22 @@ import {
 } from "@/lib/utils";
 import type { BrewForm } from "@/types/BrewTypes";
 
+// TODO(multi-method): the form still assumes espresso; config is per method.
+const ESPRESSO = methodConfig("espresso");
+
 const INITIAL: BrewForm = {
 	beanId: undefined,
 	machineId: undefined,
 	date: new Date(),
-	grindSize: 12,
-	beanWeight: 18,
-	espressoWeight: 36,
+	grindSize: DEFAULT_GRIND_SIZE,
+	beanWeight: ESPRESSO.dose.default,
+	brewWeight: ESPRESSO.brewWeight.default,
 	flow: "",
 	extractionTime: "",
 };
 
-const GRIND_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const TIME_PRESETS = ["25", "28", "30", "32", "36"];
+const GRIND_SIZES = GRIND_PRESETS;
+const TIME_PRESETS = ESPRESSO.time.presets.map(String);
 
 function StepHeading({
 	index,
@@ -176,7 +178,7 @@ export default function BrewLog() {
 			...f,
 			grindSize: lastBrewForBean.grindSize ?? f.grindSize,
 			beanWeight: lastBrewForBean.beanWeight ?? f.beanWeight,
-			espressoWeight: lastBrewForBean.espressoWeight ?? f.espressoWeight,
+			brewWeight: lastBrewForBean.brewWeight ?? f.brewWeight,
 			extractionTime: seconds != null ? String(seconds) : f.extractionTime,
 			flow: lastBrewForBean.flow ?? f.flow,
 			machineId: lastBrewForBean.machineId ?? f.machineId,
@@ -209,7 +211,7 @@ export default function BrewLog() {
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!form.beanId || isSaving) return;
+		if (!form.beanId || !form.machineId || isSaving) return;
 		setSaveError("");
 
 		setIsSaving(true);
@@ -220,7 +222,7 @@ export default function BrewLog() {
 				date: new Date(),
 				beanWeight: form.beanWeight,
 				grindSize: form.grindSize,
-				espressoWeight: form.espressoWeight,
+				brewWeight: form.brewWeight,
 				flow: form.flow,
 				extractionTime: form.extractionTime,
 			});
@@ -252,23 +254,23 @@ export default function BrewLog() {
 	const setBeanWeight = (value: number) => {
 		const next = clampWeight({
 			value,
-			min: MIN_BEAN_WEIGHT,
-			max: MAX_BEAN_WEIGHT,
+			min: ESPRESSO.dose.min,
+			max: ESPRESSO.dose.max,
 		});
 		setField("beanWeight", Number(next.toFixed(1)));
 	};
-	const setEspressoWeight = (value: number) => {
+	const setBrewWeight = (value: number) => {
 		const next = clampWeight({
 			value,
-			min: MIN_ESPRESSO_WEIGHT,
-			max: MAX_ESPRESSO_WEIGHT,
+			min: ESPRESSO.brewWeight.min,
+			max: ESPRESSO.brewWeight.max,
 		});
-		setField("espressoWeight", Number(next.toFixed(1)));
+		setField("brewWeight", Number(next.toFixed(1)));
 	};
 
 	const espressoRatio =
-		form.beanWeight && form.espressoWeight
-			? (form.espressoWeight / form.beanWeight).toFixed(1)
+		form.beanWeight && form.brewWeight
+			? (form.brewWeight / form.beanWeight).toFixed(1)
 			: null;
 	const timeSeconds = parseExtractionTime(form.extractionTime);
 
@@ -313,10 +315,13 @@ export default function BrewLog() {
 						<BrewFeedback
 							brew={{
 								id: savedBrewId,
+								method:
+									suggestions.machine.find((m) => m.id === form.machineId)
+										?.method ?? "espresso",
 								date: new Date(),
 								grindSize: form.grindSize,
 								beanWeight: form.beanWeight,
-								espressoWeight: form.espressoWeight,
+								brewWeight: form.brewWeight,
 								beanId: form.beanId,
 								machineId: form.machineId,
 								flow: form.flow,
@@ -387,7 +392,7 @@ export default function BrewLog() {
 						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
 							<RecipeSegment label="grind" value={String(form.grindSize)} />
 							<RecipeSegment label="in" value={`${form.beanWeight}g`} />
-							<RecipeSegment label="out" value={`${form.espressoWeight}g`} />
+							<RecipeSegment label="out" value={`${form.brewWeight}g`} />
 							<RecipeSegment
 								label="ratio"
 								value={espressoRatio ? `1:${espressoRatio}` : "—"}
@@ -588,8 +593,8 @@ export default function BrewLog() {
 									<Dial
 										value={form.beanWeight}
 										onChange={setBeanWeight}
-										min={MIN_BEAN_WEIGHT}
-										max={MAX_BEAN_WEIGHT}
+										min={ESPRESSO.dose.min}
+										max={ESPRESSO.dose.max}
 										label="Dose (ground coffee) dial"
 									/>
 								</div>
@@ -614,10 +619,10 @@ export default function BrewLog() {
 										Out — espresso in the cup
 									</p>
 									<Dial
-										value={form.espressoWeight}
-										onChange={setEspressoWeight}
-										min={MIN_ESPRESSO_WEIGHT}
-										max={MAX_ESPRESSO_WEIGHT}
+										value={form.brewWeight}
+										onChange={setBrewWeight}
+										min={ESPRESSO.brewWeight.min}
+										max={ESPRESSO.brewWeight.max}
 										label="Yield (espresso weight) dial"
 									/>
 								</div>
@@ -709,7 +714,7 @@ export default function BrewLog() {
 										machine={{
 											id: machineInfo.id,
 											name: machineInfo.name,
-											type: machineInfo.type,
+											method: machineInfo.method,
 										}}
 										onClick={() => {
 											setField(
@@ -730,7 +735,7 @@ export default function BrewLog() {
 							</p>
 							<button
 								type="submit"
-								disabled={!form.beanId || isSaving}
+								disabled={!form.beanId || !form.machineId || isSaving}
 								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the shot"}

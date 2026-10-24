@@ -140,7 +140,7 @@ export default function BrewFeedback({
 	const specs = [
 		brew.grindSize != null ? `grind ${brew.grindSize}` : null,
 		brew.beanWeight ? `${brew.beanWeight}g` : null,
-		brew.espressoWeight ? `→ ${brew.espressoWeight}g` : null,
+		brew.brewWeight ? `→ ${brew.brewWeight}g` : null,
 	]
 		.filter(Boolean)
 		.join(" · ");

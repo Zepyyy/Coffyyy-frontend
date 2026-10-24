@@ -14,6 +14,14 @@ export async function getMachineCount(): Promise<number> {
 	return db.Machines.count();
 }
 
+/** Brews logged with this Brewer; its method is editable only while 0. */
+export async function getMachineBrewCount(
+	machineId: number | undefined,
+): Promise<number> {
+	if (!machineId) return 0;
+	return db.Brews.where("machineId").equals(machineId).count();
+}
+
 export async function getMachineNameById(
 	id: number,
 ): Promise<string | undefined> {
@@ -32,7 +40,7 @@ export async function getMachineFilters(): Promise<Array<MachineFilters>> {
 			name: b.name,
 			brand: b.brand,
 			model: b.model,
-			type: b.type,
+			method: b.method,
 			grindRange: b.grindRange,
 			capacity: b.capacity,
 		};
@@ -49,7 +57,6 @@ export async function getMachineSuggestions(): Promise<MachineSuggestions> {
 	return {
 		brands: uniqueSorted(extract("brand")),
 		models: uniqueSorted(extract("model")),
-		types: uniqueSorted(extract("type")),
 		grindRanges: uniqueSorted(extract("grindRange")),
 		capacities: uniqueSorted(extract("capacity")),
 	};

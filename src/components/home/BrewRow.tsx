@@ -8,8 +8,8 @@ export default function BrewRow({
 	beanName: string;
 }) {
 	const ratio =
-		brew.beanWeight && brew.espressoWeight
-			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
+		brew.beanWeight && brew.brewWeight
+			? `1:${(brew.brewWeight / brew.beanWeight).toFixed(1)}`
 			: null;
 	const date = new Date(brew.date).toLocaleDateString(undefined, {
 		month: "short",

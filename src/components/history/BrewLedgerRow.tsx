@@ -77,8 +77,8 @@ export function BrewLedgerRow({
 	const strength = strengthLabel(brew.strengthScore);
 	const time = formatExtractionTime(brew.extractionTime);
 	const ratio =
-		brew.beanWeight && brew.espressoWeight
-			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
+		brew.beanWeight && brew.brewWeight
+			? `1:${(brew.brewWeight / brew.beanWeight).toFixed(1)}`
 			: null;
 	const needsNotes = brew.overallRating == null;
 
@@ -159,7 +159,7 @@ export function BrewLedgerRow({
 							[
 								"Dose",
 								brew.beanWeight != null
-									? `${brew.beanWeight}g in → ${brew.espressoWeight ?? "?"}g out`
+									? `${brew.beanWeight}g in → ${brew.brewWeight ?? "?"}g out`
 									: null,
 							],
 							["Flow", brew.flow ?? null],

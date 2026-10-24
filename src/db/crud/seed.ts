@@ -1,7 +1,9 @@
 import type { Beans } from "@/types/BeanTypes";
+import { methodConfig } from "@/lib/brewMethods";
 import { randomId } from "@/lib/randomId";
-import type { Brews } from "@/types/BrewTypes";
+import type { BrewMethod, Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 import { db } from "@/db/db";
 
 export type DatabaseSeedCounts = {
@@ -63,14 +65,58 @@ const TASTING_NOTES = [
 	"jasmine",
 	"dried fruit",
 ];
-const MACHINE_SPECS = [
-	{ brand: "La Marzocco", model: "Linea Mini", type: "Espresso" },
-	{ brand: "Sage", model: "Barista Pro", type: "Espresso" },
-	{ brand: "Flair", model: "58+", type: "Manual espresso" },
-	{ brand: "Gaggia", model: "Classic Evo", type: "Espresso" },
-	{ brand: "Hario", model: "V60", type: "Pour over" },
-	{ brand: "Cafelat", model: "Robot", type: "Manual espresso" },
+// Small presets still get one Brewer per method: espresso, V60, moka first.
+const MACHINE_SPECS: Array<{
+	brand: string;
+	model: string;
+	method: BrewMethod;
+	capacity: string;
+	grindRange: string;
+}> = [
+	{
+		brand: "La Marzocco",
+		model: "Linea Mini",
+		method: "espresso",
+		capacity: "2 cups",
+		grindRange: "fine to coarse",
+	},
+	{
+		brand: "Hario",
+		model: "V60",
+		method: "pour-over",
+		capacity: "1-3 cups",
+		grindRange: "medium-fine",
+	},
+	{
+		brand: "Bialetti",
+		model: "Moka Express",
+		method: "moka",
+		capacity: "3 cups",
+		grindRange: "fine",
+	},
+	{
+		brand: "Sage",
+		model: "Barista Pro",
+		method: "espresso",
+		capacity: "2 cups",
+		grindRange: "fine to coarse",
+	},
+	{
+		brand: "Flair",
+		model: "58+",
+		method: "espresso",
+		capacity: "1 cup",
+		grindRange: "fine to coarse",
+	},
+	{
+		brand: "Gaggia",
+		model: "Classic Evo",
+		method: "espresso",
+		capacity: "2 cups",
+		grindRange: "fine to coarse",
+	},
 ];
+const HEATS = ["low", "medium", "medium", "high"] as const;
 const FLOWS = ["Perfect", "Even", "Uneven", "Struggling"];
 
 function randomInt(min: number, max: number) {
@@ -123,11 +169,55 @@ function createMachine(index: number): Omit<Machines, "id"> {
 	return {
 		name: `${spec.model} ${index + 1}`,
 		brand: spec.brand,
-		capacity: spec.type === "Pour over" ? "1-3 cups" : "2 cups",
-		grindRange: spec.type === "Pour over" ? "medium-fine" : "fine to coarse",
+		capacity: spec.capacity,
+		grindRange: spec.grindRange,
 		purchaseDate: `${randomInt(2021, 2025)}-0${randomInt(1, 9)}-${String(randomInt(1, 28)).padStart(2, "0")}`,
 		model: spec.model,
-		type: spec.type,
+		method: spec.method,
+	};
+}
+
+/** Method-shaped dial values, around each method's defaults. */
+function brewValues(method: BrewMethod) {
+	if (method === "pour-over")
+		return {
+			grindSize: randomInt(16, 20),
+			beanWeight: randomInt(14, 18),
+			brewWeight: pick([230, 250, 270, 280]),
+			extractionTime: String(randomInt(150, 240)),
+			waterTemp: randomInt(90, 96),
+		};
+	if (method === "moka")
+		return {
+			grindSize: randomInt(8, 12),
+			beanWeight: randomInt(14, 17),
+			brewWeight: randomInt(80, 120),
+			extractionTime: String(randomInt(180, 300)),
+			heat: pick(HEATS),
+		};
+	return {
+		grindSize: randomInt(8, 18),
+		beanWeight: randomInt(17, 21),
+		brewWeight: randomInt(30, 46),
+		flow: pick(FLOWS),
+		extractionTime: `${randomInt(25, 40)}s`,
+	};
+}
+
+function createPourOverRecipe(beanId: number): Omit<Recipes, "id"> {
+	const config = methodConfig("pour-over");
+	return {
+		name: "Bright V60 · 1:16",
+		method: "pour-over",
+		beanId,
+		beanWeight: config.dose.default,
+		brewWeight: 240,
+		grindSize: 18,
+		extractionTime: "180",
+		waterTemp: config.waterTemp?.default,
+		notes: "50g bloom 45s, then 4 even pours",
+		localId: randomId(),
+		createdAt: new Date(),
 	};
 }
 
@@ -135,24 +225,30 @@ function createBrew(
 	index: number,
 	beanId: number,
 	machineId: number,
+	method: BrewMethod,
 ): Omit<Brews, "id"> {
 	const isUnrated = index % 11 === 0;
-	const beanWeight = randomInt(17, 21);
-	const espressoWeight = randomInt(30, 46);
 
 	return {
 		beanId,
 		machineId,
+		method,
 		date: dateWithinLastMonths(),
 		overallRating: isUnrated ? undefined : randomInt(2, 5),
 		tasteScore: isUnrated ? undefined : randomInt(-3, 4),
 		strengthScore: isUnrated ? undefined : randomInt(-2, 3),
-		grindSize: randomInt(8, 18),
-		beanWeight,
-		espressoWeight,
-		flow: pick(FLOWS),
-		extractionTime: `${randomInt(25, 40)}s`,
+		...brewValues(method),
 	};
+}
+
+/** Mostly espresso; every 5th brew pour-over, every 7th moka, when owned. */
+function machineForBrew(index: number, machines: Machines[]) {
+	const byMethod = (method: BrewMethod) =>
+		machines.filter((machine) => machine.method === method);
+	const wanted: BrewMethod =
+		index % 5 === 1 ? "pour-over" : index % 7 === 2 ? "moka" : "espresso";
+	const options = byMethod(wanted).length > 0 ? byMethod(wanted) : machines;
+	return options[index % options.length];
 }
 
 function validateCounts(counts: DatabaseSeedCounts) {
@@ -180,13 +276,18 @@ function validateCounts(counts: DatabaseSeedCounts) {
 }
 
 export async function clearDatabase() {
-	await db.transaction("rw", [db.Beans, db.Machines, db.Brews], async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Machines.clear(),
-		]);
-	});
+	await db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.Recipes],
+		async () => {
+			await Promise.all([
+				db.Brews.clear(),
+				db.Beans.clear(),
+				db.Machines.clear(),
+				db.Recipes.clear(),
+			]);
+		},
+	);
 }
 
 export async function resetDatabaseWithSeed(
@@ -194,44 +295,52 @@ export async function resetDatabaseWithSeed(
 ): Promise<DatabaseSeedSummary> {
 	validateCounts(counts);
 
-	return db.transaction("rw", [db.Beans, db.Machines, db.Brews], async () => {
-		await Promise.all([
-			db.Brews.clear(),
-			db.Beans.clear(),
-			db.Machines.clear(),
-		]);
+	return db.transaction(
+		"rw",
+		[db.Beans, db.Machines, db.Brews, db.Recipes],
+		async () => {
+			await Promise.all([
+				db.Brews.clear(),
+				db.Beans.clear(),
+				db.Machines.clear(),
+				db.Recipes.clear(),
+			]);
 
-		const beanIds: number[] = [];
-		for (let index = 0; index < counts.beans; index += 1) {
-			beanIds.push(
-				await db.Beans.add({
-					...createBean(index),
+			const beanIds: number[] = [];
+			for (let index = 0; index < counts.beans; index += 1) {
+				beanIds.push(
+					await db.Beans.add({
+						...createBean(index),
+						localId: randomId(),
+					}),
+				);
+			}
+
+			const machines: Machines[] = [];
+			for (let index = 0; index < counts.machines; index += 1) {
+				const machine = { ...createMachine(index), localId: randomId() };
+				machines.push({ ...machine, id: await db.Machines.add(machine) });
+			}
+
+			const recipeId = machines.some((m) => m.method === "pour-over")
+				? await db.Recipes.add(createPourOverRecipe(beanIds[0]))
+				: undefined;
+
+			for (let index = 0; index < counts.brews; index += 1) {
+				const machine = machineForBrew(index, machines);
+				const beanId = beanIds[index % beanIds.length];
+				await db.Brews.add({
+					...createBrew(index, beanId, machine.id, machine.method),
+					// Some pour-overs of the recipe's bean followed it.
+					recipeId:
+						machine.method === "pour-over" && beanId === beanIds[0]
+							? recipeId
+							: undefined,
 					localId: randomId(),
-				}),
-			);
-		}
+				});
+			}
 
-		const machineIds: number[] = [];
-		for (let index = 0; index < counts.machines; index += 1) {
-			machineIds.push(
-				await db.Machines.add({
-					...createMachine(index),
-					localId: randomId(),
-				}),
-			);
-		}
-
-		for (let index = 0; index < counts.brews; index += 1) {
-			await db.Brews.add({
-				...createBrew(
-					index,
-					beanIds[index % beanIds.length],
-					machineIds[index % machineIds.length],
-				),
-				localId: randomId(),
-			});
-		}
-
-		return counts;
-	});
+			return counts;
+		},
+	);
 }

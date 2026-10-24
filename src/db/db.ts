@@ -1,14 +1,17 @@
 import { Dexie, type EntityTable } from "dexie";
+import { methodFromMachineType } from "@/lib/brewMethods";
 import { randomId } from "@/lib/randomId";
 import type { Beans } from "@/types/BeanTypes";
-import type { Brews } from "@/types/BrewTypes";
+import type { BrewMethod, Brews } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 import type { Enrollment } from "./sync/types";
 
 const db = new Dexie("Coffyyy") as Dexie & {
 	Beans: EntityTable<Beans, "id">;
 	Machines: EntityTable<Machines, "id">;
 	Brews: EntityTable<Brews, "id">;
+	Recipes: EntityTable<Recipes, "id">;
 	Enrollment: EntityTable<Enrollment, "id">;
 };
 
@@ -129,6 +132,36 @@ db.version(11)
 					delete record.remoteMachineId;
 				});
 		}
+	});
+
+// Multi-method brewing: Machine.type (free text) becomes a Brew method,
+// espressoWeight becomes brewWeight, brews record their own method.
+db.version(12)
+	.stores({
+		Machines: "++id, localId, name, method",
+		Brews:
+			"++id, localId, bean, machine, beanId, machineId, recipeId, method, overallRating, tasteScore, strengthScore, grindSize, date",
+		Recipes: "++id, localId, method, beanId",
+	})
+	.upgrade(async (tx) => {
+		const methods = new Map<number, BrewMethod>();
+		await tx
+			.table("Machines")
+			.toCollection()
+			.modify((machine) => {
+				machine.method = methodFromMachineType(machine.type);
+				delete machine.type;
+				methods.set(machine.id, machine.method);
+			});
+		await tx
+			.table("Brews")
+			.toCollection()
+			.modify((brew) => {
+				if (brew.brewWeight === undefined)
+					brew.brewWeight = brew.espressoWeight;
+				delete brew.espressoWeight;
+				brew.method = methods.get(brew.machineId) ?? "espresso";
+			});
 	});
 
 export { db };

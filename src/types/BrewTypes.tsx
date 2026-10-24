@@ -3,24 +3,40 @@ import type { BeanCardProps } from "./BeanTypes";
 import type { MachineCardProps } from "./MachineTypes";
 
 export type SnapshotBrew = components["schemas"]["Brew"];
+export type BrewMethod = SnapshotBrew["method"];
+export type BrewHeat = NonNullable<SnapshotBrew["heat"]>;
 
 // Local row: Dexie keys replace snapshot localId references, date is a Date.
 export type Brews = Omit<
 	SnapshotBrew,
-	"localId" | "beanLocalId" | "machineLocalId" | "date"
+	"localId" | "beanLocalId" | "machineLocalId" | "recipeLocalId" | "date"
 > & {
 	id: number;
 	localId?: string;
 	date: Date;
 	beanId: number | undefined;
 	machineId: number | undefined;
+	recipeId?: number;
 };
+
+/**
+ * Input for addBrew: a Brewer is required and the brew's method is copied
+ * from it, so callers never pass `method`.
+ */
+export type NewBrew = Omit<Brews, "id" | "localId" | "method" | "machineId"> & {
+	machineId: number;
+};
+
+/** Editable brew fields; method is immutable, recipe links go through linkBrewToRecipe. */
+export type BrewChanges = Partial<
+	Omit<Brews, "id" | "localId" | "method" | "recipeId">
+>;
 
 export type BrewForm = {
 	beanId: number | undefined;
 	machineId: number | undefined;
 	beanWeight: number;
-	espressoWeight: number;
+	brewWeight: number;
 	extractionTime: string;
 	flow: string;
 	grindSize: number;
@@ -44,7 +60,7 @@ export type BeanDialInState = {
 export type BeanBrewParameterSummary = {
 	grindSize: string;
 	beanWeight: number | null;
-	espressoWeight: number | null;
+	brewWeight: number | null;
 	extractionTime: string | null;
 	_flow: string | null;
 	ratio: number | null;

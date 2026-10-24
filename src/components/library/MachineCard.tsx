@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { methodConfig } from "@/lib/brewMethods";
 import { deleteMachineById } from "@/lib/data";
 import type { Machines } from "@/types/MachineTypes";
 
@@ -21,7 +22,7 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 				<div className="mt-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
 					{machine.brand}
 					{machine.model ? ` · ${machine.model}` : ""}
-					{machine.type ? ` · ${machine.type}` : ""}
+					{` · ${methodConfig(machine.method).label}`}
 				</div>
 			</article>
 

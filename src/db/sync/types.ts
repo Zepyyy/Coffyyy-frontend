@@ -1,4 +1,4 @@
-import type { WorkspaceSnapshot } from "@/lib/api/workspace";
+import type { AnyWorkspaceSnapshot } from "@/lib/api/workspace";
 
 export type Enrollment = {
 	id: "current";
@@ -12,7 +12,10 @@ export type Enrollment = {
 	lastSyncedAt?: number;
 	/** Shared across tabs to bound automatic requests. */
 	lastAutoSyncAt?: number;
-	/** Last snapshot both sides agreed on; the base for three-way merges. */
-	baseSnapshot?: WorkspaceSnapshot;
+	/**
+	 * Last snapshot both sides agreed on; the base for three-way merges. May
+	 * predate the current schema: always read through upgradeSnapshot().
+	 */
+	baseSnapshot?: AnyWorkspaceSnapshot;
 	updatedAt: number;
 };

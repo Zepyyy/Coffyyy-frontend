@@ -35,14 +35,14 @@ export function flowClass(flow: string | undefined | null): string {
 /** One-line recipe, e.g. "grind 12 · 18g → 36g · 1:2 · 28s · even". */
 export function recipeLine(brew: Brews): string {
 	const ratio =
-		brew.beanWeight && brew.espressoWeight
-			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
+		brew.beanWeight && brew.brewWeight
+			? `1:${(brew.brewWeight / brew.beanWeight).toFixed(1)}`
 			: null;
 	const time = formatExtractionTime(brew.extractionTime);
 	return [
 		brew.grindSize != null ? `grind ${brew.grindSize}` : null,
 		brew.beanWeight != null
-			? `${brew.beanWeight}g → ${brew.espressoWeight ?? "?"}g`
+			? `${brew.beanWeight}g → ${brew.brewWeight ?? "?"}g`
 			: null,
 		ratio,
 		time,

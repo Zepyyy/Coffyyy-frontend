@@ -32,7 +32,8 @@ function brew(
 		localId: `brew-${crypto.randomUUID()}`,
 		grindSize: 12,
 		beanWeight: 18,
-		espressoWeight: 36,
+		method: "espresso",
+		brewWeight: 36,
 		...overrides,
 	} as Omit<Brews, "id">;
 }

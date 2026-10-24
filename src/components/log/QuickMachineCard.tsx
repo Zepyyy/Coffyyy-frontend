@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { methodConfig } from "@/lib/brewMethods";
 import type { MachineCardProps } from "@/types/MachineTypes";
 
 export default function QuickMachineCard({
@@ -26,7 +27,7 @@ export default function QuickMachineCard({
 					{machine.name}
 				</p>
 				<p className="mt-0.5 font-data text-[10px] uppercase tracking-[0.14em] text-ink-faint">
-					{machine.type}
+					{methodConfig(machine.method).label}
 				</p>
 			</div>
 			{selected && (

@@ -16,6 +16,7 @@ import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
+import { methodConfig } from "@/lib/brewMethods";
 import { cn } from "@/lib/utils";
 import { verdictRank } from "@/lib/verdict";
 
@@ -76,8 +77,7 @@ export default function Library() {
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const machine of activeMachines) {
-			const type = machine.type?.trim();
-			if (!type) continue;
+			const type = methodConfig(machine.method).label;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
@@ -141,14 +141,14 @@ export default function Library() {
 		return activeMachines.filter((m) => {
 			const matchesSearch =
 				!q ||
-				[m.name, m.brand, m.model, m.type]
+				[m.name, m.brand, m.model, methodConfig(m.method).label]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
 					.includes(q);
 			const matchesType =
 				selectedTypes.length === 0 ||
-				(m.type != null && selectedTypes.includes(m.type.trim()));
+				selectedTypes.includes(methodConfig(m.method).label);
 			const matchesBrand =
 				selectedBrands.length === 0 ||
 				(m.brand != null && selectedBrands.includes(m.brand.trim()));

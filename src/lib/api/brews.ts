@@ -204,7 +204,7 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 		b.map((b) => ({
 			id: b.id,
 			name: b.name,
-			type: b.type,
+			method: b.method,
 		})),
 	);
 	const BeanCardProps = beans as Array<BeanCardProps>;

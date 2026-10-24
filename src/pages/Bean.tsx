@@ -40,8 +40,8 @@ function buildStatRows(
 		],
 		[
 			"Espresso",
-			formatWeight(average.espressoWeight),
-			formatWeight(best?.espressoWeight ?? null),
+			formatWeight(average.brewWeight),
+			formatWeight(best?.brewWeight ?? null),
 		],
 		["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
 		["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],

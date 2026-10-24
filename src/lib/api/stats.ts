@@ -99,8 +99,8 @@ function buildParameterSummary(
 	const averageBeanWeight = average(
 		brews.map((brew) => brew.beanWeight ?? null),
 	);
-	const averageEspressoWeight = average(
-		brews.map((brew) => brew.espressoWeight ?? null),
+	const averageBrewWeight = average(
+		brews.map((brew) => brew.brewWeight ?? null),
 	);
 	const averageExtractionSeconds = average(
 		brews.map((brew) => toNumericValue(brew.extractionTime)),
@@ -118,8 +118,8 @@ function buildParameterSummary(
 		brews.map((brew) => brew.grindSize ?? null),
 	);
 	const averageRatio =
-		averageBeanWeight && averageEspressoWeight
-			? averageEspressoWeight / averageBeanWeight
+		averageBeanWeight && averageBrewWeight
+			? averageBrewWeight / averageBeanWeight
 			: null;
 
 	return {
@@ -128,7 +128,7 @@ function buildParameterSummary(
 			mostCommon(brews.map((brew) => brew.grindSize.toString())) ??
 			"—",
 		beanWeight: averageBeanWeight,
-		espressoWeight: averageEspressoWeight,
+		brewWeight: averageBrewWeight,
 		extractionTime: formatAverage(averageExtractionSeconds, {
 			suffix: "s",
 			decimals: 0,
