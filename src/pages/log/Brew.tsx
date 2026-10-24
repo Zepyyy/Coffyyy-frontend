@@ -17,12 +17,7 @@ import {
 } from "@/hooks/api/useBrews";
 import { useRecipesForMethod } from "@/hooks/api/useRecipes";
 import { DEFAULT_FLOW } from "@/lib/defaults";
-import {
-	DEFAULT_GRIND_SIZE,
-	GRIND_PRESETS,
-	formatRatio,
-	methodConfig,
-} from "@/lib/brewMethods";
+import { formatRatio, methodConfig } from "@/lib/brewMethods";
 import {
 	type BrewLogForm,
 	brewWeightForRatio,
@@ -48,8 +43,6 @@ const INITIAL: BrewLogForm = {
 	recipeId: undefined,
 	...methodDefaults("espresso"),
 };
-
-const GRIND_SIZES = GRIND_PRESETS;
 
 const chipClass = (active: boolean) =>
 	cn(
@@ -724,14 +717,14 @@ export default function BrewLog() {
 									Grind size
 								</p>
 								<div className="flex flex-wrap gap-1.5">
-									{GRIND_SIZES.map((lvl) => (
+									{config.grind.presets.map((lvl) => (
 										<button
 											key={lvl}
 											type="button"
 											onClick={() =>
 												setField(
 													"grindSize",
-													form.grindSize === lvl ? DEFAULT_GRIND_SIZE : lvl,
+													form.grindSize === lvl ? config.grind.default : lvl,
 												)
 											}
 											className={cn(
@@ -751,7 +744,9 @@ export default function BrewLog() {
 										className="h-10 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 										placeholder="Other"
 										value={
-											GRIND_SIZES.includes(form.grindSize) ? "" : form.grindSize
+											config.grind.presets.includes(form.grindSize)
+												? ""
+												: form.grindSize
 										}
 										onChange={(e) =>
 											setField("grindSize", Number(e.target.value))

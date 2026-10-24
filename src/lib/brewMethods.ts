@@ -18,6 +18,11 @@ export type BrewMethodConfig = {
 	dose: NumberRange;
 	/** The liquid weight (g) the ratio is computed from. */
 	brewWeight: NumberRange & { label: string };
+	/**
+	 * Grinder setting: default + preset chips. Per method because one grinder
+	 * sits far apart per method (e.g. Encore ESP: ~12 espresso, ~23 V60).
+	 */
+	grind: { default: number; presets: readonly number[] };
 	/** Ratio presets as x in 1:x. Empty = no presets shown. */
 	ratioPresets: readonly number[];
 	/** Extraction time; presets in seconds. */
@@ -35,11 +40,8 @@ export type BrewMethodConfig = {
 export const BREW_METHODS: readonly BrewMethod[] = brewMethodValues;
 export const BREW_HEATS: readonly BrewHeat[] = brewHeatValues;
 
-/** Grind presets stay shared across methods: they are grinder settings. */
-export const GRIND_PRESETS: readonly number[] = [
-	8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-];
-export const DEFAULT_GRIND_SIZE = 12;
+const range = (from: number, to: number) =>
+	Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
 const CONFIG: Record<BrewMethod, BrewMethodConfig> = {
 	espresso: {
@@ -47,6 +49,7 @@ const CONFIG: Record<BrewMethod, BrewMethodConfig> = {
 		label: "Espresso",
 		dose: { min: 12, max: 24, default: 18 },
 		brewWeight: { label: "Yield", min: 12, max: 48, default: 36 },
+		grind: { default: 12, presets: range(8, 20) },
 		ratioPresets: [1.5, 2, 2.5],
 		time: { label: "Time", presets: [25, 28, 30, 32, 36] },
 		flow: true,
@@ -59,6 +62,7 @@ const CONFIG: Record<BrewMethod, BrewMethodConfig> = {
 		label: "Pour-over",
 		dose: { min: 10, max: 30, default: 15 },
 		brewWeight: { label: "Water", min: 150, max: 500, default: 250 },
+		grind: { default: 23, presets: range(17, 29) },
 		ratioPresets: [15, 16, 17],
 		time: { label: "Total time", presets: [150, 180, 210, 240] },
 		flow: false,
@@ -71,6 +75,7 @@ const CONFIG: Record<BrewMethod, BrewMethodConfig> = {
 		label: "Moka",
 		dose: { min: 7, max: 30, default: 15 },
 		brewWeight: { label: "Output", min: 30, max: 300, default: 100 },
+		grind: { default: 16, presets: range(10, 22) },
 		ratioPresets: [],
 		time: { label: "Time", presets: [180, 240, 300, 360] },
 		flow: false,

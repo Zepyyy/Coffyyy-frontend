@@ -2,12 +2,7 @@
  * Pure logic behind the Recipe form and Recipe cards: defaults, prefill from
  * a brew (promote) or a recipe (edit), save payloads and the one-line summary.
  */
-import {
-	DEFAULT_GRIND_SIZE,
-	formatRatio,
-	isRecipeMethod,
-	methodConfig,
-} from "@/lib/brewMethods";
+import { formatRatio, isRecipeMethod, methodConfig } from "@/lib/brewMethods";
 import { formatExtractionTime, parseExtractionTime } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
@@ -41,7 +36,7 @@ export function emptyRecipeForm(method: RecipeMethod): RecipeFormState {
 		beanId: undefined,
 		beanWeight: config.dose.default,
 		brewWeight: config.brewWeight.default,
-		grindSize: DEFAULT_GRIND_SIZE,
+		grindSize: config.grind.default,
 		extractionTime: "",
 		waterTemp: config.waterTemp?.default ?? 0,
 		notes: "",
@@ -49,8 +44,8 @@ export function emptyRecipeForm(method: RecipeMethod): RecipeFormState {
 }
 
 /**
- * Switches a new recipe to another method: dial values reset to that
- * method's defaults, name / bean / grind / notes are kept.
+ * Switches a new recipe to another method: dial values (grind included)
+ * reset to that method's defaults, name / bean / notes are kept.
  */
 export function switchRecipeMethod(
 	form: RecipeFormState,
@@ -62,7 +57,6 @@ export function switchRecipeMethod(
 		...fresh,
 		name: form.name,
 		beanId: form.beanId,
-		grindSize: form.grindSize,
 		notes: form.notes,
 	};
 }

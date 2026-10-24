@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import { Button } from "@/components/ui/button";
 import { usePromotionSource } from "@/hooks/api/useRecipeStats";
@@ -94,6 +94,7 @@ function EditRecipe({ recipeId }: { recipeId: number }) {
 /** `/log/recipe?fromBrew=<brewId>`: promote a brew's actuals to a recipe. */
 function PromoteBrew({ brewId }: { brewId: number }) {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const source = usePromotionSource(brewId);
 
 	if (source === undefined) return null;
@@ -130,7 +131,10 @@ function PromoteBrew({ brewId }: { brewId: number }) {
 					source.brew.id,
 				);
 				if (result instanceof Error) return result.message;
-				navigate("/history");
+				// Back to where "Save as recipe" was hit (keeps History filters);
+				// a direct link has nowhere to go back to.
+				if (location.key === "default") navigate("/history");
+				else navigate(-1);
 				return undefined;
 			}}
 		/>

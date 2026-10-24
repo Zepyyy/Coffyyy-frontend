@@ -3,11 +3,7 @@
  * from the last brew or a recipe, and the save payload. Every number comes
  * from the method config.
  */
-import {
-	DEFAULT_GRIND_SIZE,
-	type BrewMethod,
-	methodConfig,
-} from "@/lib/brewMethods";
+import { type BrewMethod, methodConfig } from "@/lib/brewMethods";
 import { clampWeight, parseExtractionTime } from "@/lib/utils";
 import type { BrewHeat, Brews, NewBrew } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
@@ -63,7 +59,7 @@ function secondsText(raw: string | null | undefined) {
 export function methodDefaults(method: BrewMethod): BrewDials {
 	const config = methodConfig(method);
 	return {
-		grindSize: DEFAULT_GRIND_SIZE,
+		grindSize: config.grind.default,
 		beanWeight: config.dose.default,
 		brewWeight: config.brewWeight.default,
 		extractionTime: "",

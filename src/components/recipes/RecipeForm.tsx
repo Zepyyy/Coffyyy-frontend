@@ -5,8 +5,6 @@ import QuickBeanCard from "@/components/log/QuickBeanCard";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import {
-	DEFAULT_GRIND_SIZE,
-	GRIND_PRESETS,
 	type NumberRange,
 	RECIPE_METHODS,
 	formatRatio,
@@ -315,14 +313,14 @@ export default function RecipeForm({
 							<div className="space-y-2">
 								<MonoLabel>Grind size</MonoLabel>
 								<div className="flex flex-wrap gap-1.5">
-									{GRIND_PRESETS.map((lvl) => (
+									{config.grind.presets.map((lvl) => (
 										<button
 											key={lvl}
 											type="button"
 											onClick={() =>
 												setField(
 													"grindSize",
-													form.grindSize === lvl ? DEFAULT_GRIND_SIZE : lvl,
+													form.grindSize === lvl ? config.grind.default : lvl,
 												)
 											}
 											className={cn(
@@ -342,7 +340,7 @@ export default function RecipeForm({
 										className="h-10 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 										placeholder="Other"
 										value={
-											GRIND_PRESETS.includes(form.grindSize)
+											config.grind.presets.includes(form.grindSize)
 												? ""
 												: form.grindSize
 										}
@@ -487,6 +485,7 @@ export default function RecipeForm({
 											min={waterTemp.min}
 											max={waterTemp.max}
 											step={1}
+											decimals={0}
 											helpers={false}
 											label="Water temperature dial"
 										/>

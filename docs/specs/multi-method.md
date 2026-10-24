@@ -55,7 +55,7 @@ Per-method config lives in one module `src/lib/brewMethods.ts` (single source; U
 | heat options / default | – | – | low, medium, high / medium |
 | recipes | yes | yes | no |
 
-Grind presets stay shared (grinder setting, not method-specific).
+Grind default + preset chips are per method (one grinder sits far apart per method, e.g. Encore ESP ~12 espresso, ~23 V60): espresso 12 / 8–20, pour-over 23 / 17–29, moka 16 / 10–22. Free input still accepts any value (e.g. Kingrinder P2 at 36).
 Existing `MIN_/MAX_/DIAL_DEFAULT_ESPRESSO_WEIGHT` consts move into / are re-exported by the config.
 
 ## #65 Recipe model

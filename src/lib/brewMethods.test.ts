@@ -92,3 +92,14 @@ describe("brewMethods", () => {
 		expect(ratioValue(15, 100)).toBeCloseTo(6.667, 3);
 	});
 });
+
+describe("grind per method", () => {
+	it("defaults sit inside each method's preset chips", () => {
+		expect(methodConfig("espresso").grind.default).toBe(12);
+		expect(methodConfig("pour-over").grind.default).toBe(23);
+		for (const method of BREW_METHODS) {
+			const { grind } = methodConfig(method);
+			expect(grind.presets).toContain(grind.default);
+		}
+	});
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_GRIND_SIZE, methodConfig } from "@/lib/brewMethods";
+import { methodConfig } from "@/lib/brewMethods";
 import type { Brews } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
 import {
@@ -41,7 +41,7 @@ describe("methodDefaults", () => {
 	it("takes every number and visible extra from the method config", () => {
 		const pourOver = methodConfig("pour-over");
 		expect(methodDefaults("pour-over")).toEqual({
-			grindSize: DEFAULT_GRIND_SIZE,
+			grindSize: methodConfig("pour-over").grind.default,
 			beanWeight: pourOver.dose.default,
 			brewWeight: pourOver.brewWeight.default,
 			extractionTime: "",
@@ -164,7 +164,7 @@ describe("toNewBrew", () => {
 			date,
 			beanWeight: 15,
 			brewWeight: 250,
-			grindSize: DEFAULT_GRIND_SIZE,
+			grindSize: methodConfig("pour-over").grind.default,
 			extractionTime: "",
 			waterTemp: 93,
 			notes: "slow pours",
