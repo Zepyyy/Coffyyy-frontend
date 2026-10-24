@@ -24,8 +24,10 @@ export {
 	getBrewsForBeanId,
 	getBrewSuggestions,
 	getGrindSettingsForBean,
+	getLastUsedMachineId,
+	getBrewFormStart,
 } from "./api/brews";
-export type { GrindSettingSummary } from "./api/brews";
+export type { BrewFormStart, GrindSettingSummary } from "./api/brews";
 export {
 	getAllMachines,
 	getMachineCount,
@@ -47,7 +49,11 @@ export {
 	getBeanBrewInsights,
 	getBrewCountForBeanId,
 	getBeanDialInStates,
+	getBeanMethods,
+	getBrewMethodsInUse,
 } from "./api/stats";
+export { getPromotionSource, getRecipeBrewStats } from "./api/recipeStats";
+export type { RecipeBrewStats } from "./api/recipeStats";
 export { getDatabaseCounts } from "./api/database";
 
 export {

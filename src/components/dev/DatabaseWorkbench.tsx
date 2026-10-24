@@ -36,7 +36,7 @@ type OperationStatus = {
 } | null;
 
 function formatCounts(counts: DatabaseSeedCounts) {
-	return `${counts.beans} beans · ${counts.machines} machines · ${counts.brews} brews`;
+	return `${counts.beans} beans · ${counts.machines} brewers · ${counts.brews} brews`;
 }
 
 export default function DatabaseWorkbench() {
@@ -131,11 +131,12 @@ export default function DatabaseWorkbench() {
 				</Button>
 			</div>
 
-			<div className="grid grid-cols-3 gap-2">
+			<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
 				{[
 					["Beans", databaseCounts.beans],
-					["Machines", databaseCounts.machines],
+					["Brewers", databaseCounts.machines],
 					["Brews", databaseCounts.brews],
+					["Recipes", databaseCounts.recipes],
 				].map(([label, count]) => (
 					<div key={label} className="border border-border bg-background p-3">
 						<p className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
@@ -187,7 +188,7 @@ export default function DatabaseWorkbench() {
 					{(
 						[
 							["beans", "Beans", 1, 50],
-							["machines", "Machines", 1, 12],
+							["machines", "Brewers", 1, 12],
 							["brews", "Brews", 0, 500],
 						] as Array<[keyof DatabaseSeedCounts, string, number, number]>
 					).map(([field, label, min, max]) => (
@@ -218,7 +219,7 @@ export default function DatabaseWorkbench() {
 						Reset with custom data
 					</Button>
 					<span className="font-data text-[10px] text-muted-foreground">
-						Beans 1–50 · Machines 1–12 · Brews 0–500
+						Beans 1–50 · Brewers 1–12 · Brews 0–500
 					</span>
 				</div>
 			</div>
@@ -227,7 +228,7 @@ export default function DatabaseWorkbench() {
 				<div className="border border-destructive/50 bg-destructive/5 p-4">
 					<p className="text-sm font-medium">
 						{pendingAction.type === "clear"
-							? "Clear every local bean, machine, and brew?"
+							? "Clear every local bean, brewer, brew, and recipe?"
 							: `Replace current database with ${pendingAction.label.toLowerCase()} data?`}
 					</p>
 					<p className="mt-1 text-xs text-muted-foreground">
