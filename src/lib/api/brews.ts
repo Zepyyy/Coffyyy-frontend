@@ -1,7 +1,8 @@
 import { db } from "@/db/db";
 import type { BeanCardProps } from "@/types/BeanTypes";
-import type { BrewSuggestions, Brews } from "@/types/BrewTypes";
+import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
 import type { MachineCardProps } from "@/types/MachineTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 
 export type HistorySidebarStats = {
 	total: number;
@@ -63,12 +64,19 @@ export type GrindSettingSummary = {
 	shotCount: number;
 };
 
-/** One entry per grind setting used on a bean, newest use first. */
+/**
+ * One entry per grind setting used on a bean, newest use first. With a
+ * method, only that method's brews count (grind means different things
+ * across methods).
+ */
 export async function getGrindSettingsForBean(
 	beanId: number | undefined,
+	method?: BrewMethod,
 ): Promise<GrindSettingSummary[]> {
 	if (!beanId) return [];
-	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	const brews = await db.Brews.filter(
+		(b) => b.beanId === beanId && (!method || b.method === method),
+	).toArray();
 	const byGrind = new Map<number, Brews[]>();
 	for (const brew of brews) {
 		if (brew.grindSize == null) continue;
@@ -86,14 +94,76 @@ export async function getGrindSettingsForBean(
 		.slice(0, 6);
 }
 
-/** The most recent brew of one bean — the recipe the next shot starts from. */
+/**
+ * The most recent brew of one bean (of one method, when given) — the values
+ * the next brew starts from.
+ */
 export async function getLastBrewForBean(
 	beanId: number | undefined,
+	method?: BrewMethod,
 ): Promise<Brews | null> {
 	if (!beanId) return null;
-	const brews = await db.Brews.filter((b) => b.beanId === beanId).toArray();
+	const brews = await db.Brews.filter(
+		(b) => b.beanId === beanId && (!method || b.method === method),
+	).toArray();
 	if (brews.length === 0) return null;
 	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date))[0];
+}
+
+/**
+ * The Brewer the next brew most likely uses: the one behind the newest brew
+ * (of `method`, when given), else the first Brewer. Null when none exists.
+ */
+export async function getLastUsedMachineId(
+	method?: BrewMethod,
+): Promise<number | null> {
+	const machines = (await db.Machines.toArray()).filter(
+		(m) => !method || m.method === method,
+	);
+	if (machines.length === 0) return null;
+	const ids = new Set(machines.map((m) => m.id));
+	const brews = await db.Brews.orderBy("date").reverse().toArray();
+	const last = brews.find((b) => b.machineId != null && ids.has(b.machineId));
+	return last?.machineId ?? machines[0].id;
+}
+
+export type BrewFormStart = {
+	machineId: number | null;
+	/** The start Brewer's method. */
+	method: BrewMethod | null;
+	beanId: number | null;
+	/** Recipe to follow; null when missing, unusable for the bean, or no Brewer has its method. */
+	recipe: Recipes | null;
+};
+
+/**
+ * Where the brew log form starts, from its deep-link params (`?bean=`,
+ * `?recipe=`). A recipe picks a Brewer of its method and, when bean-tied,
+ * its bean. An explicit bean wins over a recipe tied to another bean.
+ */
+export async function getBrewFormStart(
+	beanParam?: number,
+	recipeParam?: number,
+): Promise<BrewFormStart> {
+	const bean = beanParam ? await db.Beans.get(beanParam) : undefined;
+	let recipe = recipeParam
+		? ((await db.Recipes.get(recipeParam)) ?? null)
+		: null;
+	if (recipe && bean && recipe.beanId != null && recipe.beanId !== bean.id) {
+		recipe = null;
+	}
+	let machineId = recipe ? await getLastUsedMachineId(recipe.method) : null;
+	if (machineId == null) {
+		recipe = null;
+		machineId = await getLastUsedMachineId();
+	}
+	const machine = machineId != null ? await db.Machines.get(machineId) : null;
+	return {
+		machineId,
+		method: machine?.method ?? null,
+		beanId: bean?.id ?? recipe?.beanId ?? null,
+		recipe,
+	};
 }
 
 /** The most recent brew overall. */
@@ -204,7 +274,7 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 		b.map((b) => ({
 			id: b.id,
 			name: b.name,
-			type: b.type,
+			method: b.method,
 		})),
 	);
 	const BeanCardProps = beans as Array<BeanCardProps>;

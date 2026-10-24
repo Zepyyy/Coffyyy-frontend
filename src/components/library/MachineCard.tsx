@@ -1,8 +1,11 @@
+import { Pencil } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
+import { methodConfig } from "@/lib/brewMethods";
 import { deleteMachineById } from "@/lib/data";
 import type { Machines } from "@/types/MachineTypes";
 
-/** Spec-plate card: the machine's details read like its factory plate. */
+/** Spec-plate card: the Brewer's details read like its factory plate. */
 export default function MachineCard({ machine }: { machine: Machines }) {
 	const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -16,12 +19,12 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 		<div className="hover-line relative flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
 			<article className="relative border-b border-line/60 p-5">
 				<div className="font-display text-xl font-semibold tracking-tight text-foreground">
-					{machine.name || "Unnamed machine"}
+					{machine.name || "Unnamed brewer"}
 				</div>
 				<div className="mt-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
 					{machine.brand}
 					{machine.model ? ` · ${machine.model}` : ""}
-					{machine.type ? ` · ${machine.type}` : ""}
+					{` · ${methodConfig(machine.method).label}`}
 				</div>
 			</article>
 
@@ -43,7 +46,14 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 				)}
 			</article>
 
-			<div className="mt-auto flex justify-end px-5 pb-3">
+			<div className="mt-auto flex items-center justify-between gap-2 px-5 pb-3">
+				<Link
+					to={`/log/machine?id=${machine.id}`}
+					className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs text-ink-faint transition-colors hover:text-foreground"
+				>
+					<Pencil className="size-3" aria-hidden />
+					Edit
+				</Link>
 				{confirmDelete ? (
 					<div className="flex items-center gap-2">
 						<span className="text-xs text-ink-soft">Sure?</span>

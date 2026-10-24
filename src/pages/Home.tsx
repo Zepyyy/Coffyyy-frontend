@@ -14,11 +14,13 @@ import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
+import { isBrewMethod } from "@/lib/brewMethods";
 import {
 	dismissFeedbackBrew,
 	getDismissedFeedbackBrewIds,
 } from "@/lib/feedbackDismiss";
 import type { Beans } from "@/types/BeanTypes";
+import type { BrewMethod } from "@/types/BrewTypes";
 
 function greetingForHour(hour: number) {
 	if (hour < 5) return "Up late?";
@@ -39,20 +41,20 @@ function dailyLine(
 		(b) => new Date(b.date).getTime() >= startOfToday.getTime(),
 	).length;
 	if (todayCount > 0)
-		return `${todayCount} shot${todayCount === 1 ? "" : "s"} in the book today.`;
-	if (recentBrews.length === 0) return "The first shot of the story.";
+		return `${todayCount} brew${todayCount === 1 ? "" : "s"} in the book today.`;
+	if (recentBrews.length === 0) return "The first brew of the story.";
 	const last = new Date(recentBrews[0].date);
 	const yesterday = new Date(startOfToday);
 	yesterday.setDate(yesterday.getDate() - 1);
 	if (last.getTime() >= yesterday.getTime())
-		return "Yesterday's shot is in the book. Today's?";
+		return "Yesterday's brew is in the book. Today's?";
 	const days = Math.max(
 		1,
 		Math.round(
 			(+startOfToday - +new Date(last).setHours(0, 0, 0, 0)) / 86_400_000,
 		),
 	);
-	return `It's been ${days} days since the last shot.`;
+	return `It's been ${days} days since the last brew.`;
 }
 
 function BeanSection({ allBeans }: { allBeans: Beans[] }) {
@@ -61,18 +63,33 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 		? Number(searchParams.get("bean"))
 		: undefined;
 
-	const beanInsights = useBeanBrewInsights(selectedBeanId);
+	// Unset = the bean's most recent method (resolved by the insights query).
+	const methodParam = searchParams.get("method");
+	const selectedMethod = isBrewMethod(methodParam) ? methodParam : undefined;
+
+	const beanInsights = useBeanBrewInsights(selectedBeanId, selectedMethod);
 	const brewCount = useBrewCountForBeanId(selectedBeanId);
 	const selectedBean = allBeans.find((b) => b.id === selectedBeanId);
 
 	function selectBean(id: number) {
 		setSearchParams(
 			(prev) => {
+				prev.delete("method");
 				if (id === selectedBeanId) {
 					prev.delete("bean");
 				} else {
 					prev.set("bean", String(id));
 				}
+				return prev;
+			},
+			{ replace: true },
+		);
+	}
+
+	function selectMethod(method: BrewMethod) {
+		setSearchParams(
+			(prev) => {
+				prev.set("method", method);
 				return prev;
 			},
 			{ replace: true },
@@ -116,6 +133,8 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 					withBarChart
 					withHeader
 					withGraph
+					withLastBrew
+					onMethodChange={selectMethod}
 				/>
 			)}
 			{selectedBean && brewCount === 0 && <NoBrewsPanel bean={selectedBean} />}

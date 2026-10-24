@@ -24,41 +24,59 @@ export {
 	getBrewsForBeanId,
 	getBrewSuggestions,
 	getGrindSettingsForBean,
+	getLastUsedMachineId,
+	getBrewFormStart,
 } from "./api/brews";
-export type { GrindSettingSummary } from "./api/brews";
+export type { BrewFormStart, GrindSettingSummary } from "./api/brews";
 export {
 	getAllMachines,
 	getMachineCount,
 	getMachineNameById,
+	getMachineBrewCount,
 	getAllMachineNames,
 	getMachineFilters,
 	getMachineSuggestions,
 } from "./api/machines";
+export {
+	getAllRecipes,
+	getRecipe,
+	getRecipesForMethod,
+	getRecipeCount,
+} from "./api/recipes";
 export {
 	getBrewCountForBean,
 	getUniqueBeansBrewedCount,
 	getBeanBrewInsights,
 	getBrewCountForBeanId,
 	getBeanDialInStates,
+	getBeanMethods,
+	getBrewMethodsInUse,
 } from "./api/stats";
+export { getPromotionSource, getRecipeBrewStats } from "./api/recipeStats";
+export type { RecipeBrewStats } from "./api/recipeStats";
 export { getDatabaseCounts } from "./api/database";
 
 export {
 	addBean,
 	addBrew,
 	addMachine,
+	addRecipe,
+	addRecipeFromBrew,
 } from "../db/crud/add";
 export {
 	deleteBeanById,
 	deleteBrewById,
 	deleteMachineById,
+	deleteRecipeById,
 } from "../db/crud/delete";
 export {
+	linkBrewToRecipe,
 	updateBeanById,
 	updateBeanByName,
 	updateBrewById,
 	updateBrewByName,
 	updateMachineById,
+	updateRecipeById,
 } from "../db/crud/update";
 export {
 	clearDatabase,

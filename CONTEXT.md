@@ -1,6 +1,21 @@
-# Coffyyy sync context
+# Coffyyy context
 
-Shared language for Coffyyy's local-first workspace and optional snapshot sync.
+Shared language for Coffyyy's brewing domain, local-first workspace and optional snapshot sync.
+
+## Brewing
+
+**Brew method**:
+A fixed, built-in way of making coffee: Espresso, Pour-over (V60), or Moka. Not user-defined.
+_Avoid_: machine type, brew type
+
+**Brewer**:
+The equipment a brew is made with (espresso machine, V60, moka pot). Each Brewer has exactly one Brew method, locked once it has brews. A Brew records its own method, copied from its Brewer when logged.
+_Avoid_: machine, equipment
+
+**Recipe**:
+A reusable target for a Brew method (optionally tied to a bean) that brews can follow. Each brew records its actuals and may link to the Recipe it followed. A Recipe can be promoted from a good brew. Moka has no Recipes.
+_Avoid_: settings, preset
+
 
 ## Workspace
 
@@ -45,7 +60,7 @@ _Avoid_: delete workspace, delete account
 ## Snapshot operations
 
 **Workspace snapshot**:
-One complete representation of beans, machines, brews, stable local IDs, and their relationships.
+One complete, versioned representation of beans, Brewers (`machines`), brews, Recipes, stable local IDs, and their relationships. Older versions are upgraded, never discarded.
 _Avoid_: change feed, sync batch
 
 **Push**:

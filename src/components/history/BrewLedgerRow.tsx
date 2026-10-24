@@ -1,17 +1,22 @@
-import { ChevronDown, Trash2, X } from "lucide-react";
+import { BookmarkPlus, ChevronDown, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { deleteBrewById } from "@/lib/data";
 import {
+	brewVsRecipe,
 	flowClass,
+	formatRecipeDelta,
 	recipeLine,
 	scoreClass,
 	strengthLabel,
 	tasteLabel,
 } from "@/lib/brewFormat";
+import { formatRatio, methodConfig } from "@/lib/brewMethods";
 import { cn, formatExtractionTime } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 
 function formatDate(date: Date | string | undefined): string {
 	if (!date) return "—";
@@ -64,10 +69,16 @@ export function BrewLedgerRow({
 	brew,
 	machineName,
 	bean,
+	recipe,
+	showMethod = false,
 }: {
 	brew: Brews;
 	machineName: string | undefined;
 	bean?: { id: number; name?: string; status?: Beans["status"] } | null;
+	/** The recipe this brew followed, when linked. */
+	recipe?: Recipes | null;
+	/** Show the method label (when the journal has more than one method). */
+	showMethod?: boolean;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
@@ -76,11 +87,13 @@ export function BrewLedgerRow({
 	const taste = tasteLabel(brew.tasteScore);
 	const strength = strengthLabel(brew.strengthScore);
 	const time = formatExtractionTime(brew.extractionTime);
-	const ratio =
-		brew.beanWeight && brew.espressoWeight
-			? `1:${(brew.espressoWeight / brew.beanWeight).toFixed(1)}`
-			: null;
+	const ratio = formatRatio(brew.beanWeight, brew.brewWeight);
+	const config = methodConfig(brew.method);
 	const needsNotes = brew.overallRating == null;
+	const deltas = recipe ? brewVsRecipe(brew, recipe) : [];
+	const temp =
+		config.waterTemp && brew.waterTemp != null ? `${brew.waterTemp}°C` : null;
+	const heat = config.heat && brew.heat ? `${brew.heat} heat` : null;
 
 	async function handleDelete() {
 		if (typeof brew.id !== "number") return;
@@ -105,6 +118,11 @@ export function BrewLedgerRow({
 					{formatDate(brew.date)}
 				</span>
 				<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
+					{showMethod && (
+						<span className="w-16 shrink-0 font-data text-[9px] uppercase tracking-[0.14em] text-ink-soft">
+							{config.label}
+						</span>
+					)}
 					{/* The dial decision, front and center */}
 					<span className="inline-flex items-baseline gap-1.5">
 						<span className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -115,9 +133,15 @@ export function BrewLedgerRow({
 						</span>
 					</span>
 					<span className="font-data text-xs text-foreground/80">
-						{[ratio, time].filter(Boolean).join(" · ") || recipeLine(brew)}
+						{[ratio, time, temp, heat].filter(Boolean).join(" · ") ||
+							recipeLine(brew)}
 					</span>
-					{brew.flow ? (
+					{recipe && (
+						<span className="max-w-40 truncate font-data text-[9px] uppercase tracking-[0.1em] text-crema-deep dark:text-crema">
+							↳ {recipe.name}
+						</span>
+					)}
+					{config.flow && brew.flow ? (
 						<RowTag
 							label={brew.flow.toLowerCase()}
 							className={flowClass(brew.flow)}
@@ -154,16 +178,36 @@ export function BrewLedgerRow({
 				<div className="rise space-y-4 border-t border-line/40 bg-paper-sunken/40 px-4 py-4">
 					<BrewFeedback brew={brew} bean={bean ?? null} bare />
 
+					{recipe && (
+						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-l-2 border-crema pl-3">
+							<span className="font-data text-[9px] font-semibold uppercase tracking-[0.16em] text-crema-deep dark:text-crema">
+								Recipe
+							</span>
+							<span className="font-sans text-sm text-foreground">
+								{recipe.name}
+							</span>
+							<span className="font-data text-xs text-ink-soft">
+								{deltas.length > 0
+									? deltas.map(formatRecipeDelta).join(" · ")
+									: "on target"}
+							</span>
+						</div>
+					)}
+
 					<div className="flex flex-wrap gap-x-8 gap-y-2">
 						{[
 							[
-								"Dose",
+								`Dose → ${config.brewWeight.label}`,
 								brew.beanWeight != null
-									? `${brew.beanWeight}g in → ${brew.espressoWeight ?? "?"}g out`
+									? `${brew.beanWeight}g → ${brew.brewWeight ?? "?"}g`
 									: null,
 							],
-							["Flow", brew.flow ?? null],
-							["Machine", machineName ?? null],
+							[config.time.label, time],
+							["Flow", config.flow ? (brew.flow ?? null) : null],
+							["Water temp", temp],
+							["Heat", config.heat ? (brew.heat ?? null) : null],
+							["Method", showMethod ? config.label : null],
+							["Brewer", machineName ?? null],
 							[
 								"Logged",
 								new Date(brew.date).toLocaleString(undefined, {
@@ -184,6 +228,17 @@ export function BrewLedgerRow({
 							) : null,
 						)}
 					</div>
+
+					{brew.notes?.trim() && (
+						<div>
+							<p className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
+								Notes
+							</p>
+							<p className="whitespace-pre-line font-sans text-sm text-foreground">
+								{brew.notes}
+							</p>
+						</div>
+					)}
 
 					<div className="flex justify-end">
 						{confirmDelete ? (
@@ -210,14 +265,25 @@ export function BrewLedgerRow({
 								</button>
 							</div>
 						) : (
-							<button
-								type="button"
-								onClick={() => setConfirmDelete(true)}
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-destructive"
-							>
-								<Trash2 className="size-3" />
-								Delete
-							</button>
+							<div className="flex items-center gap-1">
+								{config.hasRecipes && (
+									<Link
+										to={`/log/recipe?fromBrew=${brew.id}`}
+										className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+									>
+										<BookmarkPlus className="size-3" />
+										Save as recipe
+									</Link>
+								)}
+								<button
+									type="button"
+									onClick={() => setConfirmDelete(true)}
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-destructive"
+								>
+									<Trash2 className="size-3" />
+									Delete
+								</button>
+							</div>
 						)}
 					</div>
 				</div>

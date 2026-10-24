@@ -7,6 +7,7 @@ export const useDatabaseCounts = () => {
 			beans: 0,
 			machines: 0,
 			brews: 0,
+			recipes: 0,
 		}
 	);
 };

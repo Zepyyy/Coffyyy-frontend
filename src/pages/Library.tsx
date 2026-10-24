@@ -5,25 +5,41 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { SlidersHorizontal } from "lucide-react";
 import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
+import RecipeCard from "@/components/library/RecipeCard";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
+import { useRecipeBrewStats } from "@/hooks/api/useRecipeStats";
+import { useRecipes } from "@/hooks/api/useRecipes";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
+import { methodConfig } from "@/lib/brewMethods";
 import { cn } from "@/lib/utils";
 import { verdictRank } from "@/lib/verdict";
 
-type Tab = "beans" | "machines";
+type Tab = "beans" | "machines" | "recipes";
 type BeanSort = "order" | "verdict";
 
+const TABS: readonly Tab[] = ["beans", "machines", "recipes"];
+const SEARCH_LABEL: Record<Tab, string> = {
+	beans: "beans",
+	machines: "brewers",
+	recipes: "recipes",
+};
+
 export default function Library() {
-	const [tab, setTab] = useState<Tab>("beans");
+	// `?tab=recipes` deep-links a section (the recipe form returns here).
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tabParam = searchParams.get("tab") as Tab | null;
+	const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : "beans";
+	const setTab = (next: Tab) =>
+		setSearchParams(next === "beans" ? {} : { tab: next }, { replace: true });
 	const [beanSort, setBeanSort] = useState<BeanSort>("order");
 	const [search, setSearch] = useState("");
 	const [filtersOpen, setFiltersOpen] = useState(false);
@@ -31,12 +47,21 @@ export default function Library() {
 	const [selectedBrand, setSelectedBrand] = useState<string[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+	const [selectedRecipeMethods, setSelectedRecipeMethods] = useState<string[]>(
+		[],
+	);
 
 	const beansCount = useBeanCount();
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
 	const activeMachines = allMachines;
+	const allRecipes = useRecipes();
+	const recipeBrewStats = useRecipeBrewStats();
+	const beanNames = useMemo(
+		() => new Map(allBeans.map((b) => [b.id, b.name])),
+		[allBeans],
+	);
 
 	const beanIds = useMemo(
 		() =>
@@ -76,8 +101,7 @@ export default function Library() {
 	const typeCounts = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const machine of activeMachines) {
-			const type = machine.type?.trim();
-			if (!type) continue;
+			const type = methodConfig(machine.method).label;
 			counts.set(type, (counts.get(type) ?? 0) + 1);
 		}
 		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
@@ -141,20 +165,47 @@ export default function Library() {
 		return activeMachines.filter((m) => {
 			const matchesSearch =
 				!q ||
-				[m.name, m.brand, m.model, m.type]
+				[m.name, m.brand, m.model, methodConfig(m.method).label]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
 					.includes(q);
 			const matchesType =
 				selectedTypes.length === 0 ||
-				(m.type != null && selectedTypes.includes(m.type.trim()));
+				selectedTypes.includes(methodConfig(m.method).label);
 			const matchesBrand =
 				selectedBrands.length === 0 ||
 				(m.brand != null && selectedBrands.includes(m.brand.trim()));
 			return matchesSearch && matchesType && matchesBrand;
 		});
 	}, [search, selectedBrands, selectedTypes, activeMachines]);
+
+	const recipeMethodCounts = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const recipe of allRecipes) {
+			const label = methodConfig(recipe.method).label;
+			counts.set(label, (counts.get(label) ?? 0) + 1);
+		}
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}, [allRecipes]);
+
+	const filteredRecipes = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		return allRecipes.filter((r) => {
+			const methodLabel = methodConfig(r.method).label;
+			const matchesSearch =
+				!q ||
+				[r.name, methodLabel, r.beanId ? beanNames.get(r.beanId) : ""]
+					.filter(Boolean)
+					.join(" ")
+					.toLowerCase()
+					.includes(q);
+			const matchesMethod =
+				selectedRecipeMethods.length === 0 ||
+				selectedRecipeMethods.includes(methodLabel);
+			return matchesSearch && matchesMethod;
+		});
+	}, [search, selectedRecipeMethods, allRecipes, beanNames]);
 
 	const beanCountryOptions = useMemo(
 		() =>
@@ -196,6 +247,16 @@ export default function Library() {
 		[brandsCounts, selectedBrands],
 	);
 
+	const recipeMethodOptions = useMemo(
+		() =>
+			recipeMethodCounts.map(([label, count]) => ({
+				label,
+				count,
+				active: selectedRecipeMethods.includes(label),
+			})),
+		[recipeMethodCounts, selectedRecipeMethods],
+	);
+
 	const beanFilters = (
 		<>
 			<FilterCard
@@ -214,7 +275,7 @@ export default function Library() {
 	const machineFilters = (
 		<>
 			<FilterCard
-				title="Type"
+				title="Method"
 				options={machineTypeOptions}
 				onToggle={(value) => toggleSelection(value, setSelectedTypes)}
 			/>
@@ -226,11 +287,26 @@ export default function Library() {
 		</>
 	);
 
-	const filtersNode: ReactNode = tab === "beans" ? beanFilters : machineFilters;
+	const recipeFilters = (
+		<FilterCard
+			title="Method"
+			options={recipeMethodOptions}
+			onToggle={(value) => toggleSelection(value, setSelectedRecipeMethods)}
+		/>
+	);
+
+	const filtersNode: ReactNode =
+		tab === "beans"
+			? beanFilters
+			: tab === "machines"
+				? machineFilters
+				: recipeFilters;
 	const activeFilterCount =
-		selectedCountries.length +
-		selectedBrand.length +
-		(tab === "machines" ? selectedTypes.length + selectedBrands.length : 0);
+		tab === "beans"
+			? selectedCountries.length + selectedBrand.length
+			: tab === "machines"
+				? selectedTypes.length + selectedBrands.length
+				: selectedRecipeMethods.length;
 
 	return (
 		<div className="mx-auto w-full max-w-6xl">
@@ -242,7 +318,7 @@ export default function Library() {
 							Library
 						</h1>
 						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-							Your beans and equipment
+							Your beans, brewers and recipes
 						</p>
 					</div>
 
@@ -257,7 +333,11 @@ export default function Library() {
 								},
 								{
 									value: "machines",
-									label: `Machines${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
+									label: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
+								},
+								{
+									value: "recipes",
+									label: `Recipes${allRecipes.length > 0 ? ` (${allRecipes.length})` : ""}`,
 								},
 							]}
 							value={tab}
@@ -266,7 +346,7 @@ export default function Library() {
 						<label className="relative block min-w-0 flex-1">
 							<input
 								className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-								placeholder={`Search ${tab}...`}
+								placeholder={`Search ${SEARCH_LABEL[tab]}...`}
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
@@ -371,12 +451,12 @@ export default function Library() {
 									<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
 										<p className="text-sm text-muted-foreground">
 											{activeMachines.length === 0
-												? "No equipment yet."
-												: "No machines match your search."}
+												? "No brewers yet."
+												: "No brewers match your search."}
 										</p>
 										{activeMachines.length === 0 && (
 											<Button asChild variant="ink" className="mt-3">
-												<Link to="/log/machine">Add your first machine</Link>
+												<Link to="/log/machine">Add your first brewer</Link>
 											</Button>
 										)}
 									</div>
@@ -390,7 +470,52 @@ export default function Library() {
 										))}
 										<AddCard
 											to="/log/machine"
-											label="Add machine"
+											label="Add brewer"
+											className="h-32 self-start"
+										/>
+									</div>
+								)}
+							</div>
+						)}
+
+						{tab === "recipes" && (
+							<div>
+								{filteredRecipes.length === 0 ? (
+									allRecipes.length === 0 ? (
+										<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+											<p className="font-display text-2xl text-foreground/60">
+												No recipes
+											</p>
+											<p className="font-sans text-sm text-muted-foreground">
+												Write down a target, or save a good brew as one from
+												History.
+											</p>
+											<Button asChild variant="ink" className="mt-2">
+												<Link to="/log/recipe">Add a recipe</Link>
+											</Button>
+										</div>
+									) : (
+										<p className="text-sm text-muted-foreground">
+											No recipes match your search.
+										</p>
+									)
+								) : (
+									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+										{filteredRecipes.map((recipe) => (
+											<RecipeCard
+												key={recipe.id}
+												recipe={recipe}
+												beanName={
+													recipe.beanId
+														? beanNames.get(recipe.beanId)
+														: undefined
+												}
+												stats={recipeBrewStats[recipe.id]}
+											/>
+										))}
+										<AddCard
+											to="/log/recipe"
+											label="Add recipe"
 											className="h-32 self-start"
 										/>
 									</div>

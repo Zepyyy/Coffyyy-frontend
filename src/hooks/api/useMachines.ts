@@ -19,9 +19,29 @@ export const useMachineSuggestions = () => {
 			names: [""],
 			brands: [""],
 			models: [""],
-			types: [""],
 			grindRanges: [""],
 			capacities: [""],
 		}
+	);
+};
+
+/** Brews logged with a Brewer; its method is locked when > 0. */
+export const useMachineBrewCount = (machineId: number | undefined) => {
+	return useLiveQuery(
+		() => machineStatsApi.getMachineBrewCount(machineId),
+		[machineId],
+	);
+};
+
+/** One Brewer; undefined while loading, null when missing. */
+export const useMachine = (machineId: number | undefined) => {
+	return useLiveQuery(
+		async () =>
+			machineId
+				? ((await machineStatsApi.getAllMachines()).find(
+						(m) => m.id === machineId,
+					) ?? null)
+				: null,
+		[machineId],
 	);
 };

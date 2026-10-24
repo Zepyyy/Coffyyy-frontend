@@ -1,5 +1,5 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import BeanVerdictPicker from "@/components/feedback/BeanVerdictPicker";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,25 @@ import RoastDots from "@/components/home/RoastDots";
 import { useAllMachines } from "@/hooks/api/useMachines";
 import { useBean } from "@/hooks/api/useBeans";
 import { useBrewsForBeanId } from "@/hooks/api/useBrews";
+import { useRecipes } from "@/hooks/api/useRecipes";
 import {
 	useBeanBrewInsights,
 	useBrewCountForBeanId,
 } from "@/hooks/api/useStats";
+import { isBrewMethod, methodConfig } from "@/lib/brewMethods";
 import { getColorSwatch } from "@/lib/utils";
-import type { BeanBrewParameterSummary } from "@/types/BrewTypes";
+import type { BeanBrewParameterSummary, BrewMethod } from "@/types/BrewTypes";
 
 function formatWeight(value: number | null) {
 	return value == null ? "—" : `${value.toFixed(1)} g`;
 }
 
 function formatRatio(value: number | null) {
-	return value == null ? "—" : `1:${value.toFixed(1)}`;
+	return value == null ? "—" : `1:${Number(value.toFixed(1))}`;
+}
+
+function formatTemp(value: number | null) {
+	return value == null ? "—" : `${Number(value.toFixed(1))}°C`;
 }
 
 function formatRating(value: number | null) {
@@ -28,9 +34,25 @@ function formatRating(value: number | null) {
 }
 
 function buildStatRows(
+	method: BrewMethod,
 	average: BeanBrewParameterSummary,
 	best: BeanBrewParameterSummary | null,
 ) {
+	const config = methodConfig(method);
+	const extras: Array<[string, string, string]> = [];
+	if (config.flow) {
+		extras.push(["Flow", average._flow ?? "—", best?._flow ?? "—"]);
+	}
+	if (config.waterTemp) {
+		extras.push([
+			"Water temp",
+			formatTemp(average.waterTemp),
+			formatTemp(best?.waterTemp ?? null),
+		]);
+	}
+	if (config.heat) {
+		extras.push(["Heat", average.heat ?? "—", best?.heat ?? "—"]);
+	}
 	return [
 		["Grind", average.grindSize, best?.grindSize ?? "—"],
 		[
@@ -39,12 +61,17 @@ function buildStatRows(
 			formatWeight(best?.beanWeight ?? null),
 		],
 		[
-			"Espresso",
-			formatWeight(average.espressoWeight),
-			formatWeight(best?.espressoWeight ?? null),
+			config.brewWeight.label,
+			formatWeight(average.brewWeight),
+			formatWeight(best?.brewWeight ?? null),
 		],
-		["Extraction", average.extractionTime ?? "—", best?.extractionTime ?? "—"],
+		[
+			config.time.label,
+			average.extractionTime ?? "—",
+			best?.extractionTime ?? "—",
+		],
 		["Ratio", formatRatio(average.ratio), formatRatio(best?.ratio ?? null)],
+		...extras,
 		[
 			"Rating",
 			formatRating(average._rating),
@@ -56,14 +83,39 @@ function buildStatRows(
 export default function Bean() {
 	const { BeanId } = useParams();
 	const beanId = Number(BeanId);
+	const [searchParams, setSearchParams] = useSearchParams();
+	// Unset = the bean's most recent method (resolved by the insights query).
+	const methodParam = searchParams.get("method");
+	const selectedMethod = isBrewMethod(methodParam) ? methodParam : undefined;
 
 	const allMachines = useAllMachines();
+	const allRecipes = useRecipes();
 	const bean = useBean(beanId);
 	const brewCount = useBrewCountForBeanId(beanId);
-	const insights = useBeanBrewInsights(beanId);
-	const brews = useBrewsForBeanId(beanId);
+	const insights = useBeanBrewInsights(beanId, selectedMethod);
+	const allBrews = useBrewsForBeanId(beanId);
 
 	const machineNameById = new Map(allMachines.map((m) => [m.id, m.name]));
+	const recipeById = new Map(allRecipes.map((r) => [r.id, r]));
+	const multiMethod = (insights?.methods.length ?? 0) > 1;
+	const method = insights?.method;
+	const methodLabel = method ? methodConfig(method).label.toLowerCase() : "";
+	// With more than one method, the ledger follows the switch too.
+	const brews =
+		multiMethod && method
+			? allBrews?.filter((brew) => methodConfig(brew.method).method === method)
+			: allBrews;
+	const shownCount = brews?.length ?? brewCount;
+
+	function selectMethod(next: BrewMethod) {
+		setSearchParams(
+			(prev) => {
+				prev.set("method", next);
+				return prev;
+			},
+			{ replace: true },
+		);
+	}
 
 	if (!bean) {
 		return (
@@ -89,7 +141,7 @@ export default function Bean() {
 		...(bean.variety ?? []),
 	].filter(Boolean);
 	const statRows = insights
-		? buildStatRows(insights.average, insights.best)
+		? buildStatRows(insights.method, insights.average, insights.best)
 		: [];
 
 	return (
@@ -176,6 +228,7 @@ export default function Bean() {
 					withHeader={false}
 					withGraph={true}
 					withBarChart={true}
+					onMethodChange={selectMethod}
 				/>
 			)}
 
@@ -185,7 +238,9 @@ export default function Bean() {
 					<div className="flex items-center justify-between gap-4">
 						<div>
 							<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
-								Brew settings
+								{multiMethod
+									? `${methodConfig(insights.method).label} settings`
+									: "Brew settings"}
 							</p>
 							<p className="mt-1 font-sans text-xs text-muted-foreground">
 								Average vs best from{" "}
@@ -246,7 +301,9 @@ export default function Bean() {
 			{/* Brew history */}
 			<div className="space-y-3">
 				<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
-					{brewCount} brew{brewCount !== 1 ? "s" : ""}
+					{shownCount} {multiMethod ? `${methodLabel} ` : ""}brew
+					{shownCount !== 1 ? "s" : ""}
+					{multiMethod ? ` · ${brewCount} in all` : ""}
 				</p>
 
 				{brews === undefined && (
@@ -269,7 +326,7 @@ export default function Bean() {
 							Log your first brew with this bean.
 						</p>
 						<Button asChild variant="ink" className="mt-2">
-							<Link to="/log/brew">Log a brew</Link>
+							<Link to={`/log/brew?bean=${beanId}`}>Log a brew</Link>
 						</Button>
 					</div>
 				)}
@@ -286,6 +343,11 @@ export default function Bean() {
 										: undefined
 								}
 								bean={bean}
+								recipe={
+									brew.recipeId != null
+										? recipeById.get(brew.recipeId)
+										: undefined
+								}
 							/>
 						))}
 					</div>

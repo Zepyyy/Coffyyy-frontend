@@ -1,6 +1,6 @@
 # Durable enrollment and whole-workspace snapshots
 
-Status: amended by [0002](0002-automatic-sync.md)
+Status: amended by [0002](0002-automatic-sync.md), [0003](0003-versioned-snapshot-migrations.md)
 
 Coffyyy keeps local-first use and adds optional sync through one durable browser enrollment: a workspace ID is an enrollment marker and a reusable sync code is the reconnect credential. Sync uses complete workspace snapshots with explicit Push and automatic Pull; stale pushes are rejected so a browser cannot silently overwrite a newer cloud snapshot. This replaces operation feeds, outboxes, revisions, tombstones, recovery history, and record-level merging because the product needs understandable whole-workspace replacement rather than conflict-recovery machinery.
 

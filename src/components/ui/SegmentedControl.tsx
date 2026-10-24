@@ -16,12 +16,15 @@ export default function SegmentedControl<T extends string>({
 	onChange,
 	ariaLabel,
 	className,
+	disabled,
 }: {
 	options: Array<SegmentedOption<T>>;
 	value: T;
 	onChange: (value: T) => void;
 	ariaLabel: string;
 	className?: string;
+	/** Shows the value but locks every option. */
+	disabled?: boolean;
 }) {
 	return (
 		<div
@@ -37,11 +40,13 @@ export default function SegmentedControl<T extends string>({
 						type="button"
 						onClick={() => onChange(option.value)}
 						aria-pressed={active}
+						disabled={disabled}
 						className={cn(
-							"group relative pb-1.5 font-data text-[11px] uppercase tracking-[0.16em] transition-colors",
+							"group relative pb-1.5 font-data text-[11px] uppercase tracking-[0.16em] transition-colors disabled:cursor-not-allowed",
 							active
 								? "text-foreground"
-								: "text-ink-faint hover:text-foreground",
+								: "text-ink-faint hover:text-foreground disabled:hover:text-ink-faint",
+							disabled && !active && "opacity-50",
 						)}
 					>
 						{option.label}
@@ -49,7 +54,9 @@ export default function SegmentedControl<T extends string>({
 							aria-hidden
 							className={cn(
 								"seg-underline absolute inset-x-0 bottom-0 h-px origin-left bg-crema transition-transform duration-300 ease-soft",
-								active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50",
+								active
+									? "scale-x-100"
+									: "scale-x-0 group-enabled:group-hover:scale-x-50",
 							)}
 						/>
 					</button>

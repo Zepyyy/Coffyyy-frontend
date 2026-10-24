@@ -1,16 +1,16 @@
 import {
+	type AnyWorkspaceSnapshot,
+	parseSnapshot,
 	readLocalSnapshot,
 	replaceLocalSnapshot,
-	type WorkspaceSnapshot,
-	validateSnapshot,
 } from "./workspace";
 
 export async function exportLocalSnapshot() {
 	return JSON.stringify(await readLocalSnapshot(), null, 2);
 }
 
+/** Accepts any snapshot schema this client can upgrade (old backups are v1). */
 export async function importLocalSnapshot(json: string) {
-	const snapshot = JSON.parse(json) as WorkspaceSnapshot;
-	validateSnapshot(snapshot);
+	const snapshot = parseSnapshot(JSON.parse(json) as AnyWorkspaceSnapshot);
 	await replaceLocalSnapshot(snapshot);
 }

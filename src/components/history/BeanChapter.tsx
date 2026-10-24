@@ -1,22 +1,29 @@
 import { Link } from "react-router";
 import { BrewLedgerRow, RatingStars } from "./BrewLedgerRow";
 import { recipeLine } from "@/lib/brewFormat";
+import { methodConfig } from "@/lib/brewMethods";
 import { getColorSwatch, formatRelativeDay } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 
 /**
  * One bean's story in the history ledger: the recipe worth repeating,
- * then every shot of that bean beneath it.
+ * then every brew of that bean beneath it.
  */
 export function BeanChapter({
 	bean,
 	brews,
 	machineNames,
+	recipes,
+	showMethod = false,
 }: {
 	bean: Beans | undefined;
 	brews: Brews[];
 	machineNames: Map<number | undefined, string>;
+	recipes?: Map<number, Recipes>;
+	/** Label each brew's method (the journal has more than one). */
+	showMethod?: boolean;
 }) {
 	const swatch = getColorSwatch(bean?.dominantNote);
 	const rated = brews.filter((b) => b.overallRating != null);
@@ -55,7 +62,7 @@ export function BeanChapter({
 						</span>
 					)}
 					<span className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-soft/80">
-						{brews.length} shot{brews.length === 1 ? "" : "s"}
+						{brews.length} brew{brews.length === 1 ? "" : "s"}
 						{avg != null ? ` · avg ${avg.toFixed(1)}★` : ""}
 					</span>
 				</div>
@@ -73,6 +80,7 @@ export function BeanChapter({
 							Repeat this
 						</span>
 						<span className="font-data text-xs font-semibold text-foreground/90">
+							{showMethod ? `${methodConfig(best.method).label} · ` : ""}
 							{recipeLine(best)}
 						</span>
 					</div>
@@ -99,6 +107,10 @@ export function BeanChapter({
 								: undefined
 						}
 						bean={bean ?? null}
+						recipe={
+							brew.recipeId != null ? recipes?.get(brew.recipeId) : undefined
+						}
+						showMethod={showMethod}
 					/>
 				))}
 			</div>

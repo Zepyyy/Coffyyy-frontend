@@ -6,12 +6,62 @@ import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { recipeLine } from "@/lib/brewFormat";
+import { methodConfig } from "@/lib/brewMethods";
 import { useBrewSuggestions, useHistoryBrews } from "@/hooks/api/useBrews";
-import { formatRelativeDay } from "@/lib/utils";
+import { useRecipes } from "@/hooks/api/useRecipes";
+import { useBrewMethodsInUse } from "@/hooks/api/useStats";
+import { cn, formatRelativeDay } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
-import type { Brews } from "@/types/BrewTypes";
+import type { BrewMethod, Brews } from "@/types/BrewTypes";
 
 type ViewMode = "bean" | "timeline";
+type MethodFilter = "all" | BrewMethod;
+
+/** All / Espresso / Pour-over / Moka, for the methods the journal uses. */
+function MethodChips({
+	methods,
+	value,
+	onChange,
+}: {
+	methods: BrewMethod[];
+	value: MethodFilter;
+	onChange: (value: MethodFilter) => void;
+}) {
+	const options: Array<{ value: MethodFilter; label: string }> = [
+		{ value: "all", label: "All" },
+		...methods.map((method) => ({
+			value: method,
+			label: methodConfig(method).label,
+		})),
+	];
+	return (
+		<div
+			role="group"
+			aria-label="Filter by brew method"
+			className="flex flex-wrap gap-2"
+		>
+			{options.map((option) => {
+				const active = option.value === value;
+				return (
+					<button
+						key={option.value}
+						type="button"
+						onClick={() => onChange(option.value)}
+						aria-pressed={active}
+						className={cn(
+							"border px-2.5 py-1 font-data text-[10px] uppercase tracking-[0.14em] transition-colors",
+							active
+								? "border-crema bg-crema-tint text-foreground"
+								: "border-line bg-paper-raised text-ink-faint hover:border-line-strong hover:text-foreground",
+						)}
+					>
+						{option.label}
+					</button>
+				);
+			})}
+		</div>
+	);
+}
 
 const RATING_FILTER_OPTIONS: Array<{ value: "all" | number; label: string }> = [
 	{ value: "all", label: "All ratings" },
@@ -37,9 +87,11 @@ function HistorySkeleton() {
 function StoryStrip({
 	brews,
 	beanNames,
+	showMethod,
 }: {
 	brews: Brews[] | undefined;
 	beanNames: Map<number | undefined, string>;
+	showMethod: boolean;
 }) {
 	if (brews === undefined) return null;
 	const rated = brews.filter((b) => b.overallRating != null);
@@ -57,7 +109,7 @@ function StoryStrip({
 	const bestIsReal = best != null && (Number(best.overallRating) || 0) > 0;
 
 	const stats: Array<[string, string]> = [
-		["Shots", String(brews.length)],
+		["Brews", String(brews.length)],
 		["Beans", String(beansTried)],
 		["Avg rating", avg != null ? `${avg.toFixed(1)}★` : "—"],
 	];
@@ -79,6 +131,7 @@ function StoryStrip({
 					<p className="eyebrow">The one to remember</p>
 					<p className="mt-1 truncate font-data text-sm font-semibold text-foreground">
 						{beanNames.get(best.beanId ?? -1) ?? "A brew"} ·{" "}
+						{showMethod ? `${methodConfig(best.method).label} · ` : ""}
 						{best.overallRating}★ · {recipeLine(best)}
 					</p>
 				</div>
@@ -103,10 +156,33 @@ export default function History() {
 	const [search, setSearch] = useState("");
 	const [ratingFilter, setRatingFilter] = useState<"all" | number>("all");
 	const [view, setView] = useState<ViewMode>("bean");
+	const [methodFilter, setMethodFilter] = useState<MethodFilter>("all");
 
 	const minRating = ratingFilter === "all" ? null : ratingFilter;
-	const brews = useHistoryBrews(search, minRating);
+	const searchedBrews = useHistoryBrews(search, minRating);
 	const suggestions = useBrewSuggestions();
+	const allRecipes = useRecipes();
+	const methodsInUse = useBrewMethodsInUse();
+	const multiMethod = methodsInUse.length > 1;
+	// A filter for a method that no longer has brews falls back to All.
+	const activeMethod: MethodFilter =
+		methodFilter !== "all" && multiMethod && methodsInUse.includes(methodFilter)
+			? methodFilter
+			: "all";
+
+	const brews = useMemo(
+		() =>
+			activeMethod === "all"
+				? searchedBrews
+				: searchedBrews?.filter(
+						(brew) => methodConfig(brew.method).method === activeMethod,
+					),
+		[searchedBrews, activeMethod],
+	);
+	const recipeMap = useMemo(
+		() => new Map(allRecipes.map((recipe) => [recipe.id, recipe])),
+		[allRecipes],
+	);
 
 	const beanNameMap = useMemo(
 		() => new Map(suggestions.bean.map((bean) => [bean.id, bean.name])),
@@ -125,7 +201,10 @@ export default function History() {
 		[suggestions.machine],
 	);
 
-	const hasActiveFilters = search.trim().length > 0 || ratingFilter !== "all";
+	const hasActiveFilters =
+		search.trim().length > 0 ||
+		ratingFilter !== "all" ||
+		activeMethod !== "all";
 
 	/** beanId → brews, chapters ordered by most recent activity. */
 	const chapters = useMemo(() => {
@@ -159,6 +238,7 @@ export default function History() {
 	function clearFilters() {
 		setSearch("");
 		setRatingFilter("all");
+		setMethodFilter("all");
 	}
 
 	return (
@@ -173,7 +253,11 @@ export default function History() {
 					</p>
 				</div>
 
-				<StoryStrip brews={brews} beanNames={beanNameMap} />
+				<StoryStrip
+					brews={brews}
+					beanNames={beanNameMap}
+					showMethod={multiMethod}
+				/>
 
 				{/* Controls */}
 				<div className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-3 shadow-card sm:flex-row sm:items-center">
@@ -191,10 +275,10 @@ export default function History() {
 						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 						<input
 							className="h-9 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-							placeholder="Search beans or machines"
+							placeholder="Search beans or brewers"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							aria-label="Search brews by bean or machine"
+							aria-label="Search brews by bean or brewer"
 						/>
 					</label>
 					<label className="relative block">
@@ -228,6 +312,14 @@ export default function History() {
 					)}
 				</div>
 
+				{multiMethod && (
+					<MethodChips
+						methods={methodsInUse}
+						value={activeMethod}
+						onChange={setMethodFilter}
+					/>
+				)}
+
 				{brews === undefined && <HistorySkeleton />}
 
 				{brews !== undefined && brews.length === 0 && (
@@ -237,8 +329,8 @@ export default function History() {
 						</p>
 						<p className="font-sans text-sm text-muted-foreground">
 							{hasActiveFilters
-								? "Try clearing the search or rating filter."
-								: "Log your first shot and the story starts here."}
+								? "Try clearing the search or filters."
+								: "Log your first brew and the story starts here."}
 						</p>
 						{hasActiveFilters ? (
 							<Button
@@ -273,6 +365,8 @@ export default function History() {
 									bean={beanMap.get(beanId)}
 									brews={beanBrews}
 									machineNames={machineNameMap}
+									recipes={recipeMap}
+									showMethod={multiMethod}
 								/>
 							))}
 
@@ -287,7 +381,7 @@ export default function History() {
 											{day}
 										</h2>
 										<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-											{dayBrews.length} shot{dayBrews.length === 1 ? "" : "s"}
+											{dayBrews.length} brew{dayBrews.length === 1 ? "" : "s"}
 										</span>
 									</header>
 									<div>
@@ -305,6 +399,12 @@ export default function History() {
 														? (beanMap.get(brew.beanId) ?? null)
 														: null
 												}
+												recipe={
+													brew.recipeId != null
+														? recipeMap.get(brew.recipeId)
+														: undefined
+												}
+												showMethod={multiMethod}
 											/>
 										))}
 									</div>

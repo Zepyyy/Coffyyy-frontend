@@ -14,6 +14,7 @@ import Library from "./pages/Library.tsx";
 import BeansLog from "./pages/log/Beans.tsx";
 import BrewLog from "./pages/log/Brew.tsx";
 import MachinesLog from "./pages/log/Machines.tsx";
+import RecipeLog from "./pages/log/Recipe.tsx";
 import Providers from "./providers/Providers.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -31,6 +32,7 @@ createRoot(document.getElementById("root")!).render(
 							<Route path="brew" element={<BrewLog />} />
 							<Route path="bean" element={<BeansLog />} />
 							<Route path="machine" element={<MachinesLog />} />
+							<Route path="recipe" element={<RecipeLog />} />
 						</Route>
 						{/* Legacy redirects */}
 						<Route path="brew" element={<Navigate to="/log/brew" replace />} />

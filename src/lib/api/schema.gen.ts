@@ -336,10 +336,11 @@ export interface components {
         /** @description Complete workspace data */
         Snapshot: {
             /** @enum {number} */
-            schemaVersion: 1;
+            schemaVersion: 2;
             beans: components["schemas"]["Bean"][];
             machines: components["schemas"]["Machine"][];
             brews: components["schemas"]["Brew"][];
+            recipes: components["schemas"]["Recipe"][];
         };
         SnapshotResponse: {
             snapshot: components["schemas"]["Snapshot"];
@@ -372,36 +373,56 @@ export interface components {
             designation: "Pure Origin" | "Blend" | "";
             finished: boolean;
         };
-        /** @description Coffee machine or equipment record */
+        /** @description Brewer (coffee machine or equipment) record */
         Machine: {
             /** @description Stable client-generated ID, unique per entity type */
             localId: string;
             name: string;
             brand: string;
-            type: string;
+            /** @enum {string} */
+            method: "espresso" | "pour-over" | "moka";
             purchaseDate: string;
             model: string;
             grindRange: string;
             capacity: string;
         };
-        /** @description Coffee brew record; bean/machine reference snapshot localIds */
+        /** @description Coffee brew record; bean/machine/recipe reference snapshot localIds */
         Brew: {
             /** @description Stable client-generated ID, unique per entity type */
             localId: string;
+            /**
+             * @description Copied from the Brewer at log time; immutable
+             * @enum {string}
+             */
+            method: "espresso" | "pour-over" | "moka";
             /** @description Bean localId */
             beanLocalId?: string;
             /** @description Machine localId */
             machineLocalId?: string;
+            /** @description Recipe localId; recipe method must match */
+            recipeLocalId?: string;
+            /** @description Dose (g) */
             beanWeight: number;
-            espressoWeight: number;
+            /** @description Liquid weight (g) the ratio is computed from */
+            brewWeight: number;
             grindSize: number;
             overallRating?: number;
             /** @description -5 sour/under-extracted to +5 bitter/over-extracted */
             tasteScore?: number;
             /** @description -5 weak to +5 strong */
             strengthScore?: number;
+            /** @description Seconds */
             extractionTime?: string;
+            /** @description Espresso only */
             flow?: string;
+            /** @description °C, pour-over only */
+            waterTemp?: number;
+            /**
+             * @description Moka only
+             * @enum {string}
+             */
+            heat?: "low" | "medium" | "high";
+            notes?: string;
             /** @description ISO 8601 date-time */
             date: string;
         };
@@ -421,6 +442,31 @@ export interface components {
              * @example Bad Request
              */
             error: string;
+        };
+        /** @description Saved brew targets for espresso or pour-over (no moka) */
+        Recipe: {
+            /** @description Stable client-generated ID, unique per entity type */
+            localId: string;
+            name: string;
+            /**
+             * @description Immutable after creation
+             * @enum {string}
+             */
+            method: "espresso" | "pour-over";
+            /** @description Optional bean tie */
+            beanLocalId?: string;
+            /** @description Target dose (g) */
+            beanWeight: number;
+            /** @description Target yield/water (g) */
+            brewWeight: number;
+            grindSize?: number;
+            /** @description Seconds */
+            extractionTime?: string;
+            /** @description °C, pour-over only */
+            waterTemp?: number;
+            notes?: string;
+            /** @description ISO 8601 date-time */
+            createdAt: string;
         };
     };
     responses: {
@@ -751,7 +797,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description Snapshot version conflict - data has changed */
+            /** @description Snapshot version conflict - data has changed ("Cloud snapshot changed"), or outdated client sent an older schema ("Client outdated: snapshot schema 1 is no longer accepted") */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -773,8 +819,12 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const healthStatusStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HealthStatus"]["status"]> = ["healthy", "unhealthy"];
 export const databaseHealthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DatabaseHealth"]["status"]> = ["up", "down"];
-export const snapshotSchemaVersionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Snapshot"]["schemaVersion"]> = [1];
+export const snapshotSchemaVersionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Snapshot"]["schemaVersion"]> = [2];
 export const beanStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["status"]> = ["Excellent", "Good", "Mid", "Horrible", "New", ""];
 export const beanDominantNoteValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["dominantNote"]> = ["Fruity", "Nutty", "Floral", "Sweet", "Sour", "Spices", "Roasted", "Green", ""];
 export const beanBotanicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["botanic"]> = ["Arabica", "Robusta", ""];
 export const beanDesignationValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["designation"]> = ["Pure Origin", "Blend", ""];
+export const machineMethodValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Machine"]["method"]> = ["espresso", "pour-over", "moka"];
+export const brewMethodValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Brew"]["method"]> = ["espresso", "pour-over", "moka"];
+export const brewHeatValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Brew"]["heat"]> = ["low", "medium", "high"];
+export const recipeMethodValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Recipe"]["method"]> = ["espresso", "pour-over"];

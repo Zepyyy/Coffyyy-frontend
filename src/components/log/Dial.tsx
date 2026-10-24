@@ -77,6 +77,7 @@ export default function Dial({
 	helpers = true,
 	label = "Weight dial",
 	step = 0.1,
+	decimals = 1,
 }: {
 	value: number;
 	onChange: (value: number) => void;
@@ -85,6 +86,8 @@ export default function Dial({
 	helpers?: boolean;
 	label?: string;
 	step?: number;
+	/** Digits shown on the cap; 0 for whole units like °C. */
+	decimals?: number;
 }) {
 	const knobRef = useRef<HTMLButtonElement>(null);
 	const dialDrag = useRef<{
@@ -304,8 +307,8 @@ export default function Dial({
 								aria-label={`${label} — type a value`}
 								inputMode="decimal"
 								className="w-12 bg-transparent text-center font-data text-base font-semibold leading-none text-crema-deep outline-none dark:text-crema"
-								value={draft ?? value.toFixed(1)}
-								onFocus={() => setDraft(value.toFixed(1))}
+								value={draft ?? value.toFixed(decimals)}
+								onFocus={() => setDraft(value.toFixed(decimals))}
 								onChange={(e) => setDraft(e.target.value)}
 								onBlur={() => {
 									if (draft != null) {

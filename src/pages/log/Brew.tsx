@@ -1,5 +1,5 @@
-import { ArrowRight, RotateCcw, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, Plus, RotateCcw, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import SteamCup from "@/components/ui/SteamCup";
@@ -10,17 +10,22 @@ import QuickMachineCard from "@/components/log/QuickMachineCard";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { addBrew } from "@/lib/data";
 import {
+	useBrewFormStart,
 	useBrewSuggestions,
 	useLastBrewForBean,
 	useGrindSettingsForBean,
 } from "@/hooks/api/useBrews";
+import { useRecipesForMethod } from "@/hooks/api/useRecipes";
+import { DEFAULT_FLOW } from "@/lib/defaults";
+import { formatRatio, methodConfig } from "@/lib/brewMethods";
 import {
-	DEFAULT_FLOW,
-	MAX_BEAN_WEIGHT,
-	MAX_ESPRESSO_WEIGHT,
-	MIN_BEAN_WEIGHT,
-	MIN_ESPRESSO_WEIGHT,
-} from "@/lib/defaults";
+	type BrewLogForm,
+	brewWeightForRatio,
+	dialsFromBrew,
+	dialsFromRecipe,
+	methodDefaults,
+	toNewBrew,
+} from "@/components/log/brewForm";
 import {
 	clampWeight,
 	cn,
@@ -28,30 +33,47 @@ import {
 	formatRelativeDay,
 	parseExtractionTime,
 } from "@/lib/utils";
-import type { BrewForm } from "@/types/BrewTypes";
+import type { Brews } from "@/types/BrewTypes";
+import type { Recipes } from "@/types/RecipeTypes";
 
-const INITIAL: BrewForm = {
+// Before a Brewer is picked the dials show espresso's defaults.
+const INITIAL: BrewLogForm = {
 	beanId: undefined,
 	machineId: undefined,
-	date: new Date(),
-	grindSize: 12,
-	beanWeight: 18,
-	espressoWeight: 36,
-	flow: "",
-	extractionTime: "",
+	recipeId: undefined,
+	...methodDefaults("espresso"),
 };
 
-const GRIND_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const TIME_PRESETS = ["25", "28", "30", "32", "36"];
+const chipClass = (active: boolean) =>
+	cn(
+		"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+		active
+			? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
+			: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+	);
+
+const inputClass =
+	"rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60";
+
+/** A positive integer search param, else undefined. */
+function idParam(raw: string | null): number | undefined {
+	const id = Number(raw);
+	return raw != null && Number.isInteger(id) && id > 0 ? id : undefined;
+}
+
+const capitalize = (text: string) =>
+	text.charAt(0).toUpperCase() + text.slice(1);
 
 function StepHeading({
 	index,
 	title,
 	hint,
+	tag,
 }: {
 	index: string;
 	title: string;
 	hint: string;
+	tag?: string;
 }) {
 	return (
 		<div className="flex items-baseline gap-3">
@@ -61,6 +83,11 @@ function StepHeading({
 			<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
 				{title}
 			</h2>
+			{tag && (
+				<span className="font-data text-[10px] uppercase tracking-[0.14em] text-crema-deep dark:text-crema">
+					{tag}
+				</span>
+			)}
 			<span className="hidden font-sans text-xs text-muted-foreground sm:inline">
 				{hint}
 			</span>
@@ -133,101 +160,175 @@ function NextStepRow({
 }
 
 export default function BrewLog() {
-	const [form, setForm] = useState<BrewForm>(INITIAL);
+	const [form, setForm] = useState<BrewLogForm>(INITIAL);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState("");
-	const [savedBrewId, setSavedBrewId] = useState<number | null>(null);
+	const [savedBrew, setSavedBrew] = useState<Brews | null>(null);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 	const [feedbackSaved, setFeedbackSaved] = useState(false);
 	const [beanSearch, setBeanSearch] = useState("");
+	const [notesOpen, setNotesOpen] = useState(false);
+	const [prefill, setPrefill] = useState<{
+		date: Date;
+		flow?: string | null;
+		overallRating?: number | null;
+	} | null>(null);
 
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 
 	const suggestions = useBrewSuggestions();
-	const lastBrewForBean = useLastBrewForBean(form.beanId);
-	const grindSettings = useGrindSettingsForBean(form.beanId);
+	const machine = suggestions.machine.find((m) => m.id === form.machineId);
+	// The picked Brewer decides the method, and with it every dial below.
+	const method = machine?.method;
+	const config = methodConfig(method);
+	// Espresso speaks in shots; every other method in brews.
+	const noun = config.method === "espresso" ? "shot" : "brew";
 
-	// Deep link: /log/brew?bean=12 selects the bean up front.
-	useEffect(() => {
-		const beanParam = searchParams.get("bean");
-		if (beanParam == null) return;
-		const beanId = Number(beanParam);
-		if (Number.isFinite(beanId) && beanId > 0) {
-			setForm((f) => ({ ...f, beanId }));
-		}
-	}, [searchParams]);
-
-	// Selecting a bean picks up that bean's latest recipe as the starting point.
-	const [prefill, setPrefill] = useState<{
-		from: string;
-		date: Date;
-		flow?: string | null;
-		overallRating?: number | null;
-	} | null>(null);
-	const prefillSourceId = useMemo(
-		() => (lastBrewForBean?.beanId === form.beanId ? form.beanId : undefined),
-		[lastBrewForBean, form.beanId],
+	const lastBrewForBean = useLastBrewForBean(form.beanId, method);
+	const grindSettings = useGrindSettingsForBean(form.beanId, method);
+	const recipes = useRecipesForMethod(
+		config.hasRecipes ? method : undefined,
+		form.beanId,
 	);
+	const linkedRecipe = recipes.find((r) => r.id === form.recipeId);
+
+	// Deep links: /log/brew?bean=12 selects the bean, ?recipe=3 follows a
+	// recipe on a Brewer of its method. Without them the last-used Brewer
+	// is picked up front.
+	const beanParam = idParam(searchParams.get("bean"));
+	const recipeParam = idParam(searchParams.get("recipe"));
+	const start = useBrewFormStart(beanParam, recipeParam);
+	const appliedStart = useRef<string | null>(null);
 	useEffect(() => {
-		if (!lastBrewForBean || prefillSourceId !== form.beanId) return;
-		const seconds = parseExtractionTime(lastBrewForBean.extractionTime);
-		setForm((f) => ({
-			...f,
-			grindSize: lastBrewForBean.grindSize ?? f.grindSize,
-			beanWeight: lastBrewForBean.beanWeight ?? f.beanWeight,
-			espressoWeight: lastBrewForBean.espressoWeight ?? f.espressoWeight,
-			extractionTime: seconds != null ? String(seconds) : f.extractionTime,
-			flow: lastBrewForBean.flow ?? f.flow,
-			machineId: lastBrewForBean.machineId ?? f.machineId,
-		}));
-		setPrefill({
-			from: `your last shot of this bean`,
-			date: new Date(lastBrewForBean.date),
-			flow: lastBrewForBean.flow,
-			overallRating: lastBrewForBean.overallRating,
+		const key = `${beanParam}|${recipeParam}`;
+		if (!start || appliedStart.current === key) return;
+		appliedStart.current = key;
+		setForm((f) => {
+			const next: BrewLogForm = {
+				...f,
+				machineId: start.machineId ?? f.machineId,
+				beanId: start.beanId ?? f.beanId,
+				recipeId: undefined,
+				...(start.method && methodDefaults(start.method)),
+			};
+			if (!start.recipe || !start.method) return next;
+			return {
+				...next,
+				recipeId: start.recipe.id,
+				...dialsFromRecipe(start.recipe, next, start.method),
+			};
 		});
-	}, [lastBrewForBean, prefillSourceId, form.beanId]);
+		setPrefill(null);
+	}, [start, beanParam, recipeParam]);
+
+	// Picking a bean (or a Brewer of another method) picks up the last brew
+	// of that bean and method as the starting point, unless a recipe leads.
+	const prefillKey = `${form.beanId}:${method}`;
+	const appliedPrefill = useRef<string | null>(null);
+	useEffect(() => {
+		if (!form.beanId || !method || lastBrewForBean?.key !== prefillKey) return;
+		if (appliedPrefill.current === prefillKey) return;
+		appliedPrefill.current = prefillKey;
+		if (form.recipeId != null) return;
+		const brew = lastBrewForBean.brew;
+		if (!brew) {
+			setPrefill(null);
+			return;
+		}
+		setForm((f) => ({ ...f, ...dialsFromBrew(brew, method), notes: f.notes }));
+		setPrefill({
+			date: new Date(brew.date),
+			flow: config.flow ? brew.flow : null,
+			overallRating: brew.overallRating,
+		});
+	}, [
+		lastBrewForBean,
+		prefillKey,
+		form.beanId,
+		form.recipeId,
+		method,
+		config.flow,
+	]);
 
 	const [selectedBeanId, setSelectedBeanId] = useState<number | null>(null);
 	useEffect(() => {
 		setSelectedBeanId(form.beanId ?? null);
 	}, [form.beanId]);
 
-	function setField<K extends keyof BrewForm>(field: K, value: BrewForm[K]) {
+	function setField<K extends keyof BrewLogForm>(
+		field: K,
+		value: BrewLogForm[K],
+	) {
 		setForm((f) => ({ ...f, [field]: value }));
 	}
 
+	function selectBrewer(machineId: number) {
+		const next = suggestions.machine.find((m) => m.id === machineId);
+		if (!next) return;
+		if (next.method === method) {
+			setField("machineId", machineId);
+			return;
+		}
+		// Another method: its recipes and dials don't carry over.
+		setForm((f) => ({
+			...f,
+			machineId,
+			recipeId: undefined,
+			...methodDefaults(next.method),
+			notes: f.notes,
+		}));
+		setPrefill(null);
+	}
+
 	function selectBean(beanId: number) {
-		setField("beanId", beanId);
+		setForm((f) => {
+			// A recipe tied to another bean no longer applies.
+			const recipe = recipes.find((r) => r.id === f.recipeId);
+			const keep = recipe?.beanId == null || recipe.beanId === beanId;
+			return { ...f, beanId, recipeId: keep ? f.recipeId : undefined };
+		});
+	}
+
+	function pickRecipe(recipe: Recipes | null) {
+		if (!recipe || !method) {
+			setField("recipeId", undefined);
+			return;
+		}
+		setForm((f) => ({
+			...f,
+			recipeId: recipe.id,
+			...dialsFromRecipe(recipe, f, method),
+		}));
+		setPrefill(null);
 	}
 
 	function startFresh() {
-		setForm((f) => ({ ...INITIAL, beanId: f.beanId }));
+		setForm((f) => ({
+			...f,
+			recipeId: undefined,
+			...methodDefaults(config.method),
+		}));
 		setPrefill(null);
 	}
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
-		if (!form.beanId || isSaving) return;
+		if (!form.beanId || !form.machineId || !method || isSaving) return;
 		setSaveError("");
 
 		setIsSaving(true);
 		try {
-			const result = await addBrew({
-				beanId: form.beanId,
-				machineId: form.machineId,
-				date: new Date(),
-				beanWeight: form.beanWeight,
-				grindSize: form.grindSize,
-				espressoWeight: form.espressoWeight,
-				flow: form.flow,
-				extractionTime: form.extractionTime,
-			});
+			const brew = toNewBrew(
+				{ ...form, machineId: form.machineId },
+				method,
+				new Date(),
+			);
+			const result = await addBrew(brew);
 			if (result instanceof Error) {
 				setSaveError(result.message);
 			} else {
-				setSavedBrewId(result);
+				setSavedBrew({ ...brew, id: result, method });
 				setFeedbackOpen(false);
 				setFeedbackSaved(false);
 			}
@@ -237,14 +338,14 @@ export default function BrewLog() {
 	}
 
 	function logAnother() {
-		setSavedBrewId(null);
+		setSavedBrew(null);
 		setFeedbackOpen(false);
 		setFeedbackSaved(false);
 		setForm((f) => ({
 			...f,
-			date: new Date(),
 			flow: "",
 			extractionTime: "",
+			notes: linkedRecipe?.notes ?? "",
 		}));
 		setPrefill(null);
 	}
@@ -252,25 +353,29 @@ export default function BrewLog() {
 	const setBeanWeight = (value: number) => {
 		const next = clampWeight({
 			value,
-			min: MIN_BEAN_WEIGHT,
-			max: MAX_BEAN_WEIGHT,
+			min: config.dose.min,
+			max: config.dose.max,
 		});
 		setField("beanWeight", Number(next.toFixed(1)));
 	};
-	const setEspressoWeight = (value: number) => {
+	const setBrewWeight = (value: number) => {
 		const next = clampWeight({
 			value,
-			min: MIN_ESPRESSO_WEIGHT,
-			max: MAX_ESPRESSO_WEIGHT,
+			min: config.brewWeight.min,
+			max: config.brewWeight.max,
 		});
-		setField("espressoWeight", Number(next.toFixed(1)));
+		setField("brewWeight", Number(next.toFixed(1)));
 	};
+	// Wide ranges (pour-over water, moka output) step in whole grams.
+	const brewWeightStep =
+		config.brewWeight.max - config.brewWeight.min > 100 ? 1 : 0.1;
 
-	const espressoRatio =
-		form.beanWeight && form.espressoWeight
-			? (form.espressoWeight / form.beanWeight).toFixed(1)
-			: null;
+	const ratio = formatRatio(form.beanWeight, form.brewWeight);
+	const ratioValue = ratio?.slice(2) ?? null;
 	const timeSeconds = parseExtractionTime(form.extractionTime);
+	const timeExample = formatExtractionTime(
+		config.time.presets[1] ?? config.time.presets[0],
+	);
 
 	const filteredBeans = useMemo(() => {
 		const q = beanSearch.trim().toLowerCase();
@@ -286,16 +391,27 @@ export default function BrewLog() {
 
 	const selectedBean = suggestions.bean.find((b) => b.id === form.beanId);
 	const isEmpty = suggestions.bean.length === 0;
+	const noBrewers = suggestions.machine.length === 0;
+	const showNotes = notesOpen || form.notes.length > 0;
 
-	// Success: the shot is logged. Taste notes come later, when there is
+	const prefillNote = prefill && (
+		<p className="font-sans text-xs text-muted-foreground">
+			Started from your last {noun} of this bean ·{" "}
+			{formatRelativeDay(prefill.date)}
+			{prefill.flow ? ` · ${prefill.flow.toLowerCase()}` : ""}
+			{prefill.overallRating != null ? ` · ${prefill.overallRating}★` : ""}
+		</p>
+	);
+
+	// Success: the brew is logged. Taste notes come later, when there is
 	// something in the cup to judge.
-	if (savedBrewId != null) {
+	if (savedBrew != null) {
 		return (
 			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
 				<div className="rise space-y-5 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
 					<div className="flex items-start justify-between gap-4">
 						<div>
-							<p className="eyebrow">Shot logged</p>
+							<p className="eyebrow">{capitalize(noun)} logged</p>
 							<p className="mt-1 font-display text-3xl italic tracking-tight text-foreground/90">
 								{selectedBean?.name ?? "Brew"} in the book.
 							</p>
@@ -311,17 +427,7 @@ export default function BrewLog() {
 
 					{feedbackOpen && (
 						<BrewFeedback
-							brew={{
-								id: savedBrewId,
-								date: new Date(),
-								grindSize: form.grindSize,
-								beanWeight: form.beanWeight,
-								espressoWeight: form.espressoWeight,
-								beanId: form.beanId,
-								machineId: form.machineId,
-								flow: form.flow,
-								extractionTime: form.extractionTime,
-							}}
+							brew={savedBrew}
 							bean={
 								form.beanId
 									? {
@@ -355,7 +461,7 @@ export default function BrewLog() {
 								/>
 							)}
 							<NextStepRow
-								label="Log another shot"
+								label={`Log another ${noun}`}
 								hint="same bean"
 								onClick={logAnother}
 							/>
@@ -379,22 +485,25 @@ export default function BrewLog() {
 						</p>
 					</div>
 
-					{/* Live recipe line — fills in as the shot is dialed */}
+					{/* Live recipe line — fills in as the brew is dialed */}
 					<div className="rounded-xl border border-line bg-paper-raised p-4 space-y-2 shadow-card">
 						<p className="font-data text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
-							The recipe
+							{linkedRecipe ? `Following ${linkedRecipe.name}` : "The recipe"}
 						</p>
 						<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
 							<RecipeSegment label="grind" value={String(form.grindSize)} />
-							<RecipeSegment label="in" value={`${form.beanWeight}g`} />
-							<RecipeSegment label="out" value={`${form.espressoWeight}g`} />
+							<RecipeSegment label="dose" value={`${form.beanWeight}g`} />
 							<RecipeSegment
-								label="ratio"
-								value={espressoRatio ? `1:${espressoRatio}` : "—"}
-								muted={!espressoRatio}
+								label={config.brewWeight.label.toLowerCase()}
+								value={`${form.brewWeight}g`}
 							/>
 							<RecipeSegment
-								label="time"
+								label="ratio"
+								value={ratio ?? "—"}
+								muted={!ratio}
+							/>
+							<RecipeSegment
+								label={config.time.label.toLowerCase()}
 								value={
 									timeSeconds != null
 										? (formatExtractionTime(timeSeconds) ?? "—")
@@ -402,18 +511,22 @@ export default function BrewLog() {
 								}
 								muted={timeSeconds == null}
 							/>
+							{config.waterTemp && (
+								<RecipeSegment
+									label="temp"
+									value={form.waterTemp != null ? `${form.waterTemp}°C` : "—"}
+									muted={form.waterTemp == null}
+								/>
+							)}
+							{config.heat && (
+								<RecipeSegment label="heat" value={form.heat ?? "—"} />
+							)}
 						</div>
 					</div>
 
 					{prefill && (
 						<div className="space-y-1.5">
-							<p className="font-sans text-xs text-muted-foreground">
-								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
-								{prefill.flow ? ` · ${prefill.flow.toLowerCase()}` : ""}
-								{prefill.overallRating != null
-									? ` · ${prefill.overallRating}★`
-									: ""}
-							</p>
+							{prefillNote}
 							<button
 								type="button"
 								onClick={startFresh}
@@ -433,13 +546,7 @@ export default function BrewLog() {
 					{/* Mobile: the aside is hidden, so the prefill note travels with the form */}
 					{prefill && (
 						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
-							<p className="font-sans text-xs text-muted-foreground">
-								Started from {prefill.from} · {formatRelativeDay(prefill.date)}
-								{prefill.flow ? ` · ${prefill.flow.toLowerCase()}` : ""}
-								{prefill.overallRating != null
-									? ` · ${prefill.overallRating}★`
-									: ""}
-							</p>
+							{prefillNote}
 							<button
 								type="button"
 								onClick={startFresh}
@@ -451,10 +558,49 @@ export default function BrewLog() {
 						</div>
 					)}
 					<form onSubmit={handleSubmit} className="space-y-12">
-						{/* 01 — The bean */}
+						{/* 01 — The brewer: it picks the method */}
 						<section className="space-y-4">
 							<StepHeading
 								index="01"
+								title="The brewer"
+								hint="What are you brewing with?"
+								tag={machine ? config.label : undefined}
+							/>
+							{noBrewers ? (
+								<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
+									<p className="font-display text-2xl text-foreground/60">
+										No brewers yet
+									</p>
+									<p className="font-sans text-sm text-muted-foreground">
+										Add the brewer you use — espresso machine, dripper or moka
+										pot.
+									</p>
+									<Button asChild variant="ink">
+										<Link to="/log/machine">Add a brewer</Link>
+									</Button>
+								</div>
+							) : (
+								<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+									{suggestions.machine.map((machineInfo) => (
+										<QuickMachineCard
+											key={machineInfo.id}
+											selected={form.machineId === machineInfo.id}
+											machine={{
+												id: machineInfo.id,
+												name: machineInfo.name,
+												method: machineInfo.method,
+											}}
+											onClick={() => selectBrewer(machineInfo.id)}
+										/>
+									))}
+								</div>
+							)}
+						</section>
+
+						{/* 02 — The bean */}
+						<section className="space-y-4">
+							<StepHeading
+								index="02"
 								title="The bean"
 								hint="Which bag is open?"
 							/>
@@ -511,13 +657,54 @@ export default function BrewLog() {
 							)}
 						</section>
 
-						{/* 02 — The recipe */}
+						{/* 03 — The recipe */}
 						<section className="space-y-6">
 							<StepHeading
-								index="02"
+								index="03"
 								title="The recipe"
 								hint="Dial it in — the dials start from last time."
 							/>
+							{machine && config.hasRecipes && (
+								<div className="space-y-2">
+									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+										Follow a recipe
+									</p>
+									<div className="flex flex-wrap gap-1.5">
+										<button
+											type="button"
+											onClick={() => pickRecipe(null)}
+											className={chipClass(form.recipeId == null)}
+											data-active={form.recipeId == null}
+										>
+											None
+										</button>
+										{recipes.map((recipe) => {
+											const active = form.recipeId === recipe.id;
+											return (
+												<button
+													key={recipe.id}
+													type="button"
+													onClick={() => pickRecipe(active ? null : recipe)}
+													className={chipClass(active)}
+													data-active={active}
+												>
+													{recipe.name}
+													<span className="ml-1.5 text-ink-faint">
+														{formatRatio(recipe.beanWeight, recipe.brewWeight)}
+													</span>
+												</button>
+											);
+										})}
+									</div>
+									<p className="font-sans text-xs text-muted-foreground">
+										{recipes.length === 0
+											? `No ${config.label.toLowerCase()} recipes yet.`
+											: linkedRecipe
+												? "Its targets are on the dials. Change anything — the brew stays linked."
+												: "Pick one to start from its targets."}
+									</p>
+								</div>
+							)}
 							{form.beanId && (
 								<GrindHistoryStrip
 									settings={grindSettings}
@@ -530,12 +717,15 @@ export default function BrewLog() {
 									Grind size
 								</p>
 								<div className="flex flex-wrap gap-1.5">
-									{GRIND_SIZES.map((lvl) => (
+									{config.grind.presets.map((lvl) => (
 										<button
 											key={lvl}
 											type="button"
 											onClick={() =>
-												setField("grindSize", form.grindSize === lvl ? 12 : lvl)
+												setField(
+													"grindSize",
+													form.grindSize === lvl ? config.grind.default : lvl,
+												)
 											}
 											className={cn(
 												"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
@@ -554,7 +744,9 @@ export default function BrewLog() {
 										className="h-10 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 										placeholder="Other"
 										value={
-											GRIND_SIZES.includes(form.grindSize) ? "" : form.grindSize
+											config.grind.presets.includes(form.grindSize)
+												? ""
+												: form.grindSize
 										}
 										onChange={(e) =>
 											setField("grindSize", Number(e.target.value))
@@ -583,42 +775,73 @@ export default function BrewLog() {
 							<div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-start lg:gap-14">
 								<div className="flex flex-col items-center">
 									<p className="font-sans text-sm text-foreground">
-										In — ground coffee
+										Dose — ground coffee
 									</p>
 									<Dial
 										value={form.beanWeight}
 										onChange={setBeanWeight}
-										min={MIN_BEAN_WEIGHT}
-										max={MAX_BEAN_WEIGHT}
+										min={config.dose.min}
+										max={config.dose.max}
 										label="Dose (ground coffee) dial"
 									/>
 								</div>
-								{espressoRatio && (
-									<div
-										className="flex select-none flex-col items-center gap-2"
-										aria-live="polite"
-										aria-label={`Ratio 1 to ${espressoRatio}`}
-									>
-										<span className="font-data text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-											ratio
-										</span>
-										<span className="font-display text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
-											1<span className="mx-1 text-primary/40">:</span>
-											{espressoRatio}
-										</span>
-										<div className="squiggly-line w-[100px] opacity-60" />
+								{ratioValue && (
+									<div className="flex select-none flex-col items-center gap-2">
+										<div
+											className="flex flex-col items-center gap-2"
+											aria-live="polite"
+											aria-label={`Ratio 1 to ${ratioValue}`}
+										>
+											<span className="font-data text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+												ratio
+											</span>
+											<span className="font-display text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
+												1<span className="mx-1 text-primary/40">:</span>
+												{ratioValue}
+											</span>
+											<div className="squiggly-line w-[100px] opacity-60" />
+										</div>
+										{config.ratioPresets.length > 0 && (
+											<div className="flex gap-1">
+												{config.ratioPresets.map((preset) => {
+													const active = ratioValue === String(preset);
+													return (
+														<button
+															key={preset}
+															type="button"
+															onClick={() =>
+																setField(
+																	"brewWeight",
+																	brewWeightForRatio(
+																		form.beanWeight,
+																		preset,
+																		config.method,
+																	),
+																)
+															}
+															className={cn(chipClass(active), "px-2 py-1")}
+															data-active={active}
+															aria-label={`Set ratio 1 to ${preset}`}
+														>
+															1:{preset}
+														</button>
+													);
+												})}
+											</div>
+										)}
 									</div>
 								)}
 								<div className="flex flex-col items-center">
 									<p className="font-sans text-sm text-foreground">
-										Out — espresso in the cup
+										{config.brewWeight.label}
 									</p>
 									<Dial
-										value={form.espressoWeight}
-										onChange={setEspressoWeight}
-										min={MIN_ESPRESSO_WEIGHT}
-										max={MAX_ESPRESSO_WEIGHT}
-										label="Yield (espresso weight) dial"
+										value={form.brewWeight}
+										onChange={setBrewWeight}
+										min={config.brewWeight.min}
+										max={config.brewWeight.max}
+										step={brewWeightStep}
+										label={`${config.brewWeight.label} dial`}
 									/>
 								</div>
 							</div>
@@ -626,114 +849,175 @@ export default function BrewLog() {
 							<div className="grid gap-6 md:grid-cols-2">
 								<div className="space-y-2">
 									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-										Extraction time
+										{config.time.label}
 									</p>
 									<div className="flex flex-wrap items-center gap-1.5">
-										{TIME_PRESETS.map((t) => (
-											<button
-												key={t}
-												type="button"
-												onClick={() => setField("extractionTime", t)}
-												className={cn(
-													"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
-													parseExtractionTime(form.extractionTime) === Number(t)
-														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-												)}
-												data-active={
-													parseExtractionTime(form.extractionTime) === Number(t)
-												}
-											>
-												{t}s
-											</button>
-										))}
+										{config.time.presets.map((t) => {
+											const active = timeSeconds === t;
+											return (
+												<button
+													key={t}
+													type="button"
+													onClick={() => setField("extractionTime", String(t))}
+													className={chipClass(active)}
+													data-active={active}
+												>
+													{formatExtractionTime(t)}
+												</button>
+											);
+										})}
 										<input
 											type="text"
 											inputMode="decimal"
-											className="w-24 rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-											placeholder="e.g. 28"
+											className={cn(inputClass, "w-24")}
+											placeholder={timeExample ? `e.g. ${timeExample}` : ""}
 											value={form.extractionTime}
 											onChange={(e) =>
 												setField("extractionTime", e.target.value)
 											}
-											aria-label="Extraction time in seconds"
+											aria-label={`${config.time.label} in seconds`}
 										/>
 									</div>
 									<p className="font-sans text-xs text-muted-foreground">
 										Seconds, or 1:02 — whatever your scale shows.
 									</p>
 								</div>
+								{config.flow && (
+									<div className="space-y-2">
+										<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+											How did it flow?
+										</p>
+										<div className="flex flex-wrap gap-1.5">
+											{DEFAULT_FLOW.map((f) => (
+												<button
+													key={f}
+													type="button"
+													onClick={() =>
+														setField("flow", form.flow === f ? "" : f)
+													}
+													className={chipClass(form.flow === f)}
+													data-active={form.flow === f}
+												>
+													{f}
+												</button>
+											))}
+										</div>
+										<p className="font-sans text-xs text-muted-foreground">
+											First read on the shot, before you taste it.
+										</p>
+									</div>
+								)}
+								{config.waterTemp && (
+									<div className="space-y-2">
+										<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+											Water temp
+										</p>
+										<div className="flex items-center gap-2">
+											<input
+												type="number"
+												inputMode="decimal"
+												min={config.waterTemp.min}
+												max={config.waterTemp.max}
+												step="1"
+												className={cn(inputClass, "w-24")}
+												value={form.waterTemp ?? ""}
+												onChange={(e) =>
+													setField(
+														"waterTemp",
+														e.target.value === ""
+															? undefined
+															: Number(e.target.value),
+													)
+												}
+												onBlur={() => {
+													const range = config.waterTemp;
+													if (!range || form.waterTemp == null) return;
+													setField(
+														"waterTemp",
+														clampWeight({
+															value: form.waterTemp,
+															min: range.min,
+															max: range.max,
+														}),
+													);
+												}}
+												aria-label="Water temperature in °C"
+											/>
+											<span className="font-data text-xs text-muted-foreground">
+												°C
+											</span>
+										</div>
+										<p className="font-sans text-xs text-muted-foreground">
+											{config.waterTemp.min}–{config.waterTemp.max} °C, off the
+											kettle.
+										</p>
+									</div>
+								)}
+								{config.heat && (
+									<div className="space-y-2">
+										<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+											Heat
+										</p>
+										<div className="flex flex-wrap gap-1.5">
+											{config.heat.options.map((heat) => (
+												<button
+													key={heat}
+													type="button"
+													onClick={() => setField("heat", heat)}
+													className={chipClass(form.heat === heat)}
+													data-active={form.heat === heat}
+												>
+													{capitalize(heat)}
+												</button>
+											))}
+										</div>
+										<p className="font-sans text-xs text-muted-foreground">
+											The flame or plate under the pot.
+										</p>
+									</div>
+								)}
+							</div>
+
+							{/* Notes: optional, folded away until asked for */}
+							{showNotes ? (
 								<div className="space-y-2">
 									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-										How did it flow?
+										Notes
 									</p>
-									<div className="flex flex-wrap gap-1.5">
-										{DEFAULT_FLOW.map((f) => (
-											<button
-												key={f}
-												type="button"
-												onClick={() =>
-													setField("flow", form.flow === f ? "" : f)
-												}
-												className={cn(
-													"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
-													form.flow === f
-														? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
-														: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
-												)}
-												data-active={form.flow === f}
-											>
-												{f}
-											</button>
-										))}
-									</div>
-									<p className="font-sans text-xs text-muted-foreground">
-										First read on the shot, before you taste it.
-									</p>
-								</div>
-							</div>
-						</section>
-
-						{/* 03 — The setup */}
-						<section className="space-y-4">
-							<StepHeading
-								index="03"
-								title="The setup"
-								hint="Which machine pulled it?"
-							/>
-							<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-								{suggestions.machine.map((machineInfo) => (
-									<QuickMachineCard
-										key={machineInfo.id}
-										selected={form.machineId === machineInfo.id}
-										machine={{
-											id: machineInfo.id,
-											name: machineInfo.name,
-											type: machineInfo.type,
-										}}
-										onClick={() => {
-											setField(
-												"machineId",
-												form.machineId === machineInfo.id
-													? undefined
-													: machineInfo.id,
-											);
-										}}
+									<textarea
+										className={cn(inputClass, "min-h-20 w-full resize-y")}
+										placeholder="Pours, prep, anything worth remembering."
+										value={form.notes}
+										onChange={(e) => setField("notes", e.target.value)}
+										aria-label="Notes"
 									/>
-								))}
-							</div>
+								</div>
+							) : (
+								<button
+									type="button"
+									onClick={() => setNotesOpen(true)}
+									className="inline-flex items-center gap-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+								>
+									<Plus className="size-3" />
+									Add notes
+								</button>
+							)}
 						</section>
 
 						<div className="flex items-center justify-between gap-4 border-t border-border pt-5">
 							<p className="hidden font-sans text-xs text-muted-foreground sm:block">
-								{form.beanId ? "Ready when you are." : "Pick a bean to start."}
+								{!form.machineId
+									? "Pick a brewer to start."
+									: !form.beanId
+										? "Pick a bean to start."
+										: "Ready when you are."}
 							</p>
 							<button
 								type="submit"
-								disabled={!form.beanId || isSaving}
+								disabled={!form.beanId || !form.machineId || isSaving}
 								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
-								{isSaving ? "Saving…" : "Save the shot"}
+								{isSaving ? "Saving…" : `Save the ${noun}`}
 							</button>
 						</div>
 					</form>

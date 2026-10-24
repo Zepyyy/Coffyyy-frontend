@@ -1,8 +1,12 @@
 import { db } from "@/db/db";
+import { BREW_METHODS, methodConfig } from "@/lib/brewMethods";
+import { formatExtractionTime, parseExtractionTime } from "@/lib/utils";
 import type {
-	BeanBrewParameterSummary,
 	BeanBrewInsights,
+	BeanBrewParameterSummary,
 	BeanDialInState,
+	BrewHeat,
+	BrewMethod,
 	Brews,
 } from "@/types/BrewTypes";
 
@@ -14,28 +18,14 @@ function sortByNewest(a: Brews, b: Brews) {
 	return +new Date(b.date) - +new Date(a.date);
 }
 
-function toNumericValue(
-	value: number | string | undefined | null,
-): number | null {
-	if (typeof value === "number" && Number.isFinite(value)) {
-		return value;
-	}
-	if (typeof value !== "string") {
-		return null;
-	}
-
-	const match = value.match(/-?\d+(\.\d+)?/);
-	if (!match) {
-		return null;
-	}
-
-	const parsed = Number(match[0]);
-	return Number.isFinite(parsed) ? parsed : null;
+/** A brew's method; legacy rows without one read as espresso. */
+function brewMethod(brew: Pick<Brews, "method">): BrewMethod {
+	return methodConfig(brew.method).method;
 }
 
 function average(values: Array<number | null>): number | null {
 	const numericValues = values.filter(
-		(value): value is number => value != null,
+		(value): value is number => value != null && Number.isFinite(value),
 	);
 	if (numericValues.length === 0) {
 		return null;
@@ -46,20 +36,11 @@ function average(values: Array<number | null>): number | null {
 	);
 }
 
-function formatAverage(
-	value: number | null,
-	options?: {
-		suffix?: string;
-		decimals?: number;
-	},
-): string | null {
+function formatAverage(value: number | null, decimals = 1): string | null {
 	if (value == null) {
 		return null;
 	}
-
-	const decimals = options?.decimals ?? 1;
-	const rounded = Number(value.toFixed(decimals));
-	return `${rounded}${options?.suffix ?? ""}`;
+	return String(Number(value.toFixed(decimals)));
 }
 
 function mostCommon(values: Array<string | undefined | null>): string | null {
@@ -92,58 +73,86 @@ function mostCommon(values: Array<string | undefined | null>): string | null {
 	return winner;
 }
 
-function buildParameterSummary(
+/** Brew methods present in `brews`, in the fixed BREW_METHODS order. */
+export function methodsInBrews(
+	brews: Array<Pick<Brews, "method">>,
+): BrewMethod[] {
+	const present = new Set(brews.map(brewMethod));
+	return BREW_METHODS.filter((method) => present.has(method));
+}
+
+/**
+ * A bean's default method: the method of its most recent brew. Null when
+ * there are no brews.
+ */
+export function defaultMethodForBrews(
+	brews: Array<Pick<Brews, "method" | "date">>,
+): BrewMethod | null {
+	let newest: Pick<Brews, "method" | "date"> | null = null;
+	for (const brew of brews) {
+		if (!newest || +new Date(brew.date) > +new Date(newest.date)) {
+			newest = brew;
+		}
+	}
+	return newest ? brewMethod(newest) : null;
+}
+
+export function buildParameterSummary(
 	brews: Brews[],
+	method: BrewMethod,
 	usesTopRatedBrews: boolean,
 ): BeanBrewParameterSummary {
+	const config = methodConfig(method);
 	const averageBeanWeight = average(
 		brews.map((brew) => brew.beanWeight ?? null),
 	);
-	const averageEspressoWeight = average(
-		brews.map((brew) => brew.espressoWeight ?? null),
+	const averageBrewWeight = average(
+		brews.map((brew) => brew.brewWeight ?? null),
 	);
 	const averageExtractionSeconds = average(
-		brews.map((brew) => toNumericValue(brew.extractionTime)),
-	);
-	const averageTasteScore = average(
-		brews.map((brew) => brew.tasteScore ?? null),
-	);
-	const averageStrengthScore = average(
-		brews.map((brew) => brew.strengthScore ?? null),
-	);
-	const averageRating = average(
-		brews.map((brew) => brew.overallRating ?? null),
+		brews.map((brew) => parseExtractionTime(brew.extractionTime)),
 	);
 	const averageGrindNumeric = average(
 		brews.map((brew) => brew.grindSize ?? null),
 	);
 	const averageRatio =
-		averageBeanWeight && averageEspressoWeight
-			? averageEspressoWeight / averageBeanWeight
+		averageBeanWeight && averageBrewWeight
+			? averageBrewWeight / averageBeanWeight
 			: null;
 
 	return {
-		grindSize:
-			formatAverage(averageGrindNumeric, { decimals: 1 }) ??
-			mostCommon(brews.map((brew) => brew.grindSize.toString())) ??
-			"—",
+		method,
+		grindSize: formatAverage(averageGrindNumeric) ?? "—",
 		beanWeight: averageBeanWeight,
-		espressoWeight: averageEspressoWeight,
-		extractionTime: formatAverage(averageExtractionSeconds, {
-			suffix: "s",
-			decimals: 0,
-		}),
-		_flow: mostCommon(brews.map((brew) => brew.flow)) ?? "—",
+		brewWeight: averageBrewWeight,
+		extractionTime:
+			averageExtractionSeconds == null
+				? null
+				: formatExtractionTime(Math.round(averageExtractionSeconds)),
+		_flow: config.flow
+			? (mostCommon(brews.map((brew) => brew.flow)) ?? "—")
+			: null,
+		waterTemp: config.waterTemp
+			? average(brews.map((brew) => brew.waterTemp ?? null))
+			: null,
+		heat: config.heat
+			? (mostCommon(brews.map((brew) => brew.heat)) as BrewHeat | null)
+			: null,
 		ratio: averageRatio,
-		_tasteScore: averageTasteScore,
-		_strengthScore: averageStrengthScore,
-		_rating: averageRating,
+		_tasteScore: average(brews.map((brew) => brew.tasteScore ?? null)),
+		_strengthScore: average(brews.map((brew) => brew.strengthScore ?? null)),
+		_rating: average(brews.map((brew) => brew.overallRating ?? null)),
 		_basedOnCount: brews.length,
 		usesTopRatedBrews,
 	};
 }
 
-function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
+/** `brews` must be one method's brews, newest first. */
+function buildDialInState(
+	beanId: number,
+	method: BrewMethod,
+	brews: Brews[],
+): BeanDialInState {
 	const topRatedBrews = brews.filter(
 		(brew) => (brew.overallRating ?? 0) >= TOP_RATED_THRESHOLD,
 	);
@@ -164,6 +173,7 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 
 	return {
 		beanId,
+		method,
 		isDialedIn:
 			brews.length >= MIN_BREWS_FOR_DIALED_IN &&
 			recentTopRatedBrews.length >= 2 &&
@@ -176,28 +186,26 @@ function buildDialInState(beanId: number, brews: Brews[]): BeanDialInState {
 	};
 }
 
-export async function getBrewCountForBean(bean: string): Promise<number> {
-	if (!bean) return 0;
-	return db.Brews.filter((brew) => String(brew.beanId) === bean).count();
-}
+/**
+ * Insights for one bean from its brews (any method, any order). Only brews of
+ * `method` count; when `method` is omitted or the bean has no brews of it,
+ * the bean's default method (most recent brew) is used. Null with no brews.
+ */
+export function buildBeanBrewInsights(
+	beanId: number,
+	allBrews: Brews[],
+	method?: BrewMethod,
+): BeanBrewInsights | null {
+	const methods = methodsInBrews(allBrews);
+	const chosen =
+		method && methods.includes(method)
+			? method
+			: defaultMethodForBrews(allBrews);
+	if (!chosen) return null;
 
-export async function getUniqueBeansBrewedCount(): Promise<number> {
-	const beans = await db.Brews.toArray();
-	return new Set(beans.map((brew) => brew.beanId).filter(Boolean)).size;
-}
-
-export async function getBeanBrewInsights(
-	beanId: number | undefined,
-): Promise<BeanBrewInsights | null> {
-	if (!beanId) return null;
-
-	const brews = (
-		await db.Brews.filter((brew) => brew.beanId === beanId).toArray()
-	).sort(sortByNewest);
-
-	if (brews.length === 0) {
-		return null;
-	}
+	const brews = allBrews
+		.filter((brew) => brewMethod(brew) === chosen)
+		.sort(sortByNewest);
 
 	const topRatedBrews = brews.filter(
 		(brew) => (brew.overallRating ?? 0) >= TOP_RATED_THRESHOLD,
@@ -213,14 +221,11 @@ export async function getBeanBrewInsights(
 			: ratedBrews.filter((brew) => brew.overallRating === highestRating);
 	const bestSourceBrews =
 		topRatedBrews.length > 0 ? topRatedBrews : highestRatedBrews;
-	const averageTarget = buildParameterSummary(brews, false);
+	const averageTarget = buildParameterSummary(brews, chosen, false);
 	const bestTarget =
 		bestSourceBrews.length > 0
-			? buildParameterSummary(bestSourceBrews, topRatedBrews.length > 0)
+			? buildParameterSummary(bestSourceBrews, chosen, topRatedBrews.length > 0)
 			: null;
-
-	const _dialIn = buildDialInState(beanId, brews);
-	const _lastBrew = brews[0] ?? null;
 
 	const recentBrewScores = [...brews].reverse().map((brew) => ({
 		taste: brew.tasteScore ?? null,
@@ -232,22 +237,83 @@ export async function getBeanBrewInsights(
 
 	return {
 		beanId,
+		method: chosen,
+		methods,
 		target: bestTarget ?? averageTarget,
 		average: averageTarget,
 		best: bestTarget,
-		_lastBrew,
-		_dialIn,
+		_lastBrew: brews[0] ?? null,
+		_dialIn: buildDialInState(beanId, chosen, brews),
 		recentBrewScores,
 	};
 }
 
-export async function getBrewCountForBeanId(
-	beanId: number | undefined,
-): Promise<number> {
-	if (!beanId) return 0;
-	return db.Brews.filter((b) => b.beanId === beanId).count();
+/**
+ * Dial-in state for one bean, judged on its most recent method only.
+ * Null with no brews.
+ */
+export function buildBeanDialInState(
+	beanId: number,
+	allBrews: Brews[],
+): BeanDialInState | null {
+	const method = defaultMethodForBrews(allBrews);
+	if (!method) return null;
+	return buildDialInState(
+		beanId,
+		method,
+		allBrews.filter((brew) => brewMethod(brew) === method).sort(sortByNewest),
+	);
 }
 
+export async function getBrewCountForBean(bean: string): Promise<number> {
+	if (!bean) return 0;
+	return db.Brews.filter((brew) => String(brew.beanId) === bean).count();
+}
+
+export async function getUniqueBeansBrewedCount(): Promise<number> {
+	const beans = await db.Brews.toArray();
+	return new Set(beans.map((brew) => brew.beanId).filter(Boolean)).size;
+}
+
+/**
+ * Insights for `(beanId, method)`. Omit `method` (or pass one the bean has
+ * no brews in) to get the bean's default method: that of its latest brew.
+ */
+export async function getBeanBrewInsights(
+	beanId: number | undefined,
+	method?: BrewMethod,
+): Promise<BeanBrewInsights | null> {
+	if (!beanId) return null;
+	const brews = await db.Brews.where("beanId").equals(beanId).toArray();
+	return buildBeanBrewInsights(beanId, brews, method);
+}
+
+/** Methods a bean has brews in (BREW_METHODS order), for method switchers. */
+export async function getBeanMethods(
+	beanId: number | undefined,
+): Promise<BrewMethod[]> {
+	if (!beanId) return [];
+	return methodsInBrews(
+		await db.Brews.where("beanId").equals(beanId).toArray(),
+	);
+}
+
+/** Methods with at least one brew anywhere (BREW_METHODS order). */
+export async function getBrewMethodsInUse(): Promise<BrewMethod[]> {
+	return methodsInBrews(await db.Brews.toArray());
+}
+
+export async function getBrewCountForBeanId(
+	beanId: number | undefined,
+	method?: BrewMethod,
+): Promise<number> {
+	if (!beanId) return 0;
+	return db.Brews.filter(
+		(b) => b.beanId === beanId && (!method || brewMethod(b) === method),
+	).count();
+}
+
+/** Dial-in badge state per bean, each judged on the bean's most recent method. */
 export async function getBeanDialInStates(
 	beanIds?: number[],
 ): Promise<BeanDialInState[]> {
@@ -268,8 +334,7 @@ export async function getBeanDialInStates(
 	}
 
 	return [...brewsByBean.entries()]
-		.map(([beanId, beanBrews]) =>
-			buildDialInState(beanId, beanBrews.sort(sortByNewest)),
-		)
+		.map(([beanId, beanBrews]) => buildBeanDialInState(beanId, beanBrews))
+		.filter((state): state is BeanDialInState => state != null)
 		.sort((a, b) => a.beanId - b.beanId);
 }

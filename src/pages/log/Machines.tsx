@@ -1,50 +1,100 @@
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
-import { addMachine } from "@/lib/data";
-import { useMachineSuggestions } from "@/hooks/api/useMachines";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import { BREW_METHODS, methodConfig } from "@/lib/brewMethods";
+import { addMachine, updateMachineById } from "@/lib/data";
+import {
+	useMachine,
+	useMachineBrewCount,
+	useMachineSuggestions,
+} from "@/hooks/api/useMachines";
 import { validateRequiredFields } from "@/lib/formValidation";
-import type { MachineForm } from "@/types/MachineTypes";
+import type { BrewMethod } from "@/types/BrewTypes";
+import type { MachineForm, Machines } from "@/types/MachineTypes";
 
 const INITIAL: MachineForm = {
 	name: "",
 	brand: "",
 	model: "",
-	type: "",
+	method: "espresso",
 	grindRange: "",
 	capacity: "",
 	purchaseDate: "",
 };
 
 const SAVE_MESSAGES = [
-	"Machine logged. Ready to brew.",
+	"Brewer logged. Ready to brew.",
 	"Saved. Your setup just got sharper.",
 	"Catalogued. Dial-in time.",
-	"Machine added to the arsenal.",
+	"Brewer added to the arsenal.",
 	"Saved! Future brew sessions thank you.",
 ];
 
 const REQUIRED_FIELDS: Partial<Record<keyof MachineForm, string>> = {
-	brand: "Enter a brand for this machine.",
-	type: "Enter a type for this machine.",
+	brand: "Enter a brand for this brewer.",
 };
+
+const METHOD_OPTIONS = BREW_METHODS.map((method) => ({
+	value: method,
+	label: methodConfig(method).label,
+}));
 
 function normalizeOptional(value: string) {
 	const trimmed = value.trim();
 	return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function formFromMachine(machine: Machines): MachineForm {
+	return {
+		name: machine.name,
+		brand: machine.brand,
+		model: machine.model,
+		method: machine.method,
+		grindRange: machine.grindRange,
+		capacity: machine.capacity,
+		purchaseDate: machine.purchaseDate,
+	};
+}
+
+/** A positive integer search param, else undefined. */
+function idParam(raw: string | null): number | undefined {
+	const id = Number(raw);
+	return raw != null && Number.isInteger(id) && id > 0 ? id : undefined;
+}
+
+/**
+ * `/log/machine` adds a Brewer; `?id=4` edits that one. Keyed on the id so
+ * switching between them (e.g. `?id=4` -> `/log/machine`) starts a fresh form.
+ */
 export default function MachinesLog() {
+	const [searchParams] = useSearchParams();
+	const editId = idParam(searchParams.get("id"));
+	return <MachineLogForm key={editId ?? "new"} editId={editId} />;
+}
+
+function MachineLogForm({ editId }: { editId: number | undefined }) {
 	const [form, setForm] = useState<MachineForm>(INITIAL);
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
 	const suggestions = useMachineSuggestions();
 
+	// Editing a Brewer: its method locks once it has brews.
+	const editing = useMachine(editId);
+	const brewCount = useMachineBrewCount(editId) ?? 0;
+	const methodLocked = editId != null && brewCount > 0;
+	const loadedId = useRef<number | null>(null);
+	useEffect(() => {
+		if (!editing || loadedId.current === editing.id) return;
+		loadedId.current = editing.id;
+		setForm(formFromMachine(editing));
+	}, [editing]);
+
 	const [customBrand, setCustomBrand] = useState("");
 	const [customModel, setCustomModel] = useState("");
-	const [customType, setCustomType] = useState("");
 	const [customCapacity, setCustomCapacity] = useState("");
 	const [fieldErrors, setFieldErrors] = useState<
 		Partial<Record<keyof MachineForm, string>>
@@ -74,22 +124,32 @@ export default function MachinesLog() {
 
 		setIsSaving(true);
 		try {
-			const result = await addMachine({
+			const machine = {
 				name: normalizeOptional(form.name) ?? "",
 				brand: normalizeOptional(form.brand) ?? "",
 				model: normalizeOptional(form.model) ?? "",
-				type: form.type,
+				method: form.method,
 				grindRange: normalizeOptional(form.grindRange) ?? "",
 				capacity: normalizeOptional(form.capacity) ?? "",
 				purchaseDate: normalizeOptional(form.purchaseDate) ?? "",
-			});
+			};
+			if (editing) {
+				const { method, ...rest } = machine;
+				await updateMachineById(
+					methodLocked ? rest : { ...rest, method },
+					editing.id,
+				);
+				setStatus("Brewer updated.");
+				return;
+			}
+			const result = await addMachine(machine);
 			setError(result instanceof Error ? result.message : String(result));
 			setForm(INITIAL);
 			setStatus(
 				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
 			);
-		} catch {
-			setStatus("Save failed.");
+		} catch (err) {
+			setStatus(err instanceof Error ? err.message : "Save failed.");
 		} finally {
 			setIsSaving(false);
 		}
@@ -102,10 +162,10 @@ export default function MachinesLog() {
 					<div className="space-y-5 p-2 backdrop-blur-xs lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 						<div className="border-l-4 border-crema pl-5">
 							<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
-								Add equipment
+								{editing ? "Edit brewer" : "Add a brewer"}
 							</h1>
 							<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-								Register a new machine.
+								{editing ? editing.name : "Register a new brewer."}
 							</p>
 						</div>
 						{import.meta.env.DEV && (
@@ -194,18 +254,20 @@ export default function MachinesLog() {
 								/>
 							</div>
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-								<div className="space-y-1.5">
-									<FieldLabel required>Type</FieldLabel>
-									<SingleChoiceChips
-										options={suggestions.types}
-										selected={form.type}
-										onChange={(v) => setField("type", v)}
-										placeholder="E.g. Espresso"
-										customInput={customType}
-										onCustomChange={setCustomType}
-										onCustomAdd={() => selectCustom("type", customType)}
-										requiredField={fieldErrors.type}
+								<div className="space-y-2.5">
+									<FieldLabel required>Method</FieldLabel>
+									<SegmentedControl<BrewMethod>
+										options={METHOD_OPTIONS}
+										value={form.method}
+										onChange={(method) => setField("method", method)}
+										ariaLabel="Brew method"
+										disabled={methodLocked}
 									/>
+									{methodLocked && (
+										<p className="font-sans text-xs text-muted-foreground">
+											Locked: this brewer has brews
+										</p>
+									)}
 								</div>
 								<div className="space-y-1.5">
 									<FieldLabel>Capacity</FieldLabel>
@@ -248,7 +310,7 @@ export default function MachinesLog() {
 								disabled={!form.name.trim() || isSaving}
 								className="key-frame key-frame-light h-12 w-full rounded-xl bg-ink font-semibold text-sm text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
 							>
-								{isSaving ? "Saving…" : "Save Equipment"}
+								{isSaving ? "Saving…" : "Save brewer"}
 							</button>
 						</div>
 					</form>
