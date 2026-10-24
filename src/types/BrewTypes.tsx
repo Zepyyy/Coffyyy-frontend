@@ -50,6 +50,8 @@ export type BrewSuggestions = {
 
 export type BeanDialInState = {
 	beanId: number;
+	/** The method this state was judged on (the bean's most recent one). */
+	method: BrewMethod;
 	isDialedIn: boolean;
 	totalBrews: number;
 	topRatedBrews: number;
@@ -58,11 +60,18 @@ export type BeanDialInState = {
 };
 
 export type BeanBrewParameterSummary = {
+	method: BrewMethod;
 	grindSize: string;
 	beanWeight: number | null;
 	brewWeight: number | null;
+	/** Formatted like brews: "28s", "3:00". */
 	extractionTime: string | null;
+	/** Most common flow; espresso only (null otherwise). */
 	_flow: string | null;
+	/** Average °C; pour-over only (null otherwise). */
+	waterTemp: number | null;
+	/** Most common heat; moka only (null otherwise). */
+	heat: BrewHeat | null;
 	ratio: number | null;
 	_tasteScore: number | null;
 	_strengthScore: number | null;
@@ -71,8 +80,13 @@ export type BeanBrewParameterSummary = {
 	usesTopRatedBrews: boolean;
 };
 
+/** Insights for one bean and one Brew method. */
 export type BeanBrewInsights = {
 	beanId: number;
+	/** The method these insights cover. */
+	method: BrewMethod;
+	/** Every method the bean has brews in (switcher shown when >1). */
+	methods: BrewMethod[];
 	target: BeanBrewParameterSummary;
 	average: BeanBrewParameterSummary;
 	best: BeanBrewParameterSummary | null;

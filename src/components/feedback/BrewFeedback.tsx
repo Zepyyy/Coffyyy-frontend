@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import { useState } from "react";
 import BeanVerdictPicker from "@/components/feedback/BeanVerdictPicker";
+import { methodConfig } from "@/lib/brewMethods";
 import { updateBrewById } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
@@ -16,23 +17,31 @@ const TASTE_HINT: Record<string, string> = {
 	"1": "Almost there. Tiny grind tweak.",
 	"2": "A touch bitter. Close to dialed in.",
 	"3": "Slightly bitter. Nudge the grind coarser.",
-	"4": "Bitter. Go coarser or shorten the shot.",
-	"5": "Very bitter. Go coarser and shorten the shot.",
+	"4": "Bitter. Go coarser or shorten the {brew}.",
+	"5": "Very bitter. Go coarser and shorten the {brew}.",
 };
 
 const STRENGTH_HINT: Record<string, string> = {
-	"-5": "Very weak. Increase dose or decrease yield.",
-	"-4": "Weak. Increase dose or cut yield a bit.",
+	"-5": "Very weak. Increase dose or decrease {yield}.",
+	"-4": "Weak. Increase dose or cut {yield} a bit.",
 	"-3": "Slightly weak. Tighten the ratio.",
 	"-2": "A touch weak. Strength is close.",
 	"-1": "Almost there. Small ratio tweak.",
 	"0": "Balanced. Strength is on target.",
 	"1": "Almost there. Small ratio tweak.",
 	"2": "A touch strong. Loosen the ratio slightly.",
-	"3": "Slightly strong. Decrease dose or increase yield.",
-	"4": "Strong. Back off the dose or push more yield.",
-	"5": "Very strong. Decrease dose and increase yield.",
+	"3": "Slightly strong. Decrease dose or increase {yield}.",
+	"4": "Strong. Back off the dose or push more {yield}.",
+	"5": "Very strong. Decrease dose and increase {yield}.",
 };
+
+/** Fills a hint's {brew}/{yield} slots with the method's own words. */
+function methodHint(template: string, method: Brews["method"]): string {
+	const config = methodConfig(method);
+	return template
+		.replace("{brew}", config.method === "espresso" ? "shot" : "brew")
+		.replace("{yield}", config.brewWeight.label.toLowerCase());
+}
 
 /**
  * A -5..5 axis rendered as an instrument gauge: the crema fill measures the
@@ -236,7 +245,7 @@ export default function BrewFeedback({
 								leftLabel="Sour"
 								centerLabel="Balanced"
 								rightLabel="Bitter"
-								hint={TASTE_HINT[taste.value]}
+								hint={methodHint(TASTE_HINT[taste.value], brew.method)}
 								tintClassName={
 									taste.value < 0
 										? "text-tag-teal-500"
@@ -255,7 +264,7 @@ export default function BrewFeedback({
 								leftLabel="Weak"
 								centerLabel="Balanced"
 								rightLabel="Strong"
-								hint={STRENGTH_HINT[strength.value]}
+								hint={methodHint(STRENGTH_HINT[strength.value], brew.method)}
 								tintClassName={
 									strength.value < 0
 										? "text-tag-teal-500"
@@ -271,7 +280,7 @@ export default function BrewFeedback({
 						<div className="space-y-2 border-t border-line/60 pt-4">
 							<p className="eyebrow">The bean itself</p>
 							<p className="font-sans text-xs text-muted-foreground">
-								How much you like this bean, kept separate from this shot.
+								How much you like this bean, kept separate from this brew.
 							</p>
 							<BeanVerdictPicker beanId={bean.id} status={bean.status} />
 						</div>

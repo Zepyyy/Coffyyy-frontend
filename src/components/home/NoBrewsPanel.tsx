@@ -20,7 +20,7 @@ export default function NoBrewsPanel({ bean }: { bean: Beans }) {
 				No brews logged yet for this bean
 			</p>
 			<Link
-				to="/log/brew"
+				to={`/log/brew?bean=${bean.id}`}
 				className={cn(
 					"inline-block mt-1 border px-4 py-2 font-data text-[9px] uppercase tracking-[0.16em]",
 					swatch.borderColor,

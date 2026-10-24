@@ -1,17 +1,24 @@
 import { Link } from "react-router";
 import type { Beans } from "@/types/BeanTypes";
+import type { BrewMethod } from "@/types/BrewTypes";
 
 export default function BeanHeader({
 	bean,
 	brewCount,
+	insights,
 }: {
 	bean: Beans;
 	brewCount: number;
-	insights: { target: { usesTopRatedBrews: boolean } };
+	insights: { method: BrewMethod; methods: BrewMethod[] };
 }) {
+	// Carry the picked method over to the bean page when there is a choice.
+	const to =
+		insights.methods.length > 1
+			? `/beans/${bean.id}?method=${insights.method}`
+			: `/beans/${bean.id}`;
 	return (
 		<Link
-			to={`/beans/${bean.id}`}
+			to={to}
 			className="flex items-center justify-between gap-4 border-b border-line/60 bg-paper-sunken/40 px-5 py-4"
 		>
 			<div>
