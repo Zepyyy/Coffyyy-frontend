@@ -60,7 +60,7 @@ _Avoid_: delete workspace, delete account
 ## Snapshot operations
 
 **Workspace snapshot**:
-One complete representation of beans, machines, brews, stable local IDs, and their relationships.
+One complete, versioned representation of beans, Brewers (`machines`), brews, Recipes, stable local IDs, and their relationships. Older versions are upgraded, never discarded.
 _Avoid_: change feed, sync batch
 
 **Push**:
