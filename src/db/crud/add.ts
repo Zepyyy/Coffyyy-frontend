@@ -61,7 +61,7 @@ async function addMachine(
 			.equals(machine.name)
 			.first();
 		if (existing)
-			return new Error(`Machine with name ${machine.name} already exists`);
+			return new Error(`Brewer with name ${machine.name} already exists`);
 		return await db.Machines.add({ ...machine, localId: randomId() });
 	} catch (error) {
 		return asError(error);

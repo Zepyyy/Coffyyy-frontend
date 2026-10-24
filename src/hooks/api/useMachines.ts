@@ -32,3 +32,16 @@ export const useMachineBrewCount = (machineId: number | undefined) => {
 		[machineId],
 	);
 };
+
+/** One Brewer; undefined while loading, null when missing. */
+export const useMachine = (machineId: number | undefined) => {
+	return useLiveQuery(
+		async () =>
+			machineId
+				? ((await machineStatsApi.getAllMachines()).find(
+						(m) => m.id === machineId,
+					) ?? null)
+				: null,
+		[machineId],
+	);
+};
