@@ -9,6 +9,7 @@ import {
 	methodConfig,
 } from "@/lib/brewMethods";
 import { formatExtractionTime, parseExtractionTime } from "@/lib/utils";
+import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type {
 	NewRecipe,
@@ -80,11 +81,12 @@ export function defaultPromoteName(
 
 /**
  * Prefill for promoting a brew: its actuals, method and bean (tie on).
- * Null when the brew's method has no recipes (moka).
+ * Only `bean` (the brew's bean, when it still exists) is tied: brews keep
+ * the id of a deleted bean. Null when the brew's method has no recipes (moka).
  */
 export function recipeFormFromBrew(
 	brew: Brews,
-	beanName?: string | null,
+	bean?: Pick<Beans, "id" | "name"> | null,
 ): RecipeFormState | null {
 	if (!isRecipeMethod(brew.method)) return null;
 	const base = emptyRecipeForm(brew.method);
@@ -92,12 +94,12 @@ export function recipeFormFromBrew(
 	return {
 		...base,
 		name: defaultPromoteName(
-			beanName,
+			bean?.name,
 			brew.beanWeight,
 			brew.brewWeight,
 			brew.method,
 		),
-		beanId: brew.beanId,
+		beanId: bean?.id,
 		beanWeight: brew.beanWeight || base.beanWeight,
 		brewWeight: brew.brewWeight || base.brewWeight,
 		grindSize: brew.grindSize ?? base.grindSize,

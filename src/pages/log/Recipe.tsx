@@ -6,9 +6,9 @@ import { usePromotionSource } from "@/hooks/api/useRecipeStats";
 import { methodConfig } from "@/lib/brewMethods";
 import {
 	addRecipe,
+	addRecipeFromBrew,
 	deleteRecipeById,
 	getRecipe,
-	linkBrewToRecipe,
 	updateRecipeById,
 } from "@/lib/data";
 import {
@@ -107,7 +107,7 @@ function PromoteBrew({ brewId }: { brewId: number }) {
 			/>
 		);
 
-	const initial = recipeFormFromBrew(source.brew, source.beanName);
+	const initial = recipeFormFromBrew(source.brew, source.bean);
 	if (!initial)
 		return (
 			<Notice
@@ -125,9 +125,11 @@ function PromoteBrew({ brewId }: { brewId: number }) {
 			initial={initial}
 			sourceNote={`From your ${methodConfig(source.brew.method).label.toLowerCase()} brew · ${formatRelativeDay(source.brew.date)}${source.brew.overallRating != null ? ` · ${source.brew.overallRating}★` : ""}`}
 			onSave={async (form) => {
-				const result = await addRecipe(toNewRecipe(form));
+				const result = await addRecipeFromBrew(
+					toNewRecipe(form),
+					source.brew.id,
+				);
 				if (result instanceof Error) return result.message;
-				await linkBrewToRecipe(source.brew.id, result);
 				navigate("/history");
 				return undefined;
 			}}

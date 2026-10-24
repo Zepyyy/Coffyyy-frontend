@@ -1,4 +1,5 @@
 import { db } from "@/db/db";
+import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 
 export type RecipeBrewStats = {
@@ -51,12 +52,13 @@ export function summarizeRecipeBrews(
 
 export type PromotionSource = {
 	brew: Brews;
-	beanName: string | null;
+	/** The brew's bean; null when it has none or the bean was deleted. */
+	bean: Pick<Beans, "id" | "name"> | null;
 };
 
 /**
- * The brew a recipe is promoted from, with its bean's name for the default
- * recipe name. Null when the brew is missing.
+ * The brew a recipe is promoted from, with its bean (if it still exists) for
+ * the bean tie and default recipe name. Null when the brew is missing.
  */
 export async function getPromotionSource(
 	brewId: number | undefined,
@@ -65,5 +67,5 @@ export async function getPromotionSource(
 	const brew = await db.Brews.get(brewId);
 	if (!brew) return null;
 	const bean = brew.beanId ? await db.Beans.get(brew.beanId) : undefined;
-	return { brew, beanName: bean?.name ?? null };
+	return { brew, bean: bean ? { id: bean.id, name: bean.name } : null };
 }

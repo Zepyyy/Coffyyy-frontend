@@ -9,7 +9,7 @@ Domain terms: `CONTEXT.md` (**Brew method**, **Brewer**, **Recipe**). Research: 
 - "Machine" is **Brewer** in UI text + glossary. Schema names `machines`, `machineLocalId` stay. Code identifiers (`Machines`, `useMachines`, `MachineCard`) stay; no code-wide rename.
 - Brewer has exactly one `method` (replaces free-text `type`). Editable only while the Brewer has zero brews.
 - Brew stores its own immutable `method`, copied from its Brewer at log time. Brewer required when logging new brews. Legacy brewer-less brews read as espresso.
-- Migration of `Machine.type`: case-insensitive contains "espresso"→espresso, "pour"→pour-over, "moka"→moka, else espresso. Old text dropped.
+- Migration of `Machine.type`: case-insensitive contains, first match wins: "espresso"→espresso; "moka", "bialetti", "stovetop"→moka; "pour", "v60", "chemex", "kalita", "filter", "drip", "origami"→pour-over; else espresso. Old text dropped.
 - Deleting a Brewer: unchanged (brews keep `method`, lose brewer link).
 - `grindRange`, `capacity` stay optional free text.
 - Moka has no Recipes. SteamCup / save moment unchanged.

@@ -66,6 +66,23 @@ describe("brewMethods", () => {
 		expect(methodFromMachineType(undefined)).toBe("espresso");
 	});
 
+	it.each([
+		["Hario V60", "pour-over"],
+		["Chemex 6-cup", "pour-over"],
+		["Kalita Wave", "pour-over"],
+		["Filter", "pour-over"],
+		["Drip brewer", "pour-over"],
+		["Origami dripper", "pour-over"],
+		["Bialetti Venus", "moka"],
+		["Stovetop", "moka"],
+		["Stovetop drip", "moka"],
+		["Espresso / V60", "espresso"],
+		["Stovetop espresso maker", "espresso"],
+		["French press", "espresso"],
+	])("maps legacy machine type %p to %p", (type, method) => {
+		expect(methodFromMachineType(type)).toBe(method);
+	});
+
 	it("formats ratios as 1:x", () => {
 		expect(formatRatio(18, 36)).toBe("1:2");
 		expect(formatRatio(15, 250)).toBe("1:16.7");

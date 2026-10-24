@@ -4,7 +4,7 @@ import { db } from "@/db/db";
 import { getMachineBrewCount } from "@/lib/api/machines";
 import { getRecipesForMethod } from "@/lib/api/recipes";
 import type { BrewMethod } from "@/types/BrewTypes";
-import { addBrew, addRecipe } from "./add";
+import { addBrew, addRecipe, addRecipeFromBrew } from "./add";
 import { deleteBeanById, deleteRecipeById } from "./delete";
 import { linkBrewToRecipe, updateMachineById } from "./update";
 
@@ -100,6 +100,42 @@ describe("brew and recipe CRUD", () => {
 		await expect(linkBrewToRecipe(brew, espressoRecipe)).rejects.toThrow(
 			"different brew method",
 		);
+	});
+
+	it("promotes a brew: adds the recipe and links the brew atomically", async () => {
+		const v60 = await machine("pour-over");
+		const brew = await ok(
+			addBrew({ ...dial, beanId: undefined, machineId: v60, date: new Date() }),
+		);
+		const recipe = await ok(
+			addRecipeFromBrew(
+				{ ...dial, name: "Promoted", method: "pour-over" },
+				brew,
+			),
+		);
+		expect((await db.Brews.get(brew))?.recipeId).toBe(recipe);
+
+		// Failures leave no recipe behind and the brew unchanged.
+		expect(
+			await addRecipeFromBrew(
+				{ ...dial, name: "Shot", method: "espresso" },
+				brew,
+			),
+		).toBeInstanceOf(Error);
+		expect(
+			await addRecipeFromBrew(
+				{ ...dial, name: "Gone bean", method: "pour-over", beanId: 999 },
+				brew,
+			),
+		).toBeInstanceOf(Error);
+		expect(
+			await addRecipeFromBrew(
+				{ ...dial, name: "No brew", method: "pour-over" },
+				999,
+			),
+		).toBeInstanceOf(Error);
+		expect(await db.Recipes.count()).toBe(1);
+		expect((await db.Brews.get(brew))?.recipeId).toBe(recipe);
 	});
 
 	it("deleting a recipe unlinks its brews", async () => {

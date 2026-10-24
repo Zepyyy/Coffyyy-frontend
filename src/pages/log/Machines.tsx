@@ -65,16 +65,24 @@ function idParam(raw: string | null): number | undefined {
 	return raw != null && Number.isInteger(id) && id > 0 ? id : undefined;
 }
 
+/**
+ * `/log/machine` adds a Brewer; `?id=4` edits that one. Keyed on the id so
+ * switching between them (e.g. `?id=4` -> `/log/machine`) starts a fresh form.
+ */
 export default function MachinesLog() {
+	const [searchParams] = useSearchParams();
+	const editId = idParam(searchParams.get("id"));
+	return <MachineLogForm key={editId ?? "new"} editId={editId} />;
+}
+
+function MachineLogForm({ editId }: { editId: number | undefined }) {
 	const [form, setForm] = useState<MachineForm>(INITIAL);
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
 	const suggestions = useMachineSuggestions();
 
-	// /log/machine?id=4 edits that Brewer; its method locks once it has brews.
-	const [searchParams] = useSearchParams();
-	const editId = idParam(searchParams.get("id"));
+	// Editing a Brewer: its method locks once it has brews.
 	const editing = useMachine(editId);
 	const brewCount = useMachineBrewCount(editId) ?? 0;
 	const methodLocked = editId != null && brewCount > 0;

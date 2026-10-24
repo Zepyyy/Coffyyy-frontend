@@ -97,15 +97,29 @@ export function isRecipeMethod(value: unknown): value is RecipeMethod {
 export const RECIPE_METHODS: readonly RecipeMethod[] =
 	BREW_METHODS.filter(isRecipeMethod);
 
+const MOKA_KEYWORDS = ["moka", "bialetti", "stovetop"];
+const POUR_OVER_KEYWORDS = [
+	"pour",
+	"v60",
+	"chemex",
+	"kalita",
+	"filter",
+	"drip",
+	"origami",
+];
+
 /**
  * Legacy free-text Machine.type -> Brew method (case-insensitive contains).
- * Unknown text reads as espresso. Mirrors the backend snapshot upgrade.
+ * "espresso" wins, then the specific moka keywords, then the broader
+ * pour-over ones; unknown text reads as espresso. Mirrors the backend
+ * snapshot upgrade.
  */
 export function methodFromMachineType(type: unknown): BrewMethod {
 	const text = typeof type === "string" ? type.toLowerCase() : "";
+	const has = (keywords: string[]) => keywords.some((k) => text.includes(k));
 	if (text.includes("espresso")) return "espresso";
-	if (text.includes("pour")) return "pour-over";
-	if (text.includes("moka")) return "moka";
+	if (has(MOKA_KEYWORDS)) return "moka";
+	if (has(POUR_OVER_KEYWORDS)) return "pour-over";
 	return "espresso";
 }
 

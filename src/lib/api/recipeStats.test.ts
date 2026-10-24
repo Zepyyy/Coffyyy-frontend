@@ -57,8 +57,15 @@ describe("recipe queries", () => {
 		const brewId = await addBrew({ beanId });
 		const source = await getPromotionSource(brewId);
 		expect(source?.brew.id).toBe(brewId);
-		expect(source?.beanName).toBe("Kenya AA");
+		expect(source?.bean).toEqual({ id: beanId, name: "Kenya AA" });
 		expect(await getPromotionSource(9999)).toBeNull();
 		expect(await getPromotionSource(undefined)).toBeNull();
+	});
+
+	it("getPromotionSource drops a deleted bean", async () => {
+		const brewId = await addBrew({ beanId: 4242 });
+		const source = await getPromotionSource(brewId);
+		expect(source?.brew.beanId).toBe(4242);
+		expect(source?.bean).toBeNull();
 	});
 });

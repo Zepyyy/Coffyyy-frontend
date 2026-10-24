@@ -68,26 +68,59 @@ async function addMachine(
 	}
 }
 
+/** Checks a new recipe and inserts it; call inside a transaction on Recipes + Beans. */
+async function insertRecipe(recipe: NewRecipe): Promise<number | Error> {
+	const name = recipe.name.trim();
+	if (!name) return new Error("Give the recipe a name");
+	if (!isRecipeMethod(recipe.method))
+		return new Error(`${recipe.method} has no recipes`);
+	if (recipe.beanId !== undefined && !(await db.Beans.get(recipe.beanId)))
+		return new Error("Bean not found");
+	return db.Recipes.add({
+		...recipe,
+		name,
+		localId: randomId(),
+		createdAt: new Date(),
+	});
+}
+
 /** Adds a recipe. Moka has no recipes; a bean tie must point to a real bean. */
 async function addRecipe(recipe: NewRecipe): Promise<number | Error> {
 	try {
-		const name = recipe.name.trim();
-		if (!name) return new Error("Give the recipe a name");
-		if (!isRecipeMethod(recipe.method))
-			return new Error(`${recipe.method} has no recipes`);
-		return await db.transaction("rw", [db.Recipes, db.Beans], async () => {
-			if (recipe.beanId !== undefined && !(await db.Beans.get(recipe.beanId)))
-				return new Error("Bean not found");
-			return db.Recipes.add({
-				...recipe,
-				name,
-				localId: randomId(),
-				createdAt: new Date(),
-			});
-		});
+		return await db.transaction("rw", [db.Recipes, db.Beans], () =>
+			insertRecipe(recipe),
+		);
 	} catch (error) {
 		return asError(error);
 	}
 }
 
-export { addBean, addBrew, addMachine, addRecipe };
+/**
+ * Promotes a brew: adds the recipe and links the brew to it in one
+ * transaction. The brew must exist and share the recipe's method.
+ */
+async function addRecipeFromBrew(
+	recipe: NewRecipe,
+	brewId: number,
+): Promise<number | Error> {
+	try {
+		return await db.transaction(
+			"rw",
+			[db.Recipes, db.Beans, db.Brews],
+			async () => {
+				const brew = await db.Brews.get(brewId);
+				if (!brew) return new Error("Brew not found");
+				if (brew.method !== recipe.method)
+					return new Error("Recipe is for a different brew method");
+				const recipeId = await insertRecipe(recipe);
+				if (recipeId instanceof Error) return recipeId;
+				await db.Brews.update(brewId, { recipeId });
+				return recipeId;
+			},
+		);
+	} catch (error) {
+		return asError(error);
+	}
+}
+
+export { addBean, addBrew, addMachine, addRecipe, addRecipeFromBrew };

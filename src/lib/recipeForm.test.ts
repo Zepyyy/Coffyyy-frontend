@@ -52,7 +52,7 @@ describe("defaultPromoteName", () => {
 
 describe("recipeFormFromBrew", () => {
 	it("prefills actuals, method and bean tie", () => {
-		expect(recipeFormFromBrew(brew(), "Kenya AA")).toEqual({
+		expect(recipeFormFromBrew(brew(), { id: 3, name: "Kenya AA" })).toEqual({
 			name: "Kenya AA · 1:2",
 			method: "espresso",
 			beanId: 3,
@@ -75,7 +75,7 @@ describe("recipeFormFromBrew", () => {
 				waterTemp: 94,
 				notes: "50g bloom",
 			}),
-			"Gesha",
+			{ id: 3, name: "Gesha" },
 		);
 		expect(form).toMatchObject({
 			method: "pour-over",
@@ -90,8 +90,16 @@ describe("recipeFormFromBrew", () => {
 		expect(form?.waterTemp).toBe(93);
 	});
 
+	it("leaves the bean untied when the brew's bean is gone", () => {
+		const form = recipeFormFromBrew(brew({ beanId: 3 }), null);
+		expect(form?.beanId).toBeUndefined();
+		expect(form?.name).toBe("Espresso · 1:2");
+	});
+
 	it("rejects moka brews", () => {
-		expect(recipeFormFromBrew(brew({ method: "moka" }), "Kenya")).toBeNull();
+		expect(
+			recipeFormFromBrew(brew({ method: "moka" }), { id: 3, name: "Kenya" }),
+		).toBeNull();
 	});
 });
 

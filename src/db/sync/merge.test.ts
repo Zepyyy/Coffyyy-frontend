@@ -163,6 +163,54 @@ describe("mergeSnapshots", () => {
 		]);
 	});
 
+	it("keeps a brewer's method locked when the other side logged brews on it", () => {
+		const machine = (method: "espresso" | "moka", name = "Pot") => ({
+			localId: "m",
+			name,
+			brand: "",
+			model: "",
+			method,
+			purchaseDate: "",
+			grindRange: "",
+			capacity: "",
+		});
+		const withMachine = (
+			method: "espresso" | "moka",
+			brews: WorkspaceSnapshot["brews"] = [],
+			name?: string,
+		): WorkspaceSnapshot => ({
+			...snapshot([], brews),
+			machines: [machine(method, name)],
+		});
+		const espressoBrew = { ...brew("y"), machineLocalId: "m" };
+		// Local switched the brewer to moka; remote logged an espresso brew on it.
+		const machineBase = withMachine("espresso");
+		const local = withMachine("moka", [], "Renamed");
+		const remote = withMachine("espresso", [espressoBrew]);
+
+		const { snapshot: merged, conflicts } = mergeSnapshots(
+			machineBase,
+			local,
+			remote,
+		);
+
+		expect(conflicts).toEqual([{ collection: "machines", localId: "m" }]);
+		expect(merged.machines[0].method).toBe("espresso");
+		expect(merged.brews[0].method).toBe("espresso");
+
+		// Mirrored: remote switched it, local logged the brew.
+		const swapped = mergeSnapshots(machineBase, remote, local);
+		expect(swapped.conflicts).toEqual([
+			{ collection: "machines", localId: "m" },
+		]);
+		expect(swapped.snapshot.machines[0].method).toBe("espresso");
+
+		// Without brews on it the method change merges cleanly.
+		expect(
+			mergeSnapshots(machineBase, local, withMachine("espresso")).conflicts,
+		).toEqual([]);
+	});
+
 	it("merges against a stored v1 base snapshot", () => {
 		const v1Base: WorkspaceSnapshotV1 = {
 			schemaVersion: 1,
