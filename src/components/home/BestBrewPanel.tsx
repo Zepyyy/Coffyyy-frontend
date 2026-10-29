@@ -152,7 +152,7 @@ export default function BestBrewPanel({
 			)}
 
 			{/* Chart + past data */}
-			<div className="grid divide-line sm:grid-cols-[220px_1fr] divide-y sm:divide-y-0 sm:divide-x">
+			<div className="grid min-w-0 grid-cols-[minmax(0,1fr)] divide-line divide-y sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)] sm:divide-y-0 sm:divide-x">
 				{withGraph && <BeanGraph ChartData={insights.recentBrewScores} />}
 
 				{withBarChart && (

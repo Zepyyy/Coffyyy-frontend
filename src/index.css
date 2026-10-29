@@ -243,8 +243,6 @@
     }
     body {
         @apply bg-paper text-ink;
-        -webkit-tap-highlight-color: transparent;
-        overscroll-behavior-y: none;
     }
     a,
     button,
@@ -253,14 +251,6 @@
     select,
     textarea {
         touch-action: manipulation;
-    }
-    /* iOS Safari zooms the page on focus when a field is under 16px. */
-    @media (max-width: 639px) {
-        input:not([type="checkbox"], [type="radio"], [type="range"]),
-        select,
-        textarea {
-            font-size: 16px;
-        }
     }
     ::selection {
         background: var(--accent-tint);
@@ -845,3 +835,19 @@
         transition-duration: 300ms !important;
     }
 }
+
+/* Keep mobile fields readable even when a component supplies text-xs/sm.
+   Unlayered intentionally: base-layer declarations lose to utility classes.
+   Browser pan and pinch zoom remain available. */
+@media (max-width: 639px) {
+    input:not([type="checkbox"], [type="radio"], [type="range"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+/* A changed dose/yield relation redraws locally; surrounding values stay still. */
+.measure-relation { animation: measure-relation 180ms ease-out; transform-origin: left; }
+@keyframes measure-relation { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .measure-relation { animation: none; } }
