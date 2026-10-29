@@ -81,8 +81,9 @@ function AxisSlider({
 					step={1}
 					value={value}
 					onChange={(event) => onChange(Number(event.target.value))}
-					aria-label={`${leftLabel} to ${rightLabel}, currently ${touched ? hint : "not rated"}`}
-					className="h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-crema [&::-moz-range-thumb]:bg-paper-raised [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-crema [&::-webkit-slider-thumb]:bg-paper-raised [&::-webkit-slider-thumb]:shadow-[0_1px_4px_oklch(0.33_0.03_50/0.3)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+					aria-label={`${leftLabel} to ${rightLabel}`}
+					aria-valuetext={touched ? hint : "Not rated"}
+					className="h-11 w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-crema [&::-moz-range-thumb]:bg-paper-raised [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-crema [&::-webkit-slider-thumb]:bg-paper-raised [&::-webkit-slider-thumb]:shadow-[0_1px_4px_oklch(0.33_0.03_50/0.3)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
 					style={{
 						// The crema fill measures deviation from balanced, so it is
 						// zero-width at center — a permanent hairline rail keeps the
@@ -90,14 +91,14 @@ function AxisSlider({
 						background: `linear-gradient(to right, transparent 0%, transparent ${from}%, var(--color-crema) ${from}%, var(--color-crema) ${to}%, transparent ${to}%, transparent 100%) center / 100% 4px no-repeat, linear-gradient(var(--color-line-strong), var(--color-line-strong)) center / 100% 1px no-repeat`,
 					}}
 				/>
-				<div className="flex justify-between font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint select-none">
+				<div className="flex justify-between font-data text-[11px] uppercase tracking-[0.08em] text-ink-faint select-none">
 					<span>{leftLabel}</span>
 					<button
 						type="button"
 						onClick={() => onChange(0)}
 						aria-label={`Mark ${leftLabel.toLowerCase()} to ${rightLabel.toLowerCase()} as balanced`}
 						aria-pressed={touched && value === 0}
-						className="min-h-8 px-2 -my-2 text-crema-deep transition-colors hover:text-foreground active:translate-y-px"
+						className="min-h-11 px-2 text-crema-deep transition-colors hover:text-foreground active:translate-y-px"
 					>
 						{centerLabel}
 					</button>
@@ -148,6 +149,12 @@ export default function BrewFeedback({
 	});
 	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const hasFeedback =
+		overallRating > 0 ||
+		taste.touched ||
+		strength.touched ||
+		brew.overallRating != null;
 
 	const date = new Date(brew.date).toLocaleDateString(undefined, {
 		month: "short",
@@ -165,7 +172,8 @@ export default function BrewFeedback({
 		.join(" · ");
 
 	async function handleSave() {
-		if (saving) return;
+		if (saving || !hasFeedback) return;
+		setSaveError(null);
 		setSaving(true);
 		try {
 			const payload: Partial<Brews> = {};
@@ -175,19 +183,26 @@ export default function BrewFeedback({
 				payload.tasteScore = taste.value;
 			if (strength.touched || brew.strengthScore != null)
 				payload.strengthScore = strength.value;
-			await updateBrewById(payload, brew.id);
-			setSaved(true);
-			onSaved?.();
+			if ((await updateBrewById(payload, brew.id)) !== 1) {
+				throw new Error("Brew no longer exists");
+			}
+		} catch {
+			setSaveError(
+				"Couldn’t save your notes. Your changes are still here; try again.",
+			);
+			return;
 		} finally {
 			setSaving(false);
 		}
+		setSaved(true);
+		onSaved?.();
 	}
 
 	const body = (
 		<div className="space-y-5">
 			<div className="flex items-start justify-between gap-4">
 				<div className="min-w-0">
-					<p className="eyebrow">
+					<p className="eyebrow" role={saved ? "status" : undefined}>
 						{saved ? "Notes saved" : "How was that cup?"}
 					</p>
 					{bean?.name && (
@@ -204,7 +219,8 @@ export default function BrewFeedback({
 					<button
 						type="button"
 						onClick={onDismiss}
-						className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint transition-colors hover:text-foreground shrink-0"
+						disabled={saving}
+						className="min-h-11 px-2 font-data text-[11px] uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-foreground shrink-0"
 					>
 						Later
 					</button>
@@ -212,10 +228,14 @@ export default function BrewFeedback({
 			</div>
 
 			{!saved && (
-				<>
+				<fieldset disabled={saving} className="space-y-5">
 					<div className="space-y-2">
 						<p className="eyebrow">Overall rating</p>
-						<div className="flex items-center gap-1">
+						<div
+							className="flex flex-wrap items-center"
+							role="group"
+							aria-label="Overall rating"
+						>
 							{Array.from({ length: 5 }, (_, index) => {
 								const value = index + 1;
 								const active = value <= overallRating;
@@ -223,12 +243,9 @@ export default function BrewFeedback({
 									<button
 										key={value}
 										type="button"
-										onClick={() =>
-											setOverallRating((current) =>
-												current === value ? 0 : value,
-											)
-										}
-										className="transition-transform hover:scale-110 p-1.5 -m-1.5"
+										onClick={() => setOverallRating(value)}
+										aria-pressed={overallRating === value}
+										className="flex size-11 shrink-0 items-center justify-center transition-colors hover:bg-paper-sunken active:bg-paper-sunken"
 										aria-label={`Rate ${value} out of 5`}
 									>
 										<Star
@@ -240,9 +257,19 @@ export default function BrewFeedback({
 									</button>
 								);
 							})}
-							<span className="ml-2 font-sans text-xs text-muted-foreground">
-								{overallRating === 0 ? "Optional" : undefined}
-							</span>
+							{overallRating > 0 ? (
+								<button
+									type="button"
+									onClick={() => setOverallRating(0)}
+									className="min-h-11 px-2 font-sans text-xs text-ink-soft underline underline-offset-4"
+								>
+									Clear rating
+								</button>
+							) : (
+								<span className="px-2 font-sans text-xs text-muted-foreground">
+									Optional
+								</span>
+							)}
 						</div>
 					</div>
 
@@ -298,17 +325,27 @@ export default function BrewFeedback({
 						</div>
 					)}
 
+					{saveError && (
+						<p role="alert" className="font-sans text-sm text-destructive">
+							{saveError}
+						</p>
+					)}
+					{!hasFeedback && (
+						<p className="font-sans text-xs text-ink-soft">
+							Choose a rating or an axis value to save. All are optional.
+						</p>
+					)}
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
 							onClick={handleSave}
-							disabled={saving}
-							className="h-10 flex-1 rounded-lg bg-ink px-5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
+							disabled={saving || !hasFeedback}
+							className="h-11 flex-1 rounded-lg bg-ink px-5 font-sans text-sm font-semibold text-paper transition-colors hover:bg-ink/85 disabled:opacity-40"
 						>
 							{saving ? "Saving…" : "Save notes"}
 						</button>
 					</div>
-				</>
+				</fieldset>
 			)}
 		</div>
 	);
