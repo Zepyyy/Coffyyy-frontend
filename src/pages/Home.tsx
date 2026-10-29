@@ -172,7 +172,7 @@ export default function Home() {
 	const now = new Date();
 
 	return (
-		<div className="w-full mx-auto max-w-5xl px-6 space-y-10">
+		<div className="w-full mx-auto max-w-5xl sm:px-6 space-y-10">
 			{/* The journal opens by talking to you */}
 			<section className="rise flex flex-col gap-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
 				<div>

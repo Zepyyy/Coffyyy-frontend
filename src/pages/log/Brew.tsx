@@ -501,8 +501,8 @@ export default function BrewLog() {
 	// something in the cup to judge.
 	if (savedBrew != null) {
 		return (
-			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
-				<div className="rise space-y-5 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
+			<div className="mx-auto w-full max-w-3xl">
+				<div className="rise space-y-5 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-8">
 					<div className="flex items-start justify-between gap-4">
 						<div>
 							<p className="eyebrow">{capitalize(noun)} logged</p>
@@ -636,7 +636,7 @@ export default function BrewLog() {
 					)}
 				</aside>
 
-				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-6 shadow-card lg:p-8">
+				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-6 lg:p-8">
 					{/* Mobile: the aside is hidden, so the prefill note travels with the form */}
 					{startNote && (
 						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">

@@ -17,7 +17,7 @@ export default function BottomNav() {
 					to="/home"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[10px] uppercase tracking-[0.12em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}
@@ -39,7 +39,7 @@ export default function BottomNav() {
 					to="/library"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[10px] uppercase tracking-[0.12em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}
@@ -70,7 +70,7 @@ export default function BottomNav() {
 					to="/history"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[10px] uppercase tracking-[0.12em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}
