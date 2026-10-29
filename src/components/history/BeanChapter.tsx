@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
 import { BrewLedgerRow, RatingStars } from "./BrewLedgerRow";
 import { recipeLine } from "@/lib/brewFormat";
@@ -92,6 +93,13 @@ export function BeanChapter({
 								day: "numeric",
 							})}
 						</span>
+						<Link
+							to={`/log/brew?fromBrew=${best.id}`}
+							className="inline-flex items-center gap-1 font-data text-[10px] font-semibold uppercase tracking-[0.12em] text-crema-deep hover:underline dark:text-crema"
+						>
+							Repeat
+							<ArrowRight className="size-3" aria-hidden />
+						</Link>
 					</div>
 				</div>
 			)}

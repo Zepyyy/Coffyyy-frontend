@@ -391,3 +391,18 @@ been animating an invisible fill.
   segment is zero-width at balanced, so the slider showed nothing at rest.
   The gauge now sits on a permanent 1px line-strong rail with the crema fill
   measuring deviation on top.
+
+
+## Integration pass — mobile composition and censer
+
+After the October 29 investigation, implementation preserves the established
+identity and changes task composition: compact optional Home tasting, named
+Brewer/bean summaries, paired phone dials with full-size steppers, and a quieter
+History opening. The censer is larger with an attached drawn plume; no extra
+motif or off-palette surface. New plume motion stops under OS reduce while the
+previously accepted cup behavior remains. This is an implementation choice for
+owner review, not a newly recorded owner preference.
+
+Review caught and fixed folded tasting drafts being lost, stale Repeat state
+on navigation, and the tablet greeting colliding with the CTA. See
+[delivery and verification](ui-mobile-delivery.md) for scope, captures and limits.

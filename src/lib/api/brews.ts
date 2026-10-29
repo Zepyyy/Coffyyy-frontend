@@ -24,14 +24,16 @@ function sortBrews(list: Brews[], order: "newest" | "oldest"): Brews[] {
 }
 
 async function getBrewNameMaps() {
-	const [beans, machines] = await Promise.all([
+	const [beans, machines, recipes] = await Promise.all([
 		db.Beans.toArray(),
 		db.Machines.toArray(),
+		db.Recipes.toArray(),
 	]);
 
 	return {
 		beans: new Map(beans.map((bean) => [bean.id, bean.name])),
 		machines: new Map(machines.map((machine) => [machine.id, machine.name])),
+		recipes: new Map(recipes.map((recipe) => [recipe.id, recipe.name])),
 	};
 }
 
@@ -43,12 +45,16 @@ export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 /** How long a saved-but-unrated brew keeps asking for taste notes. */
 const FEEDBACK_WINDOW_MS = 72 * 60 * 60 * 1000;
 
-export async function getLatestUnratedBrew(): Promise<Brews | null> {
+export async function getLatestUnratedBrew(
+	excludedIds: readonly number[] = [],
+): Promise<Brews | null> {
 	const cutoff = Date.now() - FEEDBACK_WINDOW_MS;
+	const excluded = new Set(excludedIds);
 	const brews = await db.Brews.orderBy("date").reverse().toArray();
 	return (
 		brews.find(
 			(b) =>
+				!excluded.has(b.id) &&
 				+new Date(b.date) >= cutoff &&
 				(b.tasteScore == null ||
 					b.strengthScore == null ||
@@ -188,6 +194,11 @@ export async function getBrewsForHistoryView(
 					? names.machines.get(brew.machineId)?.toLowerCase()
 					: "";
 			return (
+				Boolean(brew.notes?.toLowerCase().includes(q)) ||
+				Boolean(
+					brew.recipeId != null &&
+						names.recipes.get(brew.recipeId)?.toLowerCase().includes(q),
+				) ||
 				Boolean(beanName?.includes(q)) ||
 				Boolean(machineName?.includes(q)) ||
 				Boolean(brew.beanId?.toString().includes(q)) ||

@@ -29,7 +29,7 @@ export default function BeanBarChart({
 	const n = chartData.length;
 
 	return (
-		<div className="p-5">
+		<div className="min-w-0 p-5">
 			<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground">
 				Average rating by grind size
 			</p>

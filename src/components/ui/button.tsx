@@ -12,13 +12,13 @@ import { buttonVariants } from "./buttonVariants";
  */
 function KeyOutline({ marching }: { marching?: boolean }) {
 	return (
-		<svg
-			aria-hidden
-			className={marching ? "key-march" : "key-trace"}
-			viewBox="0 0 100 100"
-			preserveAspectRatio="none"
-		>
-			<rect pathLength={100} x="0.5" y="0.5" width="99" height="99" />
+		<svg aria-hidden className={marching ? "key-march" : "key-trace"}>
+			<rect
+				pathLength={100}
+				x="1"
+				y="1"
+				style={{ width: "calc(100% - 2px)", height: "calc(100% - 2px)" }}
+			/>
 		</svg>
 	);
 }

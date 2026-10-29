@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 import { cn } from "@/lib/utils";
 
 /**
@@ -12,12 +12,12 @@ export default function BottomNav() {
 			aria-label="Primary"
 			className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm sm:hidden"
 		>
-			<div className="mx-auto grid h-16 max-w-md grid-cols-[1fr_1fr_auto_1fr] items-stretch px-2">
+			<div className="mx-auto grid h-16 max-w-md grid-cols-[1fr_1fr_auto_1fr] items-stretch pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))]">
 				<NavLink
 					to="/home"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[11px] tracking-[0.02em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}
@@ -39,7 +39,7 @@ export default function BottomNav() {
 					to="/library"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[11px] tracking-[0.02em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}
@@ -58,19 +58,26 @@ export default function BottomNav() {
 					)}
 				</NavLink>
 				<div className="flex items-center justify-center px-2">
-					<Link
+					<NavLink
 						to="/log/brew"
 						aria-label="Log a brew"
-						className="flex size-12 items-center justify-center rounded-full border border-ink/10 bg-crema text-ink shadow-card transition-transform active:scale-95"
+						className={({ isActive }) =>
+							cn(
+								"key-line flex size-11 items-center justify-center border transition-colors active:bg-paper-sunken active:translate-y-px",
+								isActive
+									? "border-crema bg-crema-tint text-foreground"
+									: "border-line-strong bg-paper-raised text-ink-soft hover:border-crema",
+							)
+						}
 					>
 						<Plus className="size-5" aria-hidden />
-					</Link>
+					</NavLink>
 				</div>
 				<NavLink
 					to="/history"
 					className={({ isActive }) =>
 						cn(
-							"flex flex-col items-center justify-center gap-1 font-data text-[9px] uppercase tracking-[0.12em] transition-colors",
+							"flex flex-col items-center justify-center gap-1 font-data text-[11px] tracking-[0.02em] transition-colors",
 							isActive ? "text-foreground" : "text-ink-faint",
 						)
 					}

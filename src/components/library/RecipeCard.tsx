@@ -52,9 +52,19 @@ export default function RecipeCard({
 						</span>
 					</div>
 				)}
-				<p className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
-					{brewCountLabel(stats)}
-				</p>
+				{(stats?.brewCount ?? 0) > 0 ? (
+					<Link
+						to={`/history?recipe=${recipe.id}`}
+						aria-label={`View brews following ${recipe.name}`}
+						className="word-link w-fit py-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-foreground"
+					>
+						{brewCountLabel(stats)} →
+					</Link>
+				) : (
+					<p className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+						{brewCountLabel(stats)}
+					</p>
+				)}
 			</article>
 
 			<div className="mt-auto flex items-center justify-between gap-2 px-5 pb-3">

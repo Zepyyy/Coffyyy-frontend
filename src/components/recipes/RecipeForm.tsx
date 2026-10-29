@@ -158,7 +158,7 @@ export default function RecipeForm({
 
 	return (
 		<div className="mx-auto w-full">
-			<div className="mx-6 grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
+			<div className="sm:mx-6 grid gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
 				<aside className="hidden space-y-6 lg:sticky lg:top-20 lg:block lg:self-start">
 					<div className="border-l-4 border-crema pl-5">
 						<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
@@ -193,7 +193,7 @@ export default function RecipeForm({
 					)}
 				</aside>
 
-				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-6 shadow-card lg:p-8">
+				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-6 lg:p-8">
 					{/* Mobile: the aside is hidden, so the title travels with the form */}
 					<div className="mb-8 border-l-4 border-crema pl-5 lg:hidden">
 						<h1 className="font-display text-3xl italic tracking-tight text-foreground/90">

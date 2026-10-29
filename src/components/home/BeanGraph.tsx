@@ -9,7 +9,7 @@ export default function BeanGraph({
 	}[];
 }) {
 	return (
-		<div className="p-5">
+		<div className="min-w-0 p-5">
 			<p className="font-data text-xs uppercase tracking-[0.16em] text-muted-foreground mb-4">
 				Extraction profile
 			</p>

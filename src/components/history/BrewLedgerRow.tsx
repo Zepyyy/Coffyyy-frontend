@@ -1,4 +1,4 @@
-import { BookmarkPlus, ChevronDown, Trash2, X } from "lucide-react";
+import { BookmarkPlus, ChevronDown, Repeat, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
@@ -71,6 +71,7 @@ export function BrewLedgerRow({
 	bean,
 	recipe,
 	showMethod = false,
+	showBean = false,
 }: {
 	brew: Brews;
 	machineName: string | undefined;
@@ -79,6 +80,7 @@ export function BrewLedgerRow({
 	recipe?: Recipes | null;
 	/** Show the method label (when the journal has more than one method). */
 	showMethod?: boolean;
+	showBean?: boolean;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
@@ -121,6 +123,11 @@ export function BrewLedgerRow({
 					{showMethod && (
 						<span className="w-16 shrink-0 font-data text-[9px] uppercase tracking-[0.14em] text-ink-soft">
 							{config.label}
+						</span>
+					)}
+					{showBean && (
+						<span className="w-full break-words font-display text-lg italic text-foreground">
+							{bean?.name ?? "Unknown bean"}
 						</span>
 					)}
 					{/* The dial decision, front and center */}
@@ -266,6 +273,13 @@ export function BrewLedgerRow({
 							</div>
 						) : (
 							<div className="flex items-center gap-1">
+								<Link
+									to={`/log/brew?fromBrew=${brew.id}`}
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+								>
+									<Repeat className="size-3" />
+									Repeat
+								</Link>
 								{config.hasRecipes && (
 									<Link
 										to={`/log/recipe?fromBrew=${brew.id}`}

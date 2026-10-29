@@ -16,9 +16,9 @@ export default function App() {
 	const { theme, toggleTheme } = useTheme();
 
 	return (
-		<div className="min-h-screen text-foreground flex flex-col blueprint-grid">
-			<header className="sticky top-0 z-50 h-16 border-b border-border bg-paper/90 backdrop-blur-sm">
-				<div className="flex h-full w-full gap-3 px-4 items-center relative sm:gap-0">
+		<div className="min-h-svh text-foreground flex flex-col blueprint-grid">
+			<header className="sticky top-0 z-50 h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-border bg-paper/90 backdrop-blur-sm">
+				<div className="flex h-full w-full gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] items-center relative sm:gap-0">
 					<Link
 						to="/home"
 						className="flex select-none min-w-0 shrink-0 font-display text-xl italic tracking-tight text-foreground sm:flex-1 sm:text-2xl"
@@ -61,7 +61,7 @@ export default function App() {
 						<button
 							type="button"
 							onClick={toggleTheme}
-							className="flex h-8 w-8 items-center justify-center text-ink-faint transition-colors hover:bg-paper-sunken hover:text-foreground"
+							className="flex size-11 items-center sm:size-8 justify-center text-ink-faint transition-colors hover:bg-paper-sunken hover:text-foreground"
 							aria-label="Toggle theme"
 						>
 							{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
@@ -70,7 +70,7 @@ export default function App() {
 				</div>
 			</header>
 
-			<main className="flex-1 mx-auto w-full px-4 py-6 pb-28 sm:pb-6 relative">
+			<main className="flex-1 mx-auto w-full min-w-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:pb-6 relative">
 				<Outlet />
 			</main>
 

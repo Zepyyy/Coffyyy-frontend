@@ -159,9 +159,11 @@ export default function Bean() {
 				className={`${swatch.bg} border border-foreground/15 shadow-sm shadow-foreground/5 ring-1 ring-inset ring-background/50 dark:border-border dark:shadow-none dark:ring-0`}
 			>
 				<div className="px-6 py-5">
-					<p className={`font-display text-3xl font-semibold ${swatch.text}`}>
+					<h1
+						className={`break-words font-display text-3xl font-semibold ${swatch.text}`}
+					>
 						{bean.name}
-					</p>
+					</h1>
 					{bean.brand && (
 						<p
 							className={`mt-0.5 font-data text-xs uppercase tracking-[0.16em] ${swatch.secondaryText}`}

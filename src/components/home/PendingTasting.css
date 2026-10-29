@@ -1,0 +1,18 @@
+/* The folded tasting row opens into the full form as one attached surface:
+   the form's top edge stays put and the rest unrolls beneath it. Plain
+   animation, so an OS reduce collapses it to an instant swap. */
+.pending-open {
+    animation: pending-open 0.34s var(--ease-soft) both;
+}
+@keyframes pending-open {
+    from {
+        clip-path: inset(0 0 100% 0);
+        opacity: 0.4;
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+        opacity: 1;
+    }
+}
+
+.pending-editor[hidden], .pending-row[hidden] { display: none; }

@@ -183,8 +183,8 @@ export default function BeansLog() {
 	// Success: offer the natural next step.
 	if (savedBeanId != null) {
 		return (
-			<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
-				<div className="rise space-y-6 rounded-xl border border-line bg-paper-raised p-6 shadow-card sm:p-8">
+			<div className="mx-auto w-full max-w-3xl">
+				<div className="rise space-y-6 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-8">
 					<div>
 						<p className="font-data text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
 							Bean saved
@@ -215,7 +215,7 @@ export default function BeansLog() {
 
 	return (
 		<div className="mx-auto w-full">
-			<div className="mx-6 grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)]">
+			<div className="sm:mx-6 grid gap-8 lg:grid-cols-[20rem_minmax(0,1fr)]">
 				<aside className="space-y-6 lg:sticky lg:top-20 lg:self-start lg:block hidden">
 					<div className="border-l-4 border-crema pl-5">
 						<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
@@ -243,7 +243,7 @@ export default function BeansLog() {
 					)}
 				</aside>
 
-				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-6 shadow-card lg:p-8">
+				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-6 lg:p-8">
 					<form onSubmit={handleSubmit} className="space-y-12">
 						{/* 01 — Identity */}
 						<section className="space-y-6">
