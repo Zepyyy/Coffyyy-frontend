@@ -1,0 +1,110 @@
+/*
+ * The censer vessel: SteamCup, larger, with its vapor carried upward by a
+ * plume rooted at the cup's own three wisps. Everything is sized from --cup
+ * (set on the censer key), so the plume's x-axis is the cup's 30-unit grid.
+ *
+ * Two layers per wisp: a ghost trace (the complete, static silhouette) and a
+ * travelling segment that draws itself up the trace. The cup's own steam and
+ * halo stay under the owner's reduced-motion carve-out in index.css; the
+ * plume's extra motion does not, so it stands still under an OS reduce.
+ */
+.censer-vessel {
+    position: relative;
+    flex: none;
+    width: var(--cup);
+    height: calc(var(--cup) * 1.6);
+}
+.censer-vessel > .steam-cup {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+}
+.censer-vessel > .censer-halo {
+    left: -60%;
+    top: 15%;
+    width: 220%;
+    height: 120%;
+}
+.censer-plume {
+    position: absolute;
+    left: 0;
+    bottom: calc(var(--cup) * 0.8);
+    width: var(--cup);
+    height: calc(var(--cup) * 0.8);
+    overflow: visible;
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 0.75;
+    -webkit-mask-image: linear-gradient(to top, #000 35%, transparent 98%);
+    mask-image: linear-gradient(to top, #000 35%, transparent 98%);
+}
+.censer-plume path {
+    stroke: var(--ink-soft);
+}
+.censer-plume .trace {
+    opacity: 0.4;
+    transition: opacity 0.4s var(--ease-soft);
+}
+.group:hover .censer-plume .trace,
+.group:focus-visible .censer-plume .trace {
+    opacity: 0.65;
+}
+.censer-plume .run {
+    stroke-dasharray: 0.3 1.7;
+    stroke-dashoffset: 0.3;
+    opacity: 0;
+    animation: plume-rise 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.censer-plume .run.p2 {
+    animation-duration: 10.5s;
+    animation-delay: 2.6s;
+}
+.censer-plume .run.p3 {
+    animation-duration: 12s;
+    animation-delay: 5.2s;
+}
+.dark .censer-plume path {
+    stroke: oklch(0.8 0.07 72);
+}
+.dark .censer-plume .run {
+    filter: drop-shadow(0 0 0.35px oklch(0.72 0.09 68 / 0.6));
+}
+@keyframes plume-rise {
+    0% {
+        stroke-dashoffset: 0.3;
+        opacity: 0;
+    }
+    14% {
+        opacity: 0.9;
+    }
+    80% {
+        opacity: 0.55;
+    }
+    100% {
+        stroke-dashoffset: -1;
+        opacity: 0;
+    }
+}
+
+/* Label and arrow sit on the cup's midline, not the vessel's. */
+.censer-key .censer-label {
+    margin-bottom: calc(var(--cup) * 0.5 - 0.95rem);
+}
+
+/*
+ * The carve-out in index.css (`.censer-key *`) re-enables looping motion for
+ * the original censer. The plume is new motion: it parks as the full ghost
+ * silhouette. Specificity beats the carve-out; both are !important.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .censer-key .censer-plume .run {
+        animation: none !important;
+        opacity: 0;
+    }
+    .censer-key .censer-plume .trace {
+        transition: none !important;
+    }
+}

@@ -128,12 +128,14 @@ export default function BrewFeedback({
 	brew,
 	bean,
 	onSaved,
+	onSavingChange,
 	onDismiss,
 	bare = false,
 }: {
 	brew: Brews;
 	bean?: { id: number; name?: string; status?: Beans["status"] } | null;
 	onSaved?: () => void;
+	onSavingChange?: (saving: boolean) => void;
 	onDismiss?: () => void;
 	/** Skip the card chrome when embedding in another surface. */
 	bare?: boolean;
@@ -175,6 +177,7 @@ export default function BrewFeedback({
 		if (saving || !hasFeedback) return;
 		setSaveError(null);
 		setSaving(true);
+		onSavingChange?.(true);
 		try {
 			const payload: Partial<Brews> = {};
 			if (overallRating > 0) payload.overallRating = overallRating;
@@ -193,6 +196,7 @@ export default function BrewFeedback({
 			return;
 		} finally {
 			setSaving(false);
+			onSavingChange?.(false);
 		}
 		setSaved(true);
 		onSaved?.();

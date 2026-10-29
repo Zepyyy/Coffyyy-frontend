@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
+import CenserVessel from "@/components/home/CenserVessel";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
-import BrewFeedback from "@/components/feedback/BrewFeedback";
+import PendingTasting from "@/components/home/PendingTasting";
 import AddCard from "@/components/library/AddCard";
 import { Button } from "@/components/ui/button";
-import SteamCup from "@/components/ui/SteamCup";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import { useLatestUnratedBrew, useRecentBrews } from "@/hooks/api/useBrews";
 import {
@@ -152,10 +152,10 @@ export default function Home() {
 	const recentBrews = useRecentBrews(20);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
-	const unratedBrew = useLatestUnratedBrew();
 	const [dismissedBrewIds, setDismissedBrewIds] = useState<number[]>(() =>
 		getDismissedFeedbackBrewIds(),
 	);
+	const unratedBrew = useLatestUnratedBrew(dismissedBrewIds);
 
 	const isEmpty = recentBrews.length === 0 && allBeans.length === 0;
 
@@ -172,10 +172,10 @@ export default function Home() {
 	const now = new Date();
 
 	return (
-		<div className="w-full mx-auto max-w-5xl sm:px-6 space-y-10">
+		<div className="w-full mx-auto max-w-5xl space-y-8 sm:px-6 sm:space-y-10">
 			{/* The journal opens by talking to you */}
-			<section className="rise flex flex-col gap-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
-				<div>
+			<section className="rise flex flex-col gap-5 pt-2 lg:flex-row lg:items-end lg:justify-between sm:gap-8">
+				<div className="min-w-0">
 					<p className="eyebrow">
 						{now.toLocaleDateString(undefined, {
 							weekday: "long",
@@ -183,56 +183,29 @@ export default function Home() {
 							day: "numeric",
 						})}
 					</p>
-					<h1 className="mt-1 font-display text-4xl italic tracking-tight text-foreground sm:text-5xl">
+					<h1 className="mt-1 text-balance font-display text-[clamp(2.5rem,11.5vw,3.25rem)] italic leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
 						{greetingForHour(now.getHours())}
 					</h1>
-					<p className="mt-2 font-sans text-sm text-ink-soft">
+					<p className="mt-3 font-sans text-sm text-ink-soft">
 						{dailyLine(recentBrews, allBeans.length)}
 					</p>
 				</div>
 				{/* The censer, softened: the page's own paper, the house accent as
-				    the one warm light — steam, halo, embers. It blends in. */}
+				    the one warm light. The plume continues the cup's own steam. */}
 				<Link
 					to="/log/brew"
-					className="censer-key group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong bg-paper-raised px-6 py-4 active:translate-y-px sm:w-fit"
+					style={
+						{ "--cup": "clamp(3.5rem, 17vw, 4.5rem)" } as React.CSSProperties
+					}
+					className="censer-key key-line group relative flex w-full shrink-0 items-end gap-5 overflow-hidden border border-line-strong bg-paper-raised px-5 pb-4 pt-3 active:translate-y-px lg:w-[22rem] sm:px-7"
 				>
-					<span aria-hidden className="censer-halo" />
-					<span aria-hidden className="censer-mote m1" />
-					<span aria-hidden className="censer-mote m2" />
-					<span aria-hidden className="censer-mote m3" />
-					<SteamCup className="relative z-10 size-9 shrink-0 text-crema" />
-					<span className="relative z-10 font-display text-xl italic tracking-tight">
+					<CenserVessel />
+					<span className="censer-label relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
 						Log a brew
 					</span>
-					<ArrowRight className="relative z-10 size-4 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
+					<ArrowRight className="censer-label relative z-10 ml-auto size-5 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
 				</Link>
 			</section>
-
-			{!import.meta.env.PROD && (
-				<div
-					className="rise flex gap-4"
-					style={{ "--rise-delay": "80ms" } as React.CSSProperties}
-				>
-					<Link
-						to="/dev"
-						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-					>
-						Dev tools →
-					</Link>
-					<Link
-						to="/cta-lab"
-						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-					>
-						CTA lab →
-					</Link>
-					<Link
-						to="/buttons"
-						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-					>
-						Design system →
-					</Link>
-				</div>
-			)}
 
 			{/* Taste feedback for the latest brew that still needs notes */}
 			{pendingRating && (
@@ -240,7 +213,8 @@ export default function Home() {
 					className="rise"
 					style={{ "--rise-delay": "120ms" } as React.CSSProperties}
 				>
-					<BrewFeedback
+					<PendingTasting
+						key={pendingRating.id}
 						brew={pendingRating}
 						bean={
 							pendingRating.beanId != null
@@ -271,6 +245,32 @@ export default function Home() {
 					<Button asChild variant="ink" className="mt-2">
 						<Link to="/log/bean">Add a bean</Link>
 					</Button>
+				</div>
+			)}
+
+			{!import.meta.env.PROD && (
+				<div
+					className="rise flex gap-4"
+					style={{ "--rise-delay": "200ms" } as React.CSSProperties}
+				>
+					<Link
+						to="/dev"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
+					>
+						Dev tools →
+					</Link>
+					<Link
+						to="/cta-lab"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
+					>
+						CTA lab →
+					</Link>
+					<Link
+						to="/buttons"
+						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
+					>
+						Design system →
+					</Link>
 				</div>
 			)}
 		</div>
