@@ -1,5 +1,7 @@
 # UI and mobile integration
 
+Post-review: the enlarged plume was rejected and removed. Home uses the original steam again; three interactive alternatives live at `/cta-lab`. The earlier plume captures below are historical.
+
 Implemented from the October 29 investigation. Earlier research documents describe the pre-fix snapshot; this is the delivery record.
 
 ## Delivered

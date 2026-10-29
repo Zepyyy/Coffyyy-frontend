@@ -1,0 +1,107 @@
+// Disposable lab checks. Vite on5183; no production data or persistence.
+import assert from "node:assert/strict";
+import { chromium } from "playwright";
+const browser = await chromium.launch();
+try {
+	const page = await browser.newPage({
+		viewport: { width: 390, height: 920 },
+		hasTouch: true,
+		isMobile: true,
+		reducedMotion: "reduce",
+	});
+	const errors = [];
+	page.on("pageerror", (error) => errors.push(error.message));
+	const base = process.env.BASE_URL ?? "http://127.0.0.1:5183";
+	for (const width of [320, 390, 640, 1280]) {
+		await page.setViewportSize({ width, height: 920 });
+		for (const study of ["current", "type", "continuity"]) {
+			await page.goto(`${base}/cta-lab?study=${study}`);
+			await page.locator(".motion-stage").waitFor();
+			await page.waitForTimeout(200);
+			assert.equal(
+				await page.evaluate(
+					() =>
+						document.documentElement.scrollWidth <=
+						document.documentElement.clientWidth,
+				),
+				true,
+				`${study} fits ${width}`,
+			);
+		}
+	}
+	await page.setViewportSize({ width: 390, height: 920 });
+	await page.goto(`${base}/cta-lab?study=current`);
+	const canvas = page.locator(".current-study canvas");
+	await canvas.waitFor();
+	const live = await canvas.evaluate((e) => e.toDataURL());
+	await page.waitForTimeout(250);
+	assert.notEqual(
+		await canvas.evaluate((e) => e.toDataURL()),
+		live,
+		"field moves under explicit Motion on",
+	);
+	await page.getByRole("button", { name: /Motion on/ }).click();
+	await page.waitForTimeout(150);
+	const still = await canvas.evaluate((e) => e.toDataURL());
+	await page.waitForTimeout(250);
+	assert.equal(
+		await canvas.evaluate((e) => e.toDataURL()),
+		still,
+		"Motion off freezes the field",
+	);
+	await page.goto(`${base}/cta-lab?study=continuity`);
+	await page.getByRole("button", { name: /Repeat this brew/ }).click();
+	const dose = page.getByRole("spinbutton", { name: "Demo dose in grams" });
+	await dose.waitFor();
+	assert.equal(
+		(await page
+			.locator(".continuity-study")
+			.evaluate(
+				(e) =>
+					e
+						.getAnimations({ subtree: true })
+						.filter((a) => a.playState === "running").length,
+			)) > 0,
+		true,
+		"continuity transition runs",
+	);
+	await page
+		.getByRole("spinbutton", { name: "Demo yield in grams" })
+		.fill("39");
+	await page.getByRole("button", { name: /Save this attempt/ }).click();
+	await page.getByText("Brew saved · demo only").waitFor();
+	assert.match(await page.locator(".continuity-yield").innerText(), /39/);
+	await page.getByRole("button", { name: "Reset study" }).click();
+	assert.match(await page.locator(".continuity-yield").innerText(), /36/);
+	await page.goto(`${base}/cta-lab?study=type`);
+	await page
+		.getByRole("button", { name: "Try the kinetic type treatment" })
+		.tap();
+	assert.equal(
+		await page
+			.locator(".print-study")
+			.evaluate((e) =>
+				e
+					.getAnimations({ subtree: true })
+					.some((a) => a.playState === "running"),
+			),
+		true,
+	);
+	await page.getByRole("button", { name: /Motion on/ }).click();
+	assert.equal(
+		await page
+			.locator(".print-study")
+			.evaluate((e) =>
+				e
+					.getAnimations({ subtree: true })
+					.some((a) => a.playState === "running"),
+			),
+		false,
+	);
+	assert.deepEqual(errors, []);
+	console.log(
+		"PASS: twelve route/width checks; explicit motion, frozen field, editable morph, saved values, reset, type tap and stop; no page errors.",
+	);
+} finally {
+	await browser.close();
+}
