@@ -41,7 +41,7 @@ function Notice({
 	action: string;
 }) {
 	return (
-		<div className="mx-auto w-full max-w-3xl px-4 lg:px-0">
+		<div className="mx-auto w-full max-w-3xl">
 			<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
 				<p className="font-display text-2xl text-foreground/60">{title}</p>
 				<p className="font-sans text-sm text-muted-foreground">{body}</p>

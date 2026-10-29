@@ -242,7 +242,7 @@ export default function History() {
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-5xl px-2 sm:px-6">
+		<div className="mx-auto w-full max-w-5xl sm:px-6">
 			<div className="space-y-6">
 				<div className="border-l-4 border-crema pl-5">
 					<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
