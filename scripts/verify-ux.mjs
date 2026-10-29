@@ -2,6 +2,7 @@
 // Seeds only the disposable Playwright context. Screenshots go to /tmp.
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
+const BASE = process.env.BASE_URL ?? "http://127.0.0.1:5173";
 const browser = await chromium.launch({
 	headless: true,
 	...(process.env.CHROMIUM_EXECUTABLE_PATH
@@ -16,7 +17,7 @@ try {
 		errors.push(e.message);
 		undefined;
 	});
-	await page.goto("http://127.0.0.1:5173");
+	await page.goto(BASE);
 	await page.evaluate(async () => {
 		const { db } = await import("/src/db/db.ts");
 		const bean = {
@@ -85,7 +86,7 @@ try {
 			},
 		]);
 	});
-	await page.goto("http://127.0.0.1:5173/library");
+	await page.goto(BASE + "/library");
 	await page
 		.getByRole("textbox", { name: "Search beans", exact: true })
 		.fill("Moonwalk");
@@ -106,7 +107,7 @@ try {
 		path: "/tmp/coffyyy-library-mobile.png",
 		fullPage: true,
 	});
-	await page.goto("http://127.0.0.1:5173/library?tab=recipes");
+	await page.goto(BASE + "/library?tab=recipes");
 	await page
 		.getByRole("link", { name: "View brews following Morning target" })
 		.click();
@@ -146,7 +147,7 @@ try {
 		path: "/tmp/coffyyy-history-mobile.png",
 		fullPage: true,
 	});
-	await page.goto("http://127.0.0.1:5173/log/brew?fromBrew=401");
+	await page.goto(BASE + "/log/brew?fromBrew=401");
 	await page
 		.getByText(/Repeating your shot/)
 		.filter({ visible: true })
@@ -187,12 +188,15 @@ try {
 			"/library",
 			"/history?view=timeline",
 			"/library?tab=recipes",
+			"/beans/101",
 		]) {
-			await page.goto("http://127.0.0.1:5173" + route);
+			await page.goto(BASE + route);
 			await page.getByRole("heading", { level: 1 }).waitFor();
 			assert.ok(
 				await page.evaluate(
-					() => document.documentElement.scrollWidth <= innerWidth,
+					() =>
+						document.documentElement.scrollWidth <=
+						document.documentElement.clientWidth,
 				),
 				`overflow ${width} ${route}`,
 			);

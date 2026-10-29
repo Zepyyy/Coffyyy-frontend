@@ -1,6 +1,6 @@
 # Coffyyy UI / mobile investigation
 
-2026-10-29 · Research and proposed direction; no redesign shipped.
+2026-10-29 · Research snapshot before implementation. See [delivery record](../ui-mobile-delivery.md) for the integrated changes and current verification.
 
 ## Recommendation
 
