@@ -1,0 +1,124 @@
+/*
+ * The current: a finely grained ink/satin field on the "Log a brew" surface.
+ * The field itself is drawn on a canvas (CurrentStudy.tsx); this file owns the
+ * frame, the foreground copy and the single action. App tokens when present,
+ * neutral paper/ink/caramel fallbacks when standalone. Square corners only.
+ */
+.current-study {
+    --cs-raised: var(--paper-raised, #fffefb);
+    --cs-ink: var(--ink, #2a2622);
+    --cs-ink-soft: var(--ink-soft, #5d564e);
+    --cs-accent: var(--accent, #b7864f);
+    --cs-line: var(--line, #e5e1d8);
+
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: clamp(220px, 58vw, 320px);
+    overflow: hidden;
+    border: 1px solid var(--cs-line);
+    background: var(--cs-raised);
+    color: var(--cs-ink);
+    touch-action: pan-y pinch-zoom;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.current-study__canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.current-study__foot {
+    position: absolute;
+    z-index: 1;
+    inset: auto 0 0 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px 16px;
+    pointer-events: none;
+}
+
+/* A feathered paper patch under the copy: strands thin out behind the words. */
+.current-study__copy {
+    position: relative;
+    min-width: 0;
+}
+.current-study__copy::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: -26px -56px -22px -40px;
+    background: var(--cs-raised);
+    -webkit-mask-image: radial-gradient(
+        ellipse 70% 62% at 36% 58%,
+        #000 42%,
+        transparent 100%
+    );
+    mask-image: radial-gradient(
+        ellipse 70% 62% at 36% 58%,
+        #000 42%,
+        transparent 100%
+    );
+}
+
+.current-study__label {
+    margin: 0;
+    font-family: var(--font-display, "Fraunces Variable", Georgia, serif);
+    font-size: clamp(1.5rem, 8vw, 1.875rem);
+    font-style: italic;
+    white-space: nowrap;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1;
+    color: var(--cs-ink);
+}
+
+.current-study__status {
+    margin: 8px 0 0;
+    font-family: var(--font-data, "Spline Sans Mono Variable", ui-monospace, monospace);
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--cs-ink-soft);
+}
+
+.current-study__action {
+    flex: none;
+    min-height: 44px;
+    padding: 0 clamp(12px, 4vw, 18px);
+    border: 1px solid var(--cs-ink);
+    border-radius: 0;
+    background: var(--cs-ink);
+    color: var(--cs-raised);
+    font-family: var(--font-data, "Spline Sans Mono Variable", ui-monospace, monospace);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+.current-study__action:active {
+    transform: translateY(1px);
+}
+.current-study__action:focus-visible {
+    outline: 2px solid var(--cs-accent);
+    outline-offset: 3px;
+}
+
+/* Reduced motion: the field is drawn once and holds still. */
+.current-study[data-motion="still"] .current-study__action:active {
+    transform: none;
+}
+
+.current-study__action { width:44px; padding:0; background:var(--cs-raised); color:var(--cs-ink); border-color:var(--cs-line); font-family:var(--font-sans); font-size:22px; }

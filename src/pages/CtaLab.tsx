@@ -1,79 +1,107 @@
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router";
-import SteamCup from "@/components/ui/SteamCup";
+import { useEffect, useState } from "react";
+import CurrentStudy from "@/components/motion/CurrentStudy";
+import PrintStudy from "@/components/motion/PrintStudy";
+import ContinuityStudy from "@/components/motion/ContinuityStudy";
+import "./CtaLab.css";
 
-/**
- * TEMPORARY — the CTA lab. The censer ships on the dashboard; the live word
- * is the link treatment (fixed: clean at rest, sweep restored under
- * reduced-motion). The everyday-button upgrades live on /buttons.
- */
-
-export default function CtaLab() {
+const STUDIES = [
+	{
+		id: "current",
+		name: "Current",
+		title: "A surface with a pulse",
+		description:
+			"Move across it, or tap. The current gathers around your touch, then finds its own rhythm again.",
+	},
+	{
+		id: "type",
+		name: "Type",
+		title: "Type you can play",
+		description:
+			"Move across the letters, or tap to roll the whole phrase. The motion lives in the typography.",
+	},
+	{
+		id: "continuity",
+		name: "Continuity",
+		title: "The same brew, becoming the next",
+		description:
+			"Repeat, adjust, save. The values remain the same objects as the record changes shape. Demo data only.",
+	},
+];
+export default function CtaLab({
+	standalone = false,
+}: {
+	standalone?: boolean;
+}) {
+	const [selected, setSelected] = useState(() => {
+		const id = new URLSearchParams(window.location.search).get("study");
+		return STUDIES.some((study) => study.id === id) ? id! : "current";
+	});
+	const [animated, setAnimated] = useState(true);
+	const active = STUDIES.find((study) => study.id === selected)!;
+	useEffect(() => {
+		if (standalone) return;
+		const url = new URL(window.location.href);
+		url.searchParams.set("study", selected);
+		window.history.replaceState(window.history.state, "", url);
+	}, [selected, standalone]);
 	return (
-		<div className="mx-auto w-full max-w-3xl px-6 py-10">
-			<div className="rise">
-				<p className="eyebrow">Dev only · temporary</p>
-				<h1 className="mt-1 font-display text-4xl italic tracking-tight text-foreground">
-					CTA lab
-				</h1>
-				<p className="mt-2 max-w-xl font-sans text-sm text-ink-soft">
-					Two survivors. The everyday-button upgrades — key press, light sweep,
-					plate texture, hint chips — live on the design system page.
-				</p>
+		<div className="motion-lab" data-motion={animated ? "on" : "off"}>
+			<header className="motion-lab-heading">
+				<div>
+					<p className="motion-eyebrow">Coffyyy · interactive studies</p>
+					<h1>Find the feeling.</h1>
+				</div>
+				<button
+					type="button"
+					className="motion-switch"
+					aria-pressed={animated}
+					onClick={() => setAnimated(!animated)}
+				>
+					Motion {animated ? "on" : "off"}
+					<span aria-hidden>{animated ? "Ⅱ" : "▷"}</span>
+				</button>
+			</header>
+			<nav className="motion-tabs" aria-label="Motion studies">
+				{STUDIES.map((study) => (
+					<button
+						key={study.id}
+						type="button"
+						aria-pressed={selected === study.id}
+						onClick={() => setSelected(study.id)}
+					>
+						{study.name}
+					</button>
+				))}
+			</nav>
+			<div className="motion-context">
+				<p className="motion-eyebrow">Friday · your brew journal</p>
+				<p className="motion-greeting">Good morning.</p>
 			</div>
-
-			<div className="mt-10 space-y-10">
-				<section className="space-y-3">
-					<div>
-						<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
-							0 · The censer
-						</h2>
-						<p className="mt-0.5 font-sans text-xs text-ink-soft">
-							Ships on the dashboard. Paper face, crema cup, breath of warmth,
-							steam and embers.
-						</p>
-					</div>
-					<div className="flex min-h-40 items-center justify-center border border-line bg-paper-raised p-8">
-						<Link
-							to="/log/brew"
-							className="censer-key group relative flex w-fit items-center gap-4 overflow-hidden border border-line-strong bg-paper-raised px-6 py-4 active:translate-y-px"
-						>
-							<span aria-hidden className="censer-halo" />
-							<span aria-hidden className="censer-mote m1" />
-							<span aria-hidden className="censer-mote m2" />
-							<span aria-hidden className="censer-mote m3" />
-							<SteamCup className="relative z-10 size-9 shrink-0 text-crema" />
-							<span className="relative z-10 font-display text-xl italic tracking-tight">
-								Log a brew
-							</span>
-							<ArrowRight className="relative z-10 size-4 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
-						</Link>
-					</div>
-				</section>
-
-				<section className="space-y-3">
-					<div>
-						<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
-							1 · Live word (as the app's own link)
-						</h2>
-						<p className="mt-0.5 font-sans text-xs text-ink-soft">
-							Clean at rest now — the faint left-edge light was a gradient-stop
-							artifact. On hover, one amber light passes through the letters,
-							once.
-						</p>
-					</div>
-					<div className="flex min-h-40 items-center justify-center border border-line bg-paper-raised p-8">
-						<a
-							href="#"
-							onClick={(e) => e.preventDefault()}
-							className="group inline-flex items-center gap-2 font-data text-xs uppercase tracking-[0.14em] text-ink-faint transition-colors hover:text-foreground"
-						>
-							<span className="word-link">Log a brew</span>
-							<ArrowRight className="size-3.5" />
-						</a>
-					</div>
-				</section>
+			<div className="motion-stage" key={selected}>
+				{selected === "current" && <CurrentStudy animated={animated} />}
+				{selected === "type" && <PrintStudy animated={animated} />}
+				{selected === "continuity" && <ContinuityStudy animated={animated} />}
 			</div>
+			<div className="motion-description">
+				<h2>{active.title}</h2>
+				<p>{active.description}</p>
+			</div>
+			<div className="motion-shelf" aria-hidden>
+				<div>
+					<span className="motion-eyebrow">Colombia</span>
+					<strong>Moonwalk</strong>
+					<span>Chocolate · orange</span>
+				</div>
+				<div>
+					<span className="motion-eyebrow">Ethiopia</span>
+					<strong>Guji</strong>
+					<span>Jasmine · stone fruit</span>
+				</div>
+			</div>
+			<p className="motion-disclaimer">
+				Exploration · interactions use sample data and don’t change your
+				journal.
+			</p>
 		</div>
 	);
 }

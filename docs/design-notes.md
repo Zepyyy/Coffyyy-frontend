@@ -406,3 +406,18 @@ owner review, not a newly recorded owner preference.
 Review caught and fixed folded tasting drafts being lost, stale Repeat state
 on navigation, and the tablet greeting colliding with the CTA. See
 [delivery and verification](ui-mobile-delivery.md) for scope, captures and limits.
+
+
+## Plume rejected — motion studies
+
+The owner rejected the enlarged plume: its static upper traces and separate
+short steam animation read as disconnected squiggles. Removed it; restored the
+accepted original SteamCup without undoing the mobile/functionality fixes.
+
+The existing `/cta-lab` now holds three interactive, in-memory studies:
+Current (a fluid ink field), Type (rolling responsive letterforms), Continuity
+(a persistent brew specimen unfolding into edit and receipt states). Motion
+has an explicit on/off control. These are exploratory surfaces, not journal
+writes or newly accepted owner preferences. The studies are loaded only when
+the lab opens. Current is the implementation team's strongest visual candidate;
+Continuity is the strongest candidate for useful motion across workflows.

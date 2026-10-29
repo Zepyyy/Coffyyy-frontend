@@ -1,0 +1,22 @@
+.motion-lab {width:100%;max-width:840px;margin:0 auto;font-family:var(--font-sans);color:var(--ink)}
+.motion-lab-heading {display:flex;gap:20px;justify-content:space-between;align-items:center;margin-bottom:24px}
+.motion-lab-heading h1 {font-family:var(--font-display);font-style:italic;font-size:clamp(28px,5vw,40px);line-height:1.15;margin:6px 0 0;letter-spacing:-.025em}
+.motion-eyebrow {font-family:var(--font-data);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:0}
+.motion-switch {display:flex;align-items:center;gap:12px;flex:none;min-height:44px;border:1px solid var(--line);padding:0 14px;background:var(--paper-raised);font-size:12px;color:var(--ink-soft);cursor:pointer}
+.motion-tabs {display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);gap:28px;margin-bottom:28px}
+.motion-tabs button {position:relative;min-height:48px;background:none;border:0;padding:0 2px;font-family:var(--font-data);font-size:12px;color:var(--ink-soft);cursor:pointer}
+.motion-tabs button[aria-pressed=true] {color:var(--ink)}
+.motion-tabs button[aria-pressed=true]::after {content:"";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--accent)}
+.motion-context {margin-bottom:20px}
+.motion-greeting {font-family:var(--font-display);font-size:clamp(29px,5vw,40px);font-style:italic;letter-spacing:-.025em;line-height:1.1;margin:7px 0}
+.motion-stage {min-width:0}
+.motion-description {padding:22px 0 24px;border-bottom:1px solid var(--line)}
+.motion-description h2 {font-family:var(--font-display);font-style:italic;font-size:21px;line-height:1.2;margin:0 0 8px}
+.motion-description p {font-size:13px;line-height:1.6;color:var(--ink-soft);max-width:540px;margin:0}
+.motion-shelf {display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:24px 0}
+.motion-shelf>div {display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);background:var(--paper-raised);padding:18px;min-width:0}
+.motion-shelf strong {font-family:var(--font-display);font-size:21px;font-weight:500;letter-spacing:-.02em}
+.motion-shelf>div>span:last-child {font-size:12px;color:var(--ink-soft)}
+.motion-disclaimer {font-size:11px;line-height:1.5;color:var(--ink-faint);margin:0}
+.motion-lab button:focus-visible {outline:2px solid var(--accent);outline-offset:4px}
+@media(max-width:360px){.motion-tabs{gap:22px}.motion-lab-heading{gap:10px}.motion-switch{padding:0 10px}.motion-shelf>div{padding:14px}.motion-shelf>div>span:last-child{font-size:11px}}
