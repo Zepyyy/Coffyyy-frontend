@@ -1,11 +1,10 @@
-import { Coffee, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BeanChapter } from "@/components/history/BeanChapter";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
-import { recipeLine } from "@/lib/brewFormat";
 import { isBrewMethod, methodConfig } from "@/lib/brewMethods";
 import { useBrewSuggestions, useHistoryBrews } from "@/hooks/api/useBrews";
 import { useRecipes } from "@/hooks/api/useRecipes";
@@ -83,72 +82,28 @@ function HistorySkeleton() {
 	);
 }
 
-/** The ledger's opening balance: a few countable facts, then the CTA. */
-function StoryStrip({
-	brews,
-	beanNames,
-	showMethod,
-}: {
-	brews: Brews[] | undefined;
-	beanNames: Map<number | undefined, string>;
-	showMethod: boolean;
-}) {
+/** A quiet opening balance; the actual attempts are the page's focus. */
+function StoryStrip({ brews }: { brews: Brews[] | undefined }) {
 	if (brews === undefined) return null;
-	const rated = brews.filter((b) => b.overallRating != null);
-	const avg =
-		rated.length > 0
-			? rated.reduce((s, b) => s + (Number(b.overallRating) || 0), 0) /
-				rated.length
-			: null;
-	const best = rated.length
-		? rated.reduce((a, b) =>
-				(Number(b.overallRating) || 0) > (Number(a.overallRating) || 0) ? b : a,
-			)
+	const rated = brews.filter((brew) => brew.overallRating != null);
+	const average = rated.length
+		? rated.reduce((sum, brew) => sum + Number(brew.overallRating), 0) /
+			rated.length
 		: null;
-	const beansTried = new Set(brews.map((b) => b.beanId)).size;
-	const bestIsReal = best != null && (Number(best.overallRating) || 0) > 0;
-
-	const stats: Array<[string, string]> = [
-		["Brews", String(brews.length)],
-		["Beans", String(beansTried)],
-		["Avg rating", avg != null ? `${avg.toFixed(1)}★` : "—"],
-	];
-
+	const beans = new Set(
+		brews.flatMap((brew) => (brew.beanId == null ? [] : [brew.beanId])),
+	).size;
 	return (
-		<div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
-			<div className="grid flex-1 grid-cols-3 divide-x divide-line border border-line bg-paper-raised">
-				{stats.map(([label, value]) => (
-					<div key={label} className="px-4 py-3">
-						<p className="eyebrow">{label}</p>
-						<p className="mt-1 font-data text-sm font-semibold text-foreground">
-							{value}
-						</p>
-					</div>
-				))}
-			</div>
-			{bestIsReal && best && (
-				<div className="border border-line bg-paper-raised px-4 py-3 sm:max-w-sm">
-					<p className="eyebrow">The one to remember</p>
-					<p className="mt-1 truncate font-data text-sm font-semibold text-foreground">
-						{beanNames.get(best.beanId ?? -1) ?? "A brew"} ·{" "}
-						{showMethod ? `${methodConfig(best.method).label} · ` : ""}
-						{best.overallRating}★ · {recipeLine(best)}
-					</p>
-				</div>
-			)}
-			<Link
-				to="/log/brew"
-				className="key-frame hover-line group inline-flex shrink-0 items-center justify-between gap-3 border border-ink bg-paper-raised px-4 py-3 text-ink transition-colors hover:bg-paper-sunken sm:w-52"
-			>
+		<p className="flex flex-wrap gap-x-4 gap-y-1 font-data text-xs text-ink-soft">
+			<span>{brews.length} brews</span>
+			<span>{beans} beans</span>
+			{average != null && (
 				<span>
-					<span className="eyebrow block">Next shot</span>
-					<span className="block font-display text-xl italic tracking-tight text-foreground">
-						Log a brew
-					</span>
+					Avg {average.toFixed(1)}★{" "}
+					<span className="text-ink-faint">· {rated.length} rated</span>
 				</span>
-				<Coffee className="size-5 shrink-0 text-crema" />
-			</Link>
-		</div>
+			)}
+		</p>
 	);
 }
 
@@ -217,10 +172,6 @@ export default function History() {
 		[allRecipes],
 	);
 
-	const beanNameMap = useMemo(
-		() => new Map(suggestions.bean.map((bean) => [bean.id, bean.name])),
-		[suggestions.bean],
-	);
 	const beanMap = useMemo(
 		() =>
 			new Map<number | undefined, Beans>(
@@ -293,11 +244,7 @@ export default function History() {
 					</p>
 				</div>
 
-				<StoryStrip
-					brews={brews}
-					beanNames={beanNameMap}
-					showMethod={multiMethod}
-				/>
+				<StoryStrip brews={brews} />
 
 				{hasRecipeFilter && (
 					<p className="flex flex-wrap items-baseline gap-3 border-b border-line pb-3 font-sans text-sm text-ink-soft">
@@ -317,7 +264,7 @@ export default function History() {
 				)}
 
 				{/* Controls */}
-				<div className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-3 shadow-card sm:flex-row sm:items-center">
+				<div className="flex flex-col gap-3 border-y border-line py-4 sm:flex-row sm:items-center">
 					<SegmentedControl
 						ariaLabel="History view"
 						className="w-fit"
@@ -331,7 +278,7 @@ export default function History() {
 					<label className="relative block min-w-0 flex-1">
 						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 						<input
-							className="h-9 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+							className="h-11 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 							placeholder="Search beans, brewers, recipes or notes"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
@@ -340,7 +287,7 @@ export default function History() {
 					</label>
 					<label className="relative block">
 						<select
-							className="h-9 w-full appearance-none rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
+							className="h-11 w-full appearance-none rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
 							value={ratingFilter === "all" ? "all" : String(ratingFilter)}
 							onChange={(e) => {
 								const v = e.target.value;

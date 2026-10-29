@@ -52,7 +52,7 @@ const INITIAL: BrewLogForm = {
 
 const chipClass = (active: boolean) =>
 	cn(
-		"opt-frame border px-3 py-1.5 font-data text-xs transition-colors",
+		"opt-frame min-h-11 border px-3 py-1.5 font-data text-xs transition-colors",
 		active
 			? "border-primary bg-primary/10 text-primary-800 dark:text-primary-200"
 			: "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -174,6 +174,10 @@ export default function BrewLog() {
 	const [feedbackSaved, setFeedbackSaved] = useState(false);
 	const [beanSearch, setBeanSearch] = useState("");
 	const [notesOpen, setNotesOpen] = useState(false);
+	const [brewerOpen, setBrewerOpen] = useState(false);
+	const [beanOpen, setBeanOpen] = useState(false);
+	const brewerToggle = useRef<HTMLButtonElement>(null);
+	const beanToggle = useRef<HTMLButtonElement>(null);
 	const [prefill, setPrefill] = useState<{
 		date: Date;
 		flow?: string | null;
@@ -225,6 +229,7 @@ export default function BrewLog() {
 			return;
 		}
 		appliedStart.current = key;
+		appliedPrefill.current = null;
 		setPrefill(null);
 		if (source) {
 			const rs = repeatStart(source);
@@ -568,7 +573,7 @@ export default function BrewLog() {
 
 	return (
 		<div className="mx-auto w-full">
-			<div className="mx-6 grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
+			<div className="sm:mx-6 grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
 				<aside className="lg:sticky lg:top-20 lg:self-start space-y-6 lg:block hidden">
 					<div className="border-l-4 border-crema pl-5">
 						<h1 className="text-4xl font-display italic tracking-tight text-foreground/90">
@@ -636,7 +641,10 @@ export default function BrewLog() {
 					)}
 				</aside>
 
-				<section className="mb-8 rounded-xl border border-line bg-paper-raised p-4 shadow-card sm:p-6 lg:p-8">
+				<section className="min-w-0 mb-8 sm:border sm:border-line sm:bg-paper-raised sm:p-6 lg:p-8">
+					<h1 className="mb-5 font-display text-3xl italic tracking-tight lg:hidden">
+						Log a {noun}
+					</h1>
 					{/* Mobile: the aside is hidden, so the prefill note travels with the form */}
 					{startNote && (
 						<div className="mb-6 flex items-center justify-between gap-3 lg:hidden">
@@ -663,103 +671,172 @@ export default function BrewLog() {
 							))}
 						</div>
 					)}
-					<form onSubmit={handleSubmit} className="space-y-12">
+					<form onSubmit={handleSubmit} className="space-y-8 sm:space-y-10">
 						{/* 01 — The brewer: it picks the method */}
 						<section className="space-y-4">
-							<StepHeading
-								index="01"
-								title="The brewer"
-								hint="What are you brewing with?"
-								tag={machine ? config.label : undefined}
-							/>
-							{noBrewers ? (
-								<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
-									<p className="font-display text-2xl text-foreground/60">
-										No brewers yet
-									</p>
-									<p className="font-sans text-sm text-muted-foreground">
-										Add the brewer you use — espresso machine, dripper or moka
-										pot.
-									</p>
-									<Button asChild variant="ink">
-										<Link to="/log/machine">Add a brewer</Link>
-									</Button>
-								</div>
+							{machine ? (
+								<h2>
+									<button
+										ref={brewerToggle}
+										type="button"
+										aria-label={`Change brewer, ${machine.name}, ${config.label}`}
+										aria-expanded={brewerOpen}
+										aria-controls="brewer-picker"
+										onClick={() => setBrewerOpen(!brewerOpen)}
+										className="group flex min-h-14 w-full items-center justify-between gap-4 border-b border-line py-3 text-left"
+									>
+										<span className="min-w-0">
+											<span className="eyebrow block">
+												Brewer · {config.label}
+											</span>
+											<span className="block break-words font-display text-xl italic">
+												{machine.name}
+											</span>
+										</span>
+										<span className="key-line shrink-0 py-2 font-sans text-sm text-ink-soft">
+											{brewerOpen ? "Close" : "Change"}
+										</span>
+									</button>
+								</h2>
 							) : (
-								<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-									{suggestions.machine.map((machineInfo) => (
-										<QuickMachineCard
-											key={machineInfo.id}
-											selected={form.machineId === machineInfo.id}
-											machine={{
-												id: machineInfo.id,
-												name: machineInfo.name,
-												method: machineInfo.method,
-											}}
-											onClick={() => selectBrewer(machineInfo.id)}
-										/>
-									))}
+								<StepHeading
+									index="01"
+									title="The brewer"
+									hint="What are you brewing with?"
+								/>
+							)}
+							{(!machine || brewerOpen) && (
+								<div id="brewer-picker">
+									{noBrewers ? (
+										<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
+											<p className="font-display text-2xl text-foreground/60">
+												No brewers yet
+											</p>
+											<p className="font-sans text-sm text-muted-foreground">
+												Add the brewer you use — espresso machine, dripper or
+												moka pot.
+											</p>
+											<Button asChild variant="ink">
+												<Link to="/log/machine">Add a brewer</Link>
+											</Button>
+										</div>
+									) : (
+										<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+											{suggestions.machine.map((machineInfo) => (
+												<QuickMachineCard
+													key={machineInfo.id}
+													selected={form.machineId === machineInfo.id}
+													machine={{
+														id: machineInfo.id,
+														name: machineInfo.name,
+														method: machineInfo.method,
+													}}
+													onClick={() => {
+														selectBrewer(machineInfo.id);
+														setBrewerOpen(false);
+														requestAnimationFrame(() =>
+															brewerToggle.current?.focus(),
+														);
+													}}
+												/>
+											))}
+										</div>
+									)}
 								</div>
 							)}
 						</section>
 
 						{/* 02 — The bean */}
 						<section className="space-y-4">
-							<StepHeading
-								index="02"
-								title="The bean"
-								hint="Which bag is open?"
-							/>
-							{isEmpty ? (
-								<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
-									<p className="font-display text-2xl text-foreground/60">
-										No beans yet
-									</p>
-									<p className="font-sans text-sm text-muted-foreground">
-										Add a bean first — it takes a minute.
-									</p>
-									<Button asChild variant="ink">
-										<Link to="/log/bean">Add a bean</Link>
-									</Button>
-								</div>
+							{selectedBean ? (
+								<h2>
+									<button
+										ref={beanToggle}
+										type="button"
+										aria-label={`Change bean, ${selectedBean.name}`}
+										aria-expanded={beanOpen}
+										aria-controls="bean-picker"
+										onClick={() => setBeanOpen(!beanOpen)}
+										className="group flex min-h-14 w-full items-center justify-between gap-4 border-b border-line py-3 text-left"
+									>
+										<span className="min-w-0">
+											<span className="eyebrow block">Bean</span>
+											<span className="block break-words font-display text-xl italic">
+												{selectedBean.name}
+											</span>
+										</span>
+										<span className="key-line shrink-0 py-2 font-sans text-sm text-ink-soft">
+											{beanOpen ? "Close" : "Change"}
+										</span>
+									</button>
+								</h2>
 							) : (
-								<>
-									{suggestions.bean.length > 8 && (
-										<label className="relative block max-w-xs">
-											<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-											<input
-												className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-												placeholder="Search your beans…"
-												value={beanSearch}
-												onChange={(e) => setBeanSearch(e.target.value)}
-												aria-label="Search beans"
-											/>
-										</label>
+								<StepHeading
+									index="02"
+									title="The bean"
+									hint="Which bag is open?"
+								/>
+							)}
+							{(!selectedBean || beanOpen) && (
+								<div id="bean-picker">
+									{isEmpty ? (
+										<div className="rounded-xl border border-dashed border-line-strong bg-paper-sunken/40 p-10 text-center space-y-3">
+											<p className="font-display text-2xl text-foreground/60">
+												No beans yet
+											</p>
+											<p className="font-sans text-sm text-muted-foreground">
+												Add a bean first — it takes a minute.
+											</p>
+											<Button asChild variant="ink">
+												<Link to="/log/bean">Add a bean</Link>
+											</Button>
+										</div>
+									) : (
+										<>
+											{suggestions.bean.length > 8 && (
+												<label className="relative block max-w-xs">
+													<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+													<input
+														className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+														placeholder="Search your beans…"
+														value={beanSearch}
+														onChange={(e) => setBeanSearch(e.target.value)}
+														aria-label="Search beans"
+													/>
+												</label>
+											)}
+											<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
+												{filteredBeans.map((beanInfo) => (
+													<BeanSelectorCard
+														key={beanInfo.id}
+														bean={{
+															id: beanInfo.id,
+															name: beanInfo.name,
+															origin: beanInfo.origin,
+															dominantNote: beanInfo.dominantNote,
+															process: beanInfo.process,
+															roastLevel: beanInfo.roastLevel,
+															variety: beanInfo.variety,
+														}}
+														selected={selectedBeanId === beanInfo.id}
+														onClick={() => {
+															selectBean(beanInfo.id);
+															setBeanOpen(false);
+															requestAnimationFrame(() =>
+																beanToggle.current?.focus(),
+															);
+														}}
+													/>
+												))}
+											</div>
+											{!isEmpty && filteredBeans.length === 0 && (
+												<p className="font-sans text-sm text-muted-foreground">
+													No bean matches “{beanSearch}”.
+												</p>
+											)}
+										</>
 									)}
-									<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-										{filteredBeans.map((beanInfo) => (
-											<BeanSelectorCard
-												key={beanInfo.id}
-												bean={{
-													id: beanInfo.id,
-													name: beanInfo.name,
-													origin: beanInfo.origin,
-													dominantNote: beanInfo.dominantNote,
-													process: beanInfo.process,
-													roastLevel: beanInfo.roastLevel,
-													variety: beanInfo.variety,
-												}}
-												selected={selectedBeanId === beanInfo.id}
-												onClick={() => selectBean(beanInfo.id)}
-											/>
-										))}
-									</div>
-									{!isEmpty && filteredBeans.length === 0 && (
-										<p className="font-sans text-sm text-muted-foreground">
-											No bean matches “{beanSearch}”.
-										</p>
-									)}
-								</>
+								</div>
 							)}
 						</section>
 
@@ -781,6 +858,7 @@ export default function BrewLog() {
 											onClick={() => pickRecipe(null)}
 											className={chipClass(form.recipeId == null)}
 											data-active={form.recipeId == null}
+											aria-pressed={form.recipeId == null}
 										>
 											None
 										</button>
@@ -793,6 +871,7 @@ export default function BrewLog() {
 													onClick={() => pickRecipe(active ? null : recipe)}
 													className={chipClass(active)}
 													data-active={active}
+													aria-pressed={active}
 												>
 													{recipe.name}
 													<span className="ml-1.5 text-ink-faint">
@@ -840,6 +919,7 @@ export default function BrewLog() {
 													: "text-muted-foreground hover:text-foreground",
 											)}
 											data-active={form.grindSize === lvl}
+											aria-pressed={form.grindSize === lvl}
 										>
 											{lvl}
 										</button>
@@ -878,12 +958,12 @@ export default function BrewLog() {
 								</div>
 							</div>
 
-							<div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-start lg:gap-14">
+							<div className="grid grid-cols-[104px_minmax(0,1fr)_104px] items-start gap-x-1 border-y border-line py-5 sm:gap-x-8 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
 								<div className="flex flex-col items-center">
-									<p className="font-sans text-sm text-foreground">
-										Dose — ground coffee
-									</p>
+									<p className="font-sans text-sm text-foreground">Dose · g</p>
 									<Dial
+										compact
+										helpers={false}
 										value={form.beanWeight}
 										onChange={setBeanWeight}
 										min={config.dose.min}
@@ -892,7 +972,7 @@ export default function BrewLog() {
 									/>
 								</div>
 								{ratioValue && (
-									<div className="flex select-none flex-col items-center gap-2">
+									<div className="flex min-w-0 select-none flex-col items-center self-center gap-2">
 										<div
 											className="flex flex-col items-center gap-2"
 											aria-live="polite"
@@ -901,47 +981,25 @@ export default function BrewLog() {
 											<span className="font-data text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
 												ratio
 											</span>
-											<span className="font-display text-5xl font-bold leading-none text-primary-700/90 dark:text-primary-200/90">
+											<span className="font-display text-xl min-[360px]:text-3xl sm:text-5xl italic font-normal leading-none text-primary-700/90 dark:text-primary-200/90">
 												1<span className="mx-1 text-primary/40">:</span>
 												{ratioValue}
 											</span>
-											<div className="squiggly-line w-[100px] opacity-60" />
+											<div
+												key={ratioValue}
+												aria-hidden="true"
+												className="measure-relation h-px w-12 bg-crema/60"
+											/>
 										</div>
-										{config.ratioPresets.length > 0 && (
-											<div className="flex gap-1">
-												{config.ratioPresets.map((preset) => {
-													const active = ratioValue === String(preset);
-													return (
-														<button
-															key={preset}
-															type="button"
-															onClick={() =>
-																setField(
-																	"brewWeight",
-																	brewWeightForRatio(
-																		form.beanWeight,
-																		preset,
-																		config.method,
-																	),
-																)
-															}
-															className={cn(chipClass(active), "px-2 py-1")}
-															data-active={active}
-															aria-label={`Set ratio 1 to ${preset}`}
-														>
-															1:{preset}
-														</button>
-													);
-												})}
-											</div>
-										)}
 									</div>
 								)}
 								<div className="flex flex-col items-center">
 									<p className="font-sans text-sm text-foreground">
-										{config.brewWeight.label}
+										{config.brewWeight.label} · g
 									</p>
 									<Dial
+										compact
+										helpers={false}
 										value={form.brewWeight}
 										onChange={setBrewWeight}
 										min={config.brewWeight.min}
@@ -952,6 +1010,38 @@ export default function BrewLog() {
 								</div>
 							</div>
 
+							{config.ratioPresets.length > 0 && (
+								<div className="flex flex-wrap justify-center gap-1">
+									{config.ratioPresets.map((preset) => {
+										const active = ratioValue === String(preset);
+										return (
+											<button
+												key={preset}
+												type="button"
+												onClick={() =>
+													setField(
+														"brewWeight",
+														brewWeightForRatio(
+															form.beanWeight,
+															preset,
+															config.method,
+														),
+													)
+												}
+												className={cn(
+													chipClass(active),
+													"min-h-11 min-w-14 px-3 py-1 text-xs",
+												)}
+												data-active={active}
+												aria-pressed={active}
+												aria-label={`Set ratio 1 to ${preset}`}
+											>
+												1:{preset}
+											</button>
+										);
+									})}
+								</div>
+							)}
 							<div className="grid gap-6 md:grid-cols-2">
 								<div className="space-y-2">
 									<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -967,6 +1057,7 @@ export default function BrewLog() {
 													onClick={() => setField("extractionTime", String(t))}
 													className={chipClass(active)}
 													data-active={active}
+													aria-pressed={active}
 												>
 													{formatExtractionTime(t)}
 												</button>
@@ -1003,6 +1094,7 @@ export default function BrewLog() {
 													}
 													className={chipClass(form.flow === f)}
 													data-active={form.flow === f}
+													aria-pressed={form.flow === f}
 												>
 													{f}
 												</button>
@@ -1072,6 +1164,7 @@ export default function BrewLog() {
 													onClick={() => setField("heat", heat)}
 													className={chipClass(form.heat === heat)}
 													data-active={form.heat === heat}
+													aria-pressed={form.heat === heat}
 												>
 													{capitalize(heat)}
 												</button>
@@ -1129,7 +1222,7 @@ export default function BrewLog() {
 							<button
 								type="submit"
 								disabled={!form.beanId || !form.machineId || isSaving}
-								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
+								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-display text-lg italic text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : `Save the ${noun}`}
 							</button>

@@ -7,7 +7,7 @@ export const buttonVariants = cva(
 			variant: {
 				default:
 					"key-frame bg-primary text-primary-foreground hover:bg-primary/90",
-				ink: "key-ruler bg-foreground text-background font-display text-base italic hover:bg-foreground/85 hover:tracking-wide",
+				ink: "key-ruler bg-foreground text-background font-display text-base italic hover:bg-foreground/85",
 				destructive:
 					"key-arm bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
 				"subtle-destructive":
