@@ -157,6 +157,19 @@ describe("getLatestUnratedBrew", () => {
 		expect(unrated?.overallRating ?? null).toBeNull();
 	});
 
+	it("finds the next eligible prompt after dismissing the latest", async () => {
+		const bean = await seedBean("Test Bean");
+		const older = await db.Brews.add(
+			brew({ beanId: bean.id, date: hoursAgo(2) }),
+		);
+		const latest = await db.Brews.add(
+			brew({ beanId: bean.id, date: hoursAgo(1) }),
+		);
+		expect((await getLatestUnratedBrew())?.id).toBe(latest);
+		expect((await getLatestUnratedBrew([latest]))?.id).toBe(older);
+		expect(await getLatestUnratedBrew([latest, older])).toBeNull();
+	});
+
 	it("stops asking about brews older than the feedback window", async () => {
 		const bean = await seedBean("Test Bean");
 		await db.Brews.add(

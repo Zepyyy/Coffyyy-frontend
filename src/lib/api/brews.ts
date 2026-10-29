@@ -45,12 +45,16 @@ export async function getRecentBrews(limit = 5): Promise<Array<Brews>> {
 /** How long a saved-but-unrated brew keeps asking for taste notes. */
 const FEEDBACK_WINDOW_MS = 72 * 60 * 60 * 1000;
 
-export async function getLatestUnratedBrew(): Promise<Brews | null> {
+export async function getLatestUnratedBrew(
+	excludedIds: readonly number[] = [],
+): Promise<Brews | null> {
 	const cutoff = Date.now() - FEEDBACK_WINDOW_MS;
+	const excluded = new Set(excludedIds);
 	const brews = await db.Brews.orderBy("date").reverse().toArray();
 	return (
 		brews.find(
 			(b) =>
+				!excluded.has(b.id) &&
 				+new Date(b.date) >= cutoff &&
 				(b.tasteScore == null ||
 					b.strengthScore == null ||

@@ -1,10 +1,15 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { getRepeatSource } from "@/lib/api/repeatSource";
 
-/**
- * The brew behind `?fromBrew=`: undefined while loading, null when it is
- * missing (or no id was given).
- */
+/** Ignore a prior query's result while a new in-place navigation loads. */
 export const useRepeatSource = (brewId: number | undefined) => {
-	return useLiveQuery(() => getRepeatSource(brewId), [brewId]);
+	const result = useLiveQuery(
+		async () => ({
+			brewId,
+			source: await getRepeatSource(brewId),
+		}),
+		[brewId],
+	);
+	if (brewId == null) return null;
+	return result?.brewId === brewId ? result.source : undefined;
 };

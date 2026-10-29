@@ -26,8 +26,13 @@ export const useBrewSuggestions = () => {
 	);
 };
 
-export const useLatestUnratedBrew = () => {
-	return useLiveQuery(() => brewStatsApi.getLatestUnratedBrew(), []) ?? null;
+export const useLatestUnratedBrew = (excludedIds: readonly number[] = []) => {
+	return (
+		useLiveQuery(
+			() => brewStatsApi.getLatestUnratedBrew(excludedIds),
+			[excludedIds.join(",")],
+		) ?? null
+	);
 };
 
 /**
@@ -51,10 +56,15 @@ export const useLastBrewForBean = (
 
 /** Where the brew log form starts from its deep-link params. Undefined while loading. */
 export const useBrewFormStart = (beanParam?: number, recipeParam?: number) => {
-	return useLiveQuery(
-		() => brewStatsApi.getBrewFormStart(beanParam, recipeParam),
+	const key = `${beanParam}|${recipeParam}`;
+	const result = useLiveQuery(
+		async () => ({
+			key,
+			start: await brewStatsApi.getBrewFormStart(beanParam, recipeParam),
+		}),
 		[beanParam, recipeParam],
 	);
+	return result?.key === key ? result.start : undefined;
 };
 
 export const useLastBrew = () => {
