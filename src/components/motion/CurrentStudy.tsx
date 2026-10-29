@@ -77,6 +77,8 @@ const grain = (i: number) => {
 	return 0.5 + 0.5 * (h - Math.floor(h));
 };
 
+let paletteProbe: CanvasRenderingContext2D | null = null;
+
 function readPalette(el: HTMLElement, ctx: CanvasRenderingContext2D): Palette {
 	const cs = getComputedStyle(el);
 	const resolve = (name: string, fallback: string) => {
@@ -89,12 +91,18 @@ function readPalette(el: HTMLElement, ctx: CanvasRenderingContext2D): Palette {
 	};
 	const ink = resolve("--cs-ink", "#2a2622");
 	const raised = resolve("--cs-raised", "#fffefb");
-	ctx.fillStyle = raised;
-	ctx.save();
-	ctx.fillRect(0, 0, 1, 1);
-	const pixel = ctx.getImageData(0, 0, 1, 1).data;
-	const lum = (0.2126 * pixel[0] + 0.7152 * pixel[1] + 0.0722 * pixel[2]) / 255;
-	ctx.restore();
+	if (!paletteProbe) {
+		const sample = document.createElement("canvas");
+		sample.width = sample.height = 1;
+		paletteProbe = sample.getContext("2d", { willReadFrequently: true });
+	}
+	let lum = 0.9;
+	if (paletteProbe) {
+		paletteProbe.fillStyle = raised;
+		paletteProbe.fillRect(0, 0, 1, 1);
+		const pixel = paletteProbe.getImageData(0, 0, 1, 1).data;
+		lum = (0.2126 * pixel[0] + 0.7152 * pixel[1] + 0.0722 * pixel[2]) / 255;
+	}
 	return { ink, accent: resolve("--cs-accent", "#b7864f"), dark: lum < 0.5 };
 }
 
