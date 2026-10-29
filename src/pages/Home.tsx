@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
-import CenserVessel from "@/components/home/CenserVessel";
+import SteamCup from "@/components/ui/SteamCup";
 import NoBrewsPanel from "@/components/home/NoBrewsPanel";
 import PendingTasting from "@/components/home/PendingTasting";
 import AddCard from "@/components/library/AddCard";
@@ -191,19 +191,17 @@ export default function Home() {
 					</p>
 				</div>
 				{/* The censer, softened: the page's own paper, the house accent as
-				    the one warm light. The plume continues the cup's own steam. */}
+				    the one warm light, with the original cup's own steam. */}
 				<Link
 					to="/log/brew"
-					style={
-						{ "--cup": "clamp(3.5rem, 17vw, 4.5rem)" } as React.CSSProperties
-					}
-					className="censer-key key-line group relative flex w-full shrink-0 items-end gap-5 overflow-hidden border border-line-strong bg-paper-raised px-5 pb-4 pt-3 active:translate-y-px lg:w-[22rem] sm:px-7"
+					className="censer-key key-line group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong bg-paper-raised px-5 py-4 active:translate-y-px lg:w-[22rem] sm:px-7"
 				>
-					<CenserVessel />
-					<span className="censer-label relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
+					<span aria-hidden className="censer-halo" />
+					<SteamCup className="relative z-10 size-12 shrink-0 text-crema" />
+					<span className="relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
 						Log a brew
 					</span>
-					<ArrowRight className="censer-label relative z-10 ml-auto size-5 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
+					<ArrowRight className="relative z-10 ml-auto size-5 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
 				</Link>
 			</section>
 
@@ -263,7 +261,7 @@ export default function Home() {
 						to="/cta-lab"
 						className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
 					>
-						CTA lab →
+						Motion lab →
 					</Link>
 					<Link
 						to="/buttons"
