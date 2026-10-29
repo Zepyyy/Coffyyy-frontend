@@ -49,6 +49,7 @@ function methodHint(template: string, method: Brews["method"]): string {
  */
 function AxisSlider({
 	value,
+	touched,
 	onChange,
 	leftLabel,
 	centerLabel,
@@ -57,6 +58,7 @@ function AxisSlider({
 	tintClassName,
 }: {
 	value: number;
+	touched: boolean;
 	onChange: (value: number) => void;
 	leftLabel: string;
 	centerLabel: string;
@@ -79,7 +81,7 @@ function AxisSlider({
 					step={1}
 					value={value}
 					onChange={(event) => onChange(Number(event.target.value))}
-					aria-label={`${leftLabel} to ${rightLabel}, currently ${hint}`}
+					aria-label={`${leftLabel} to ${rightLabel}, currently ${touched ? hint : "not rated"}`}
 					className="h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none [&::-moz-range-thumb]:size-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-crema [&::-moz-range-thumb]:bg-paper-raised [&::-moz-range-thumb]:shadow-sm [&::-webkit-slider-thumb]:size-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-crema [&::-webkit-slider-thumb]:bg-paper-raised [&::-webkit-slider-thumb]:shadow-[0_1px_4px_oklch(0.33_0.03_50/0.3)] [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
 					style={{
 						// The crema fill measures deviation from balanced, so it is
@@ -90,17 +92,25 @@ function AxisSlider({
 				/>
 				<div className="flex justify-between font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint select-none">
 					<span>{leftLabel}</span>
-					<span>{centerLabel}</span>
+					<button
+						type="button"
+						onClick={() => onChange(0)}
+						aria-label={`Mark ${leftLabel.toLowerCase()} to ${rightLabel.toLowerCase()} as balanced`}
+						aria-pressed={touched && value === 0}
+						className="min-h-8 px-2 -my-2 text-crema-deep transition-colors hover:text-foreground active:translate-y-px"
+					>
+						{centerLabel}
+					</button>
 					<span>{rightLabel}</span>
 				</div>
 			</div>
 			<p
 				className={cn(
 					"font-sans text-xs text-center transition-colors",
-					tintClassName,
+					touched ? tintClassName : "text-ink-faint",
 				)}
 			>
-				{hint}
+				{touched ? hint : "Not rated. Move the slider or choose Balanced."}
 			</p>
 		</div>
 	);
@@ -241,6 +251,7 @@ export default function BrewFeedback({
 							<p className="eyebrow">Taste axis</p>
 							<AxisSlider
 								value={taste.value}
+								touched={taste.touched}
 								onChange={(value) => setTaste({ value, touched: true })}
 								leftLabel="Sour"
 								centerLabel="Balanced"
@@ -260,6 +271,7 @@ export default function BrewFeedback({
 							<p className="eyebrow">Strength axis</p>
 							<AxisSlider
 								value={strength.value}
+								touched={strength.touched}
 								onChange={(value) => setStrength({ value, touched: true })}
 								leftLabel="Weak"
 								centerLabel="Balanced"

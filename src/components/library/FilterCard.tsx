@@ -26,34 +26,32 @@ export default function FilterCard({
 			<section className="p-3">
 				<ul className="grid grid-cols-1 space-y-1">
 					{options.map((option) => (
-						<li
-							className={cn(
-								"group flex cursor-pointer items-center justify-between gap-4 rounded-lg px-2 py-1.5 transition-colors",
-								option.active
-									? "bg-crema-tint text-foreground"
-									: "text-ink-soft hover:bg-paper-sunken hover:text-foreground",
-							)}
-							key={option.label}
-							onClick={() => onToggle(option.label)}
-							onKeyUp={(e) => {
-								if (e.key === "Enter") {
-									onToggle(option.label);
-								}
-							}}
-						>
-							<span className="font-data text-xs uppercase tracking-[0.08em]">
-								{option.label}
-							</span>
-							<span
+						<li key={option.label}>
+							<button
+								type="button"
+								aria-pressed={option.active}
 								className={cn(
-									"px-2 py-0.5 font-data text-[10px]",
+									"group flex min-h-11 w-full items-center justify-between gap-4 px-2 py-1.5 text-left transition-colors active:translate-y-px",
 									option.active
-										? "bg-crema text-paper"
-										: "bg-paper-sunken text-ink-faint",
+										? "bg-crema-tint text-foreground"
+										: "text-ink-soft hover:bg-paper-sunken hover:text-foreground",
 								)}
+								onClick={() => onToggle(option.label)}
 							>
-								{option.count}
-							</span>
+								<span className="font-data text-xs uppercase tracking-[0.08em]">
+									{option.label}
+								</span>
+								<span
+									className={cn(
+										"px-2 py-0.5 font-data text-[10px]",
+										option.active
+											? "bg-crema text-paper"
+											: "bg-paper-sunken text-ink-faint",
+									)}
+								>
+									{option.count}
+								</span>
+							</button>
 						</li>
 					))}
 				</ul>

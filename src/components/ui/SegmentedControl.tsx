@@ -30,7 +30,7 @@ export default function SegmentedControl<T extends string>({
 		<div
 			role="group"
 			aria-label={ariaLabel}
-			className={cn("flex items-center gap-5", className)}
+			className={cn("flex flex-wrap items-center gap-x-5 gap-y-1", className)}
 		>
 			{options.map((option) => {
 				const active = option.value === value;
@@ -42,7 +42,7 @@ export default function SegmentedControl<T extends string>({
 						aria-pressed={active}
 						disabled={disabled}
 						className={cn(
-							"group relative pb-1.5 font-data text-[11px] uppercase tracking-[0.16em] transition-colors disabled:cursor-not-allowed",
+							"group relative min-h-11 py-2 font-data text-[11px] uppercase tracking-[0.16em] transition-colors active:translate-y-px disabled:cursor-not-allowed",
 							active
 								? "text-foreground"
 								: "text-ink-faint hover:text-foreground disabled:hover:text-ink-faint",
@@ -56,7 +56,7 @@ export default function SegmentedControl<T extends string>({
 								"seg-underline absolute inset-x-0 bottom-0 h-px origin-left bg-crema transition-transform duration-300 ease-soft",
 								active
 									? "scale-x-100"
-									: "scale-x-0 group-enabled:group-hover:scale-x-50",
+									: "scale-x-0 group-enabled:group-hover:scale-x-50 group-enabled:group-focus-visible:scale-x-50",
 							)}
 						/>
 					</button>

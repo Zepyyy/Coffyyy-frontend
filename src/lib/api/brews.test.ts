@@ -5,6 +5,7 @@ import type { Beans } from "@/types/BeanTypes";
 import type { BrewMethod, Brews } from "@/types/BrewTypes";
 import {
 	getBrewFormStart,
+	getBrewsForHistoryView,
 	getGrindSettingsForBean,
 	getLastBrewForBean,
 	getLastUsedMachineId,
@@ -338,5 +339,55 @@ describe("getBrewFormStart", () => {
 		expect(otherBean.beanId).toBe(bean.id);
 
 		expect((await getBrewFormStart(undefined, 999)).recipe).toBeNull();
+	});
+});
+
+describe("history discovery", () => {
+	beforeEach(async () => {
+		await Promise.all([
+			db.Beans.clear(),
+			db.Machines.clear(),
+			db.Recipes.clear(),
+			db.Brews.clear(),
+		]);
+	});
+
+	it("finds notes and linked recipe names, combined with a minimum rating", async () => {
+		const bean = await seedBean("Bourbon");
+		const recipeId = await seedRecipe("Morning target", "espresso", bean.id);
+		const noted = await db.Brews.add(
+			brew({
+				beanId: bean.id,
+				date: hoursAgo(2),
+				notes: "Chocolate finish",
+				overallRating: 3,
+			}),
+		);
+		const linked = await db.Brews.add(
+			brew({ beanId: bean.id, date: hoursAgo(1), recipeId, overallRating: 5 }),
+		);
+		expect(
+			(await getBrewsForHistoryView(" CHOCOLATE ", null)).map((b) => b.id),
+		).toEqual([noted]);
+		expect(await getBrewsForHistoryView("chocolate", 4)).toEqual([]);
+		expect(
+			(await getBrewsForHistoryView("morning target", 4)).map((b) => b.id),
+		).toEqual([linked]);
+	});
+
+	it("keeps bean and Brewer search working when references are missing", async () => {
+		const bean = await seedBean("Bourbon");
+		const machineId = await seedMachine("Kitchen Brewer", "espresso");
+		const id = await db.Brews.add(
+			brew({ beanId: bean.id, machineId, date: hoursAgo(1) }),
+		);
+		await db.Brews.add(
+			brew({ beanId: 99999, recipeId: 99999, date: hoursAgo(2) }),
+		);
+		for (const q of ["bourbon", "kitchen brewer"]) {
+			expect((await getBrewsForHistoryView(q, null)).map((b) => b.id)).toEqual([
+				id,
+			]);
+		}
 	});
 });

@@ -133,7 +133,7 @@ export default function Library() {
 		return allBeans.filter((b) => {
 			const matchesSearch =
 				!q ||
-				[...(b.origin ?? []), b.dominantNote, b.brand]
+				[b.name, ...(b.origin ?? []), b.dominantNote, b.brand]
 					.filter(Boolean)
 					.join(" ")
 					.toLowerCase()
@@ -308,6 +308,30 @@ export default function Library() {
 				? selectedTypes.length + selectedBrands.length
 				: selectedRecipeMethods.length;
 
+	const hasRestrictions = search.trim().length > 0 || activeFilterCount > 0;
+	const resultCount =
+		tab === "beans"
+			? sortedBeans.length
+			: tab === "machines"
+				? filteredMachines.length
+				: filteredRecipes.length;
+	const totalCount =
+		tab === "beans"
+			? allBeans.length
+			: tab === "machines"
+				? activeMachines.length
+				: allRecipes.length;
+	function clearCurrentFilters() {
+		setSearch("");
+		if (tab === "beans") {
+			setSelectedCountries([]);
+			setSelectedBrand([]);
+		} else if (tab === "machines") {
+			setSelectedTypes([]);
+			setSelectedBrands([]);
+		} else setSelectedRecipeMethods([]);
+	}
+
 	return (
 		<div className="mx-auto w-full max-w-6xl">
 			<div className="space-y-6">
@@ -347,6 +371,7 @@ export default function Library() {
 							<input
 								className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 								placeholder={`Search ${SEARCH_LABEL[tab]}...`}
+								aria-label={`Search ${SEARCH_LABEL[tab]}`}
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
@@ -371,6 +396,7 @@ export default function Library() {
 							type="button"
 							onClick={() => setFiltersOpen((o) => !o)}
 							aria-expanded={filtersOpen}
+							aria-controls="library-mobile-filters"
 							className={cn(
 								"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
 								filtersOpen
@@ -387,7 +413,10 @@ export default function Library() {
 							)}
 						</button>
 						{filtersOpen && (
-							<div className="rise mt-3 grid gap-4 sm:grid-cols-2">
+							<div
+								id="library-mobile-filters"
+								className="rise mt-3 grid gap-4 sm:grid-cols-2"
+							>
 								{filtersNode}
 							</div>
 						)}
@@ -402,6 +431,19 @@ export default function Library() {
 					</aside>
 
 					<section className="min-w-0">
+						<div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+							<p
+								role="status"
+								className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint"
+							>
+								{resultCount} of {totalCount} {SEARCH_LABEL[tab]}
+							</p>
+							{hasRestrictions && (
+								<Button variant="ghost" size="sm" onClick={clearCurrentFilters}>
+									Clear search and filters
+								</Button>
+							)}
+						</div>
 						{tab === "beans" && (
 							<div>
 								{sortedBeans.length === 0 ? (

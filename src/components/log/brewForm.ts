@@ -7,6 +7,7 @@ import { type BrewMethod, methodConfig } from "@/lib/brewMethods";
 import { clampWeight, parseExtractionTime } from "@/lib/utils";
 import type { BrewHeat, Brews, NewBrew } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
+import type { RepeatSourceRows } from "@/lib/api/repeatSource";
 
 /** The values a brew is dialed with; what prefill and resets replace. */
 export type BrewDials = {
@@ -87,6 +88,78 @@ export function dialsFromBrew(brew: Brews, method: BrewMethod): BrewDials {
 		heat: config.heat ? (brew.heat ?? config.heat.default) : undefined,
 		notes: "",
 	};
+}
+
+/**
+ * Dials for repeating a brew: its settings, with this attempt's time, flow
+ * and notes left blank to observe afresh.
+ */
+export function dialsForRepeat(brew: Brews, method: BrewMethod): BrewDials {
+	return {
+		...dialsFromBrew(brew, method),
+		extractionTime: "",
+		flow: "",
+		notes: "",
+	};
+}
+
+/** Where repeating one exact brew starts; the source's method always wins. */
+export type RepeatStart = {
+	method: BrewMethod;
+	/** Undefined when the source has no bean, or it was deleted. */
+	beanId: number | undefined;
+	/** The source's Brewer; undefined when deleted or no longer of `method`. */
+	machineId: number | undefined;
+	/** Kept only if it still exists, fits the method and the bean. */
+	recipe: Recipes | null;
+	dials: BrewDials;
+	missing: Array<"bean" | "brewer">;
+};
+
+export function repeatStart(source: RepeatSourceRows): RepeatStart {
+	const { brew } = source;
+	const method = brew.method;
+	const beanId = source.bean?.id;
+	const machineId =
+		source.machine?.method === method ? source.machine.id : undefined;
+	const recipe = source.recipe;
+	const recipeFits =
+		recipe != null &&
+		methodConfig(method).hasRecipes &&
+		recipe.method === method &&
+		(recipe.beanId == null || recipe.beanId === beanId);
+	return {
+		method,
+		beanId,
+		machineId,
+		recipe: recipeFits ? recipe : null,
+		dials: dialsForRepeat(brew, method),
+		missing: [
+			...(beanId == null ? (["bean"] as const) : []),
+			...(machineId == null ? (["brewer"] as const) : []),
+		],
+	};
+}
+
+/** Whether a recipe can stay linked on this bean. */
+export function recipeFitsBean(
+	recipe: Recipes | null,
+	beanId: number | undefined,
+) {
+	return recipe != null && (recipe.beanId == null || recipe.beanId === beanId);
+}
+
+/** What the user must fix before the repeat is complete. */
+export function repeatNotices(start: RepeatStart): string[] {
+	const label = methodConfig(start.method).label.toLowerCase();
+	return [
+		...(start.missing.includes("brewer")
+			? [`That brew's brewer is gone. Pick a ${label} brewer to repeat it.`]
+			: []),
+		...(start.missing.includes("bean")
+			? ["That brew's bean is gone. Pick a bean."]
+			: []),
+	];
 }
 
 /**

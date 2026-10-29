@@ -1,12 +1,12 @@
 import { Coffee, Search } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useSearchParams } from "react-router";
 import { BeanChapter } from "@/components/history/BeanChapter";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { recipeLine } from "@/lib/brewFormat";
-import { methodConfig } from "@/lib/brewMethods";
+import { isBrewMethod, methodConfig } from "@/lib/brewMethods";
 import { useBrewSuggestions, useHistoryBrews } from "@/hooks/api/useBrews";
 import { useRecipes } from "@/hooks/api/useRecipes";
 import { useBrewMethodsInUse } from "@/hooks/api/useStats";
@@ -153,10 +153,42 @@ function StoryStrip({
 }
 
 export default function History() {
-	const [search, setSearch] = useState("");
-	const [ratingFilter, setRatingFilter] = useState<"all" | number>("all");
-	const [view, setView] = useState<ViewMode>("bean");
-	const [methodFilter, setMethodFilter] = useState<MethodFilter>("all");
+	const [params, setParams] = useSearchParams();
+	// Search-param setters do not queue. Keep rapid control changes together
+	// even when the router has not rendered the preceding navigation yet.
+	const latestParams = useRef(params);
+	useEffect(() => {
+		latestParams.current = params;
+	}, [params]);
+	const search = params.get("q") ?? "";
+	const ratingParam = Number(params.get("rating"));
+	const ratingFilter = [2, 3, 4].includes(ratingParam) ? ratingParam : "all";
+	const view: ViewMode =
+		params.get("view") === "timeline" ? "timeline" : "bean";
+	const methodParam = params.get("method");
+	const methodFilter: MethodFilter = isBrewMethod(methodParam)
+		? methodParam
+		: "all";
+	const recipeId = Number(params.get("recipe"));
+	const hasRecipeFilter = Number.isSafeInteger(recipeId) && recipeId > 0;
+	function updateParam(key: string, value: string, defaultValue = "") {
+		setParams(
+			() => {
+				const next = new URLSearchParams(latestParams.current);
+				if (value === defaultValue) next.delete(key);
+				else next.set(key, value);
+				latestParams.current = next;
+				return next;
+			},
+			{ replace: true },
+		);
+	}
+	const setSearch = (value: string) => updateParam("q", value);
+	const setView = (value: ViewMode) => updateParam("view", value, "bean");
+	const setMethodFilter = (value: MethodFilter) =>
+		updateParam("method", value, "all");
+	const setRatingFilter = (value: string | number) =>
+		updateParam("rating", String(value), "all");
 
 	const minRating = ratingFilter === "all" ? null : ratingFilter;
 	const searchedBrews = useHistoryBrews(search, minRating);
@@ -172,13 +204,14 @@ export default function History() {
 
 	const brews = useMemo(
 		() =>
-			activeMethod === "all"
-				? searchedBrews
-				: searchedBrews?.filter(
-						(brew) => methodConfig(brew.method).method === activeMethod,
-					),
-		[searchedBrews, activeMethod],
+			searchedBrews?.filter(
+				(brew) =>
+					(activeMethod === "all" || brew.method === activeMethod) &&
+					(!hasRecipeFilter || brew.recipeId === recipeId),
+			),
+		[searchedBrews, activeMethod, hasRecipeFilter, recipeId],
 	);
+
 	const recipeMap = useMemo(
 		() => new Map(allRecipes.map((recipe) => [recipe.id, recipe])),
 		[allRecipes],
@@ -204,7 +237,8 @@ export default function History() {
 	const hasActiveFilters =
 		search.trim().length > 0 ||
 		ratingFilter !== "all" ||
-		activeMethod !== "all";
+		activeMethod !== "all" ||
+		hasRecipeFilter;
 
 	/** beanId → brews, chapters ordered by most recent activity. */
 	const chapters = useMemo(() => {
@@ -236,9 +270,15 @@ export default function History() {
 	const shownCount = brews?.length ?? 0;
 
 	function clearFilters() {
-		setSearch("");
-		setRatingFilter("all");
-		setMethodFilter("all");
+		setParams(
+			() => {
+				const next = new URLSearchParams(latestParams.current);
+				for (const key of ["q", "rating", "method", "recipe"]) next.delete(key);
+				latestParams.current = next;
+				return next;
+			},
+			{ replace: true },
+		);
 	}
 
 	return (
@@ -259,6 +299,23 @@ export default function History() {
 					showMethod={multiMethod}
 				/>
 
+				{hasRecipeFilter && (
+					<p className="flex flex-wrap items-baseline gap-3 border-b border-line pb-3 font-sans text-sm text-ink-soft">
+						<span>
+							Brews following{" "}
+							<strong className="text-foreground">
+								{recipeMap.get(recipeId)?.name ?? "this recipe"}
+							</strong>
+						</span>
+						<Link
+							to="/library?tab=recipes"
+							className="word-link font-data text-[10px] uppercase tracking-[0.12em]"
+						>
+							Recipes →
+						</Link>
+					</p>
+				)}
+
 				{/* Controls */}
 				<div className="flex flex-col gap-3 rounded-xl border border-line bg-paper-raised p-3 shadow-card sm:flex-row sm:items-center">
 					<SegmentedControl
@@ -275,10 +332,10 @@ export default function History() {
 						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
 						<input
 							className="h-9 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-							placeholder="Search beans or brewers"
+							placeholder="Search beans, brewers, recipes or notes"
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							aria-label="Search brews by bean or brewer"
+							aria-label="Search brews by bean, brewer, recipe or notes"
 						/>
 					</label>
 					<label className="relative block">
@@ -352,6 +409,7 @@ export default function History() {
 				{brews !== undefined && brews.length > 0 && (
 					<div className="space-y-4">
 						<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+							{hasActiveFilters ? "Matching: " : ""}
 							{shownCount} brew{shownCount === 1 ? "" : "s"}
 							{view === "bean"
 								? ` in ${chapters.length} bean chapter${chapters.length === 1 ? "" : "s"}`
@@ -405,6 +463,7 @@ export default function History() {
 														: undefined
 												}
 												showMethod={multiMethod}
+												showBean
 											/>
 										))}
 									</div>

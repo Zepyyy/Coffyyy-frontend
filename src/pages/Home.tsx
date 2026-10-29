@@ -113,6 +113,12 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 				</Link>
 			</div>
 
+			{!selectedBean && (
+				<p className="font-sans text-sm text-ink-soft">
+					Choose a bean to see your last brew and what worked.
+				</p>
+			)}
+
 			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
 				{allBeans.map((bean) => (
 					<BeanSelectorCard

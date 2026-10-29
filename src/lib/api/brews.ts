@@ -24,14 +24,16 @@ function sortBrews(list: Brews[], order: "newest" | "oldest"): Brews[] {
 }
 
 async function getBrewNameMaps() {
-	const [beans, machines] = await Promise.all([
+	const [beans, machines, recipes] = await Promise.all([
 		db.Beans.toArray(),
 		db.Machines.toArray(),
+		db.Recipes.toArray(),
 	]);
 
 	return {
 		beans: new Map(beans.map((bean) => [bean.id, bean.name])),
 		machines: new Map(machines.map((machine) => [machine.id, machine.name])),
+		recipes: new Map(recipes.map((recipe) => [recipe.id, recipe.name])),
 	};
 }
 
@@ -188,6 +190,11 @@ export async function getBrewsForHistoryView(
 					? names.machines.get(brew.machineId)?.toLowerCase()
 					: "";
 			return (
+				Boolean(brew.notes?.toLowerCase().includes(q)) ||
+				Boolean(
+					brew.recipeId != null &&
+						names.recipes.get(brew.recipeId)?.toLowerCase().includes(q),
+				) ||
 				Boolean(beanName?.includes(q)) ||
 				Boolean(machineName?.includes(q)) ||
 				Boolean(brew.beanId?.toString().includes(q)) ||
