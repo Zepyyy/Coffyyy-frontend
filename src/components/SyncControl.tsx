@@ -95,7 +95,7 @@ function SyncPopover() {
 					aria-label={label}
 					title={label}
 					className={cn(
-						"relative flex h-8 w-8 items-center justify-center transition-colors hover:bg-paper-sunken hover:text-foreground",
+						"relative flex size-11 items-center sm:size-8 justify-center transition-colors hover:bg-paper-sunken hover:text-foreground",
 						needsAttention ? "text-crema" : "text-ink-faint",
 					)}
 				>

@@ -49,7 +49,7 @@ function MethodChips({
 						onClick={() => onChange(option.value)}
 						aria-pressed={active}
 						className={cn(
-							"border px-2.5 py-1 font-data text-[10px] uppercase tracking-[0.14em] transition-colors",
+							"border px-3 py-2 font-data text-[10px] sm:px-2.5 sm:py-1 uppercase tracking-[0.14em] transition-colors",
 							active
 								? "border-crema bg-crema-tint text-foreground"
 								: "border-line bg-paper-raised text-ink-faint hover:border-line-strong hover:text-foreground",

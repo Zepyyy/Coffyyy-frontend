@@ -243,6 +243,24 @@
     }
     body {
         @apply bg-paper text-ink;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+    }
+    a,
+    button,
+    [role="button"],
+    input,
+    select,
+    textarea {
+        touch-action: manipulation;
+    }
+    /* iOS Safari zooms the page on focus when a field is under 16px. */
+    @media (max-width: 639px) {
+        input:not([type="checkbox"], [type="radio"], [type="range"]),
+        select,
+        textarea {
+            font-size: 16px;
+        }
     }
     ::selection {
         background: var(--accent-tint);

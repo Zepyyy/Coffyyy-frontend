@@ -46,7 +46,7 @@ export default function MultiChips({
 								type="button"
 								onClick={() => (isPending ? onCustomAdd() : onToggle(s))}
 								className={cn(
-									"flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-sans text-xs font-medium transition-colors",
+									"flex items-center gap-1.5 rounded-lg border px-3 py-2 font-sans text-xs sm:px-2.5 sm:py-1 font-medium transition-colors",
 									selected.includes(s)
 										? "border-crema bg-crema-tint text-crema-deep dark:text-crema"
 										: isPending

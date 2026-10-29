@@ -16,7 +16,7 @@ export default function App() {
 	const { theme, toggleTheme } = useTheme();
 
 	return (
-		<div className="min-h-screen text-foreground flex flex-col blueprint-grid">
+		<div className="min-h-dvh text-foreground flex flex-col blueprint-grid">
 			<header className="sticky top-0 z-50 h-16 border-b border-border bg-paper/90 backdrop-blur-sm">
 				<div className="flex h-full w-full gap-3 px-4 items-center relative sm:gap-0">
 					<Link
@@ -61,7 +61,7 @@ export default function App() {
 						<button
 							type="button"
 							onClick={toggleTheme}
-							className="flex h-8 w-8 items-center justify-center text-ink-faint transition-colors hover:bg-paper-sunken hover:text-foreground"
+							className="flex size-11 items-center sm:size-8 justify-center text-ink-faint transition-colors hover:bg-paper-sunken hover:text-foreground"
 							aria-label="Toggle theme"
 						>
 							{theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
