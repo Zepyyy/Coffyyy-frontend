@@ -4,9 +4,8 @@
 .motion-eyebrow {font-family:var(--font-data);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:0}
 .motion-switch {display:flex;align-items:center;gap:12px;flex:none;min-height:44px;border:1px solid var(--line);padding:0 14px;background:var(--paper-raised);font-size:12px;color:var(--ink-soft);cursor:pointer}
 .motion-tabs {display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);gap:24px;margin-bottom:28px}
-.motion-tabs button {position:relative;min-height:48px;background:none;border:0;padding:0 2px;font-family:var(--font-data);font-size:12px;color:var(--ink-soft);cursor:pointer}
-.motion-tabs button[aria-pressed=true] {color:var(--ink)}
-.motion-tabs button[aria-pressed=true]::after {content:"";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--accent)}
+.motion-tabs a {display:inline-flex;align-items:center;min-height:48px;padding:0 2px;font-family:var(--font-data);font-size:12px;color:var(--ink-soft)}
+.motion-tabs a:hover {color:var(--ink)}
 .motion-context {margin-bottom:20px}
 .motion-greeting {font-family:var(--font-display);font-size:clamp(29px,5vw,40px);font-style:italic;letter-spacing:-.025em;line-height:1.1;margin:7px 0}
 .motion-stage {min-width:0}
