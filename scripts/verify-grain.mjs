@@ -1,5 +1,5 @@
 // Vite DEV required. Run: node scripts/verify-grain.mjs
-// Optional: BASE_URL, CHROMIUM_EXECUTABLE_PATH. No engine modifications.
+// Optional: BASE_URL, CHROMIUM_EXECUTABLE_PATH, SCENES (comma separated), WIDTH.
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
@@ -9,18 +9,19 @@ const registry = await readFile(
 );
 const body = registry.match(/export const SCENES[^=]*=\s*\{([\s\S]*?)\}/)?.[1];
 if (!body) throw new Error("Cannot parse SCENES registry");
-const scenes = [...body.matchAll(/^\s*([\w]+)\s*(?::[^,]+)?\s*,?\s*$/gm)].map(
-	(m) => m[1],
-);
+const scenes = [...body.matchAll(/^\s*([\w]+)\s*(?::[^,]+)?\s*,?\s*$/gm)]
+	.map((m) => m[1])
+	.filter(
+		(scene) =>
+			!process.env.SCENES || process.env.SCENES.split(",").includes(scene),
+	);
 if (!scenes.length) throw new Error("Empty scene registry");
 const base = process.env.BASE_URL ?? "http://localhost:5199";
-// 8% tone/frame is already a visible edge; allow no more. The independent
-// alpha test allows 2% of existing ink/frame, half the old 4%-of-ALL-dots flip
-// baseline (different denominators, reported explicitly). A hard on/off/on
-// reversal is never acceptable. Warm-up is excluded, never hidden in a mean.
-const limits = { step: 0.08, inkChange: 0.02, reversals: 0 };
-// Lab-only scenes are measured and printed, but never reach Home by default.
-const labOnly = new Set(["kaldi"]);
+// Blink is a dot reversing or snapping, so those are what fail the run. A dot
+// may change by up to the engine's slew cap per frame. A hard flip is a dot
+// going fully on or off in one frame; the old texture did this to 4% of dots.
+// Ink turnover is printed but does not gate: any moving silhouette has it.
+const limits = { step: 0.14, hardFlips: 0.0001, reversals: 0 };
 const browser = await chromium.launch({
 	executablePath: process.env.CHROMIUM_EXECUTABLE_PATH || undefined,
 });
@@ -30,7 +31,10 @@ try {
 		{ width: 1280, height: 900, dpr: 1, cpu: 1 },
 		{ width: 2560, height: 1440, dpr: 1, cpu: 1 },
 		{ width: 390, height: 844, dpr: 3, cpu: 4 },
-	]) {
+	].filter(
+		(config) =>
+			!process.env.WIDTH || config.width === Number(process.env.WIDTH),
+	)) {
 		const context = await browser.newContext({
 			viewport: { width: config.width, height: config.height },
 			deviceScaleFactor: config.dpr,
@@ -58,8 +62,8 @@ try {
 						return original.apply(this, args);
 					} finally {
 						if (
-							name === "putImageData" &&
-							this.canvas.classList.contains("grain-field__dither")
+							name === "clearRect" &&
+							this.canvas.classList.contains("grain-field__blur")
 						)
 							rendered = true;
 						if (measured)
@@ -101,6 +105,18 @@ try {
 						window.__grain && document.querySelector(".grain-field__dither"),
 				);
 				await page.evaluate(() => document.fonts.ready);
+				// Whale deliberately spends a minute offscreen. Exercise a crossing,
+				// rather than mistaking that pause for a stalled/empty renderer.
+				if (scene === "whale") {
+					await page.evaluate(async () => {
+						const { SCENES } = await import(
+							"/src/components/grain/scenes/index.ts"
+						);
+						window.__grain.setScene((layers, env) =>
+							SCENES.whale(layers, { ...env, t: env.t + 30 }),
+						);
+					});
+				}
 				await page.waitForTimeout(3000);
 				const performanceResult = await page.evaluate(async () => {
 					window.__grain.stats(); // reset startup maximum
@@ -193,6 +209,32 @@ try {
 						transitions,
 					};
 				});
+				// A still must replace all previous ink in one render, including dark
+				// tones above 1. A second still render must change no pixels.
+				await page.evaluate(() => {
+					const canvases = [
+						...document.querySelectorAll(".grain-field canvas"),
+					];
+					const pixels = () =>
+						canvases.map(
+							(canvas) =>
+								canvas
+									.getContext("2d")
+									.getImageData(0, 0, canvas.width, canvas.height).data,
+						);
+					window.__grain.setMotion(false);
+					const first = pixels();
+					window.__grain.setMotion(false);
+					const second = pixels();
+					if (
+						first.some((data, layer) =>
+							data.some((value, i) => value !== second[layer][i]),
+						)
+					)
+						throw new Error(
+							"Still redraw changed pixels: stale ink after stopping motion",
+						);
+				});
 				const { costs, maxStep, alive, methods, elapsed } = performanceResult;
 				const mean = costs.reduce((a, b) => a + b, 0) / costs.length;
 				const sorted = [...costs].sort((a, b) => a - b);
@@ -203,15 +245,9 @@ try {
 					!costs.length ||
 					!alive ||
 					maxStep >= limits.step ||
-					pixels.inkChange >= limits.inkChange ||
+					pixels.hardFlipShare >= limits.hardFlips ||
 					pixels.reversals > limits.reversals;
-				const verdict = labOnly.has(scene)
-					? "LAB"
-					: blinks
-						? "FAIL"
-						: mean > threshold
-							? "SLOW"
-							: "PASS";
+				const verdict = blinks ? "FAIL" : mean > threshold ? "SLOW" : "PASS";
 				const hot = Object.entries(methods)
 					.sort((a, b) => b[1] - a[1])
 					.slice(0, 2)
@@ -266,7 +302,7 @@ try {
 				rows.push({
 					scene,
 					viewport: `${config.width}x${config.height}`,
-					result: labOnly.has(scene) ? "LAB" : "FAIL",
+					result: "FAIL",
 					error: error.message,
 				});
 			}

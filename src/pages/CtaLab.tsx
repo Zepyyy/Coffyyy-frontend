@@ -6,8 +6,9 @@ const FIELDS = [
 	{ id: "moka", name: "Moka" },
 	{ id: "v60", name: "V60" },
 	{ id: "espresso", name: "Espresso" },
-	{ id: "plume", name: "Steam only" },
-	{ id: "kaldi", name: "Kaldi" },
+	{ id: "koi", name: "Koi" },
+	{ id: "whale", name: "Whale" },
+	{ id: "jelly", name: "Jellyfish" },
 ] as const;
 
 export default function CtaLab({

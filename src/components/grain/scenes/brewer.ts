@@ -1,5 +1,6 @@
 import type { Scene } from "../engine";
-import { cupJourney, steam } from "./plume";
+import { koi } from "./koi";
+import { steam } from "./plume";
 
 // A plate has a fixed camera. Only the illumination and the air change.
 // Seconds, including milliseconds, avoid a minute/hour boundary in the light.
@@ -106,7 +107,7 @@ function shadow(c: C, light: number, width: number) {
 	ellipse(c, -Math.cos(light) * 50, 8, width * 1.3, 13, 0.07);
 	ellipse(c, 0, 4, width, 6, 0.16);
 }
-/** Plates need open margin; below this the journey starts at the cup. */
+/** Plates need an open margin. Narrower pages get koi under the cards instead. */
 const PLATE_MIN_WIDTH = 1100;
 
 function plate(
@@ -120,7 +121,7 @@ function plate(
 	return (layers, env) => {
 		const { W, H } = env;
 		if (W < PLATE_MIN_WIDTH) {
-			steam(layers, env, cupJourney(env));
+			koi(layers, env);
 			return;
 		}
 		const scale = Math.min(W / 1100, H / 770, 1.65) * size;
@@ -147,14 +148,15 @@ function plate(
 		target.restore();
 		const ox = x + outlet[0] * scale;
 		const oy = y + outlet[1] * scale;
+		// Steam only uses the margin that the page's content leaves free.
+		const edge = env.anchors.content;
+		const left = edge ? edge.x + edge.w : W * 0.9;
 		steam(layers, env, {
 			x: ox,
 			y: oy,
-			dir: -1,
-			reach: ox - 20,
-			rise: oy - 96,
-			climb: 6,
-			settle: 40,
+			top: 14,
+			centre: (left + W) / 2,
+			room: (W - left) / 2,
 		});
 	};
 }

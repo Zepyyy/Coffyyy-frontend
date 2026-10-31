@@ -474,3 +474,35 @@ phones and fails the blink gate, so it stays a lab scene. `/cta-lab` links
 each field on the real Home with `?grain=`, which also forces motion on. The
 old ASCII, dither and blur tabs are retired. Home follows the OS reduced-motion
 setting and draws one still frame.
+
+## Grain, round two — out of the text, and swimmers
+
+Owner feedback: the smoke behind the greeting did not work and the grey haze
+behind the letters looked awful, though the idea and execution were loved. The
+pointer made it jump, and the goat was a wrong turn: "fish are graceful at
+least". Standing rule from this round: **nothing moves behind text**, and haze
+on open paper is out. Blur only exists under `.grain-glass`.
+
+- Steam now climbs the empty right margin and thins out on bare paper. The H1
+  is a full quiet zone, so no scene can draw behind it.
+- The pointer jump was a sign flip as the ribbon crossed it. The shift is now an
+  odd, continuous function of distance, and the engine gives the pointer mass.
+- Kaldi is deleted. `scenes/swim.ts` makes a body follow its head along one
+  curve with a wave travelling tailward, which is where the grace comes from.
+- Koi, whale and jellyfish all use dither, not ASCII: 2px dots hold a silhouette
+  and 8x16 tiles do not, unless the mass is as large as the whale's back.
+- Phones have no margin, so the brewer scenes fall back to koi under the cards.
+  The whale needs open paper; mobile cards conceal most of its silhouette,
+  so it remains a lab study.
+- Tone easing got faster so moving shapes keep crisp edges. `verify-grain` now
+  gates on what blink actually is: reversals and hard flips, not ink turnover.
+
+Validation follow-up: smoothing source tone before the Bayer threshold still
+let that threshold amplify small steps into visible flashes (koi: 0.091% hard
+flips, 10 on-off-on dots). Threshold and density now precede temporal easing,
+so the slew cap controls final dot opacity. Faint tones fade continuously to
+zero. The same focused check reports zero hard flips and reversals. Whale
+verification samples its visible crossing instead of its intentional pause.
+Instant still rendering also bypasses the slew limit entirely: dense ink can
+exceed normalized opacity 1, so capping an instant change at 1 left a ghost of
+the old silhouette when motion stopped.
