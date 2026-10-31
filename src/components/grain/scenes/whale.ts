@@ -32,29 +32,34 @@ function curve(table: Table, q: number) {
 	);
 }
 
-// The low rostrum, deep throat and narrow caudal stock are separate volumes.
+// A rounded rostrum rising smoothly into the hump of the back, a bowed lower
+// jaw, a deep pleated throat and a narrow caudal stock. No straight roofline.
 const BACK: Table = [
-	[0, -42],
-	[0.025, -46],
-	[0.1, -48],
-	[0.19, -51],
-	[0.27, -74],
-	[0.36, -86],
-	[0.46, -83],
-	[0.59, -61],
-	[0.67, -55],
-	[0.705, -77],
-	[0.73, -47],
+	[0, -4],
+	[0.012, -25],
+	[0.04, -42],
+	[0.1, -56],
+	[0.18, -65],
+	[0.27, -77],
+	[0.36, -88],
+	[0.46, -85],
+	[0.59, -64],
+	[0.65, -55],
+	[0.675, -60],
+	[0.697, -78],
+	[0.707, -80],
+	[0.716, -58],
+	[0.74, -44],
 	[0.83, -25],
 	[0.94, -14],
 	[1, -12],
 ];
 const BELLY: Table = [
-	[0, -42],
-	[0.005, -12],
-	[0.025, 39],
-	[0.075, 104],
-	[0.16, 145],
+	[0, -4],
+	[0.006, 12],
+	[0.03, 44],
+	[0.075, 84],
+	[0.16, 128],
 	[0.28, 158],
 	[0.38, 163],
 	[0.48, 137],
@@ -116,7 +121,10 @@ function animal(
 	const lag = calf ? 1.7 : 0;
 	const bend = (q: number) => {
 		const grow = Math.max(0, (q - 0.34) / 0.66);
-		return 36 * grow * grow * Math.sin(t * 0.6 - q * 3.5 - lag);
+		return (
+			12 * Math.sin(Math.PI * q) * Math.sin(t * 0.42 - q * 2.4 - lag) +
+			42 * grow * grow * Math.sin(t * 0.6 - q * 3.5 - lag)
+		);
 	};
 	const point = (px: number, py: number): Point => [
 		calf && px < -280 ? -280 + (px + 280) * 0.78 : px,
@@ -134,16 +142,20 @@ function animal(
 	) => c.bezierCurveTo(...point(a, b), ...point(d, e), ...point(f, g));
 	const body = (outline = false) => {
 		c.beginPath();
-		for (let j = 0; j < PROFILE.length; j++) {
-			const p = PROFILE[j];
-			if (!j) move(p.x, p.back);
-			else line(p.x, p.back);
+		// A vertical tangent at the muzzle, rather than the pointed join of two
+		// height graphs. The short rounded cap flows into both jaw and crown.
+		move(0, -4);
+		bezier(0, -32, -23, -46, -60, curve(BACK, 0.06));
+		for (const p of PROFILE) {
+			if (p.x <= -60) line(p.x, p.back);
 		}
 		for (let j = PROFILE.length - 1; j >= 0; j--) {
 			const p = PROFILE[j];
+			if (p.x > -60) continue;
 			if (outline && j === PROFILE.length - 1) move(p.x, p.belly);
 			else line(p.x, p.belly);
 		}
+		bezier(-29, 63, 0, 27, 0, -4);
 		if (!outline) c.closePath();
 	};
 	c.save();
@@ -154,7 +166,7 @@ function animal(
 
 	// The far pectoral is foreshortened, visible beyond the rolled shoulder.
 	c.save();
-	c.translate(-300, 0);
+	c.translate(...point(-300, 0));
 	c.rotate(0.06 * Math.sin(t * 0.38 - 0.8));
 	c.beginPath();
 	c.moveTo(0, 27);
@@ -215,7 +227,7 @@ function animal(
 	tailTone.addColorStop(1, ink(0.26));
 	c.fillStyle = tailTone;
 	c.fill();
-	c.strokeStyle = ink(0.78);
+	c.strokeStyle = ink(0.58);
 	c.lineWidth = width;
 	c.stroke();
 	c.save();
@@ -399,7 +411,7 @@ function animal(
 		for (let j = 0; j < grooves; j++) {
 			const v = j / (grooves - 1);
 			c.beginPath();
-			move(-8 - v * 63, -21 + v * 106);
+			move(-8 - v * 63, -2 + v * 92);
 			bezier(
 				-95 - v * 42,
 				40 + v * 119,
@@ -424,7 +436,7 @@ function animal(
 		}
 		c.restore();
 		body(true);
-		c.strokeStyle = ink(calf ? 0.94 : 0.72);
+		c.strokeStyle = ink(calf ? 0.78 : 0.5);
 		c.lineWidth = width;
 		c.stroke();
 	}
@@ -435,14 +447,14 @@ function animal(
 
 	// The near pectoral hangs from the shoulder; its tip lags the body's stroke.
 	c.save();
-	c.translate(-287, 52);
+	c.translate(...point(-287, 52));
 	c.rotate(0.07 * Math.sin(t * 0.39 - 1.2 - lag));
 	const finPoint = (u: number, edge: number): Point => {
 		const half = 31 * Math.sin(Math.PI * (0.07 + 0.93 * u)) ** 0.8;
 		const scallop = edge > 0 ? 1 + 0.26 * Math.sin(u * Math.PI * 15) : 0.72;
 		return [
-			-326 * u + edge * 0.44 * half * scallop,
-			125 * u + 13 * Math.sin(Math.PI * u) + edge * 0.9 * half * scallop,
+			-326 * u - 24 * Math.sin(Math.PI * u) + edge * 0.44 * half * scallop,
+			125 * u + 40 * Math.sin(Math.PI * u) + edge * 0.9 * half * scallop,
 		];
 	};
 	const fin = () => {
@@ -476,7 +488,7 @@ function animal(
 	);
 	c.fillStyle = finTone;
 	c.fill();
-	c.strokeStyle = ink(0.78);
+	c.strokeStyle = ink(0.58);
 	c.lineWidth = width;
 	c.stroke();
 	c.save();
@@ -489,14 +501,18 @@ function animal(
 		const b = finPoint(u + 0.04, 0.93);
 		c.beginPath();
 		c.moveTo(...a);
-		c.quadraticCurveTo(-326 * u - 9, 125 * u + 7, ...b);
+		c.quadraticCurveTo(
+			-326 * u - 24 * Math.sin(Math.PI * u) - 9,
+			125 * u + 40 * Math.sin(Math.PI * u) + 7,
+			...b,
+		);
 		c.strokeStyle = ink(0.53);
 		c.lineWidth = width;
 		c.stroke();
 	}
 	c.beginPath();
 	c.moveTo(-4, 2);
-	c.quadraticCurveTo(-139, 59, -316, 123);
+	c.bezierCurveTo(-96, 75, -224, 139, -316, 123);
 	c.strokeStyle = ink(0.42);
 	c.stroke();
 	c.restore();
@@ -509,18 +525,18 @@ function animal(
 	c.restore();
 
 	if (!appendagesOnly) {
-		// The flat rostrum is a thin plate above the great bowed lower jaw.
+		// The gape bows around the rostrum and returns toward the small eye.
 		c.beginPath();
-		move(-2, -37);
-		bezier(-65, -35, -126, -34, -182, -32);
-		bezier(-212, -31, -221, 27, -257, 31);
+		move(-3, -4);
+		bezier(-42, 17, -125, 35, -192, 27);
+		bezier(-222, 23, -240, 29, -258, 33);
 		c.strokeStyle = ink(0.98);
 		c.lineWidth = width * 1.4;
 		c.stroke();
 		c.beginPath();
-		move(-9, -25);
-		bezier(-75, -24, -135, -23, -180, -20);
-		bezier(-208, -18, -216, 38, -253, 40);
+		move(-12, 8);
+		bezier(-48, 31, -129, 47, -190, 39);
+		bezier(-218, 36, -235, 39, -252, 43);
 		c.strokeStyle = ink(0.45);
 		c.lineWidth = width;
 		c.stroke();
@@ -561,7 +577,15 @@ function animal(
 		for (let j = 0; j < (calf ? 3 : 5); j++) {
 			const px = -24 - j * (calf ? 56 : 33);
 			c.beginPath();
-			c.ellipse(px, -24 + j * 0.7, calf ? 7 : 5.8, calf ? 6 : 4, -0.1, 0, TAU);
+			c.ellipse(
+				px,
+				curve(BACK, -px / 1000) + 12,
+				calf ? 7 : 5.8,
+				calf ? 6 : 4,
+				-0.1,
+				0,
+				TAU,
+			);
 			c.fillStyle = dark ? "rgb(170 176 190 / 0.66)" : ink(0.35);
 			c.fill();
 			c.strokeStyle = ink(0.72);
@@ -592,10 +616,11 @@ function animal(
 			}
 			for (let j = 0; j < 11; j++) {
 				const row = Math.floor(j / 4);
-				const px = -46 - (j % 4) * 11 - row * 4;
+				const px = -29 - (j % 4) * 32 - row * 8;
 				const py =
-					curve(BELLY, -px / 1000) - 3 - row * 8 + 3 * Math.sin(j * 2.3);
-				barnacle(c, px, py, 4.5 + 2.5 * Math.sin(j * 1.7) ** 2, dark);
+					curve(BELLY, -px / 1000) - 4 - row * 9 + 3 * Math.sin(j * 2.3);
+				const chin = point(px, py);
+				barnacle(c, chin[0], chin[1], 3.8 + 1.8 * Math.sin(j * 1.7) ** 2, dark);
 			}
 			c.beginPath();
 			move(-235, -63);

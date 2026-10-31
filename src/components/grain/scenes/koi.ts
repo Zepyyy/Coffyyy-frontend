@@ -781,6 +781,7 @@ function drawFish(
 	}
 }
 
+/** Nose position at distance `d`, with no body or wave to compute. */
 function headAt(loop: Loop, d: number): Point {
 	const s = spineOn(loop, d, 1, 2, { waves: 0, reach: 0, beat: 0 }, 0);
 	return [s.x[0], s.y[0]];
@@ -788,9 +789,7 @@ function headAt(loop: Loop, d: number): Point {
 
 function ripples(
 	c: CanvasRenderingContext2D,
-	loop: Loop,
-	v: Variety,
-	start: number,
+	nose: (at: number) => Point,
 	index: number,
 	t: number,
 	dark: boolean,
@@ -803,7 +802,7 @@ function ripples(
 		const te = (Math.floor(t / period) - k) * period + index * 0.7;
 		const age = t - te;
 		if (age < 0 || age > life) continue;
-		const [x, y] = headAt(loop, start + v.speed * te);
+		const [x, y] = nose(te);
 		const fade = (1 - age / life) ** 0.9 * smooth(0, 0.5, age);
 		const r = 5 + age * 12 * size;
 		c.beginPath();
@@ -821,10 +820,91 @@ function ripples(
 	}
 }
 
-let cached = "";
-let loops: Loop[] = [];
+/** Laps before the route repeats, each reshaped: 4+ minutes on a phone, 9+ on a desk. */
+const LAPS = 17;
+/** How far in from its composed line a lap can wander, toward the route's middle. */
+const WANDER = 0.62;
+/** Seconds to wait for the shelf before settling for a guess at where it is. */
+const SHELF_WAIT = 1.2;
+const APPEAR = 1.6;
+/** Seconds to ease onto new routes if the water moves under a visible fish. */
+const SHIFT = 2.4;
+/** Pose time of the reduced-motion still. */
+const STILL = 30;
 
-export const koi: Scene = (layers, { t, W, H, anchors, dark }) => {
+/**
+ * One very long closed route: the composed lap, then laps that each swing a
+ * different side of it inward, a lobe at a time, so a fish's line never quite
+ * retraces itself and stays inside the bounds the route was composed for. The
+ * first lap and the end of the last are exact, so the still stays as drawn.
+ */
+function wandering(route: Point[], seed: number): Point[] {
+	const n = route.length;
+	const cx = route.reduce((sum, p) => sum + p[0], 0) / n;
+	const cy = route.reduce((sum, p) => sum + p[1], 0) / n;
+	const xs = route.map((p) => p[0]);
+	const ys = route.map((p) => p[1]);
+	const out: Point[] = [...route];
+	for (let lap = 1; lap < LAPS; lap++) {
+		const roll = (k: number) => hash(seed * 7919 + lap * 257 + k);
+		const lobes = 1 + (roll(0) > 0.5 ? 1 : 0);
+		const phase = roll(1) * TAU;
+		const depth = WANDER * (0.55 + 0.45 * roll(2));
+		route.forEach(([x, y], i) => {
+			if (lap === LAPS - 1 && i >= n - 2) {
+				out.push([x, y]);
+				return;
+			}
+			const pull =
+				depth * (0.5 + 0.5 * Math.sin((i / n) * TAU * lobes + phase));
+			const jx = (hash(seed * 31 + lap * 101 + i * 2) - 0.5) * 0.07;
+			const jy = (hash(seed * 37 + lap * 103 + i * 2 + 1) - 0.5) * 0.1;
+			out.push([
+				clamp(lerp(x, cx, pull) + jx, Math.min(...xs), Math.max(...xs)),
+				clamp(lerp(y, cy, pull) + jy, Math.min(...ys), Math.max(...ys)),
+			]);
+		});
+	}
+	// Rounded off, so a lap's reshaping can't leave a turn too tight for a body.
+	return out.map((p, i) => {
+		if (i < n || i >= out.length - 2) return p;
+		const a = out[i - 1];
+		const b = out[i + 1];
+		return [(a[0] + 2 * p[0] + b[0]) / 4, (a[1] + 2 * p[1] + b[1]) / 4];
+	});
+}
+
+/**
+ * Time as this fish has lived it: it surges and coasts, on rhythms no two fish
+ * share and none of which divide a lap. Exactly `t` at the still.
+ */
+function lived(index: number, t: number) {
+	const x = t - STILL;
+	return (
+		t +
+		1.8 * Math.sin(x * 0.11 * (1 + index * 0.37)) +
+		0.5 * Math.sin((x * 0.29) / (1 + index * 0.23))
+	);
+}
+
+type Path = { loop: Loop; start: number };
+
+let cached = "";
+let paths: Path[] = [];
+/** The routes being eased away from, and when that began. */
+let prior: Path[] | null = null;
+let shiftedAt = 0;
+/** When the fish came into view; null while they have yet to. */
+let bornAt: number | null = null;
+let seen = Number.NEGATIVE_INFINITY;
+
+export const koi: Scene = (layers, { t, dt, W, H, anchors, dark }) => {
+	// The clock restarting or skipping means this is a new sighting.
+	if (t < seen || t - seen > 1) {
+		bornAt = null;
+		prior = null;
+	}
+	seen = t;
 	// Routes are fixed once the shelf is known, so a card opening later on
 	// cannot make a fish jump.
 	const shelf = anchors.shelf;
@@ -835,46 +915,88 @@ export const koi: Scene = (layers, { t, W, H, anchors, dark }) => {
 	const depth = Math.max(200, H - top - 40);
 	if (key !== cached) {
 		cached = key;
-		loops = FISH.map((f) =>
-			buildLoop(
-				(narrow ? f.route.phone : f.route.desk).map(
-					([x, y]) => [W * x, top + y * depth] as Point,
-				),
-			),
-		);
+		if (bornAt !== null) {
+			prior = paths;
+			shiftedAt = t;
+		}
+		paths = FISH.map((f) => {
+			const toWater = (p: Point): Point => [W * p[0], top + p[1] * depth];
+			const route = narrow ? f.route.phone : f.route.desk;
+			return {
+				loop: buildLoop(wandering(route, f.seed).map(toWater)),
+				// The still is a fraction of the composed lap, not of the long route.
+				start:
+					f.still[narrow ? 1 : 0] * buildLoop(route.map(toWater)).length -
+					f.speed * STILL,
+			};
+		});
 	}
+	// The shelf only arrives with the page's data, some frames after the field
+	// starts, and it moves every route. No fish shows until it has.
+	const still = dt === 0;
+	if (bornAt === null && (shelf || still || t > SHELF_WAIT)) bornAt = t;
+	if (bornAt === null) return;
 	const c = layers.dither;
 	c.lineCap = "round";
 	c.lineJoin = "round";
+	c.globalAlpha = still ? 1 : smooth(0, APPEAR, t - bornAt);
 
-	// The reduced-motion still (t=30) is where each fish is composed to be.
-	const starts = FISH.map(
-		(f, i) => f.still[narrow ? 1 : 0] * loops[i].length - f.speed * 30,
-	);
+	const shift = still ? 1 : smooth(0, SHIFT, t - shiftedAt);
+	if (shift >= 1) prior = null;
+	const from = prior;
+	const distance = (p: Path, index: number, at: number) =>
+		p.start + FISH[index].speed * lived(index, at);
+	const nose =
+		(index: number) =>
+		(at: number): Point => {
+			const [x, y] = headAt(
+				paths[index].loop,
+				distance(paths[index], index, at),
+			);
+			if (!from) return [x, y];
+			const [x0, y0] = headAt(
+				from[index].loop,
+				distance(from[index], index, at),
+			);
+			return [lerp(x0, x, shift), lerp(y0, y, shift)];
+		};
+
 	// Three fish would only muddy the stains under the glass of a phone.
 	const swimmers = narrow ? FISH.slice(0, 2) : FISH;
-	swimmers.forEach((fish, index) => {
-		ripples(c, loops[index], fish, starts[index], index, t, dark, size);
+	swimmers.forEach((_, index) => {
+		ripples(c, nose(index), index, t, dark, size);
 	});
 	// Larger fish swim deeper; draw the small ones last so they cross over.
 	swimmers.forEach((_, index) => {
 		const fish = FISH[index];
-		const loop = loops[index];
 		const length = fish.length * size;
 		const n = clamp(Math.round(length / 8), 30, 62);
-		const s = spineOn(
-			loop,
-			starts[index] + fish.speed * t,
-			length,
-			n,
-			{
-				waves: 0.85,
-				reach: length * 0.062,
-				beat: 0.4 + index * 0.03,
-				stiff: 0.25,
-			},
-			t,
-		);
+		const stroke = {
+			waves: 0.85,
+			reach: length * 0.062,
+			beat: 0.4 + index * 0.03,
+			stiff: 0.25,
+		};
+		// Lived time drives the tail too, so it beats harder through a surge.
+		const body = (p: Path) =>
+			spineOn(
+				p.loop,
+				distance(p, index, t),
+				length,
+				n,
+				stroke,
+				lived(index, t),
+			);
+		const s = body(paths[index]);
+		if (from) {
+			const o = body(from[index]);
+			for (let i = 0; i < n; i++) {
+				s.x[i] = lerp(o.x[i], s.x[i], shift);
+				s.y[i] = lerp(o.y[i], s.y[i], shift);
+				s.nx[i] = lerp(o.nx[i], s.nx[i], shift);
+				s.ny[i] = lerp(o.ny[i], s.ny[i], shift);
+			}
+		}
 		drawFish(c, fish, index, s, t, dark, size, narrow ? 1.3 : 1);
 	});
 };

@@ -19,29 +19,33 @@ const mod = (x: number, n: number) => ((x % n) + n) % n;
 const ease = (x: number) => x * x * (3 - 2 * x);
 const tint = (c: Rgb, a: number) => `rgb(${c[0]} ${c[1]} ${c[2]} / ${a})`;
 
-/** Dots print at about 0.62, so light paper wants deeper values than dark. */
+/**
+ * One family: coffee-warm crowns fading to dusty mauve, so every animal reads
+ * as a tint of the same dye. Dots print at about 0.62, so light paper wants
+ * deeper values than dark.
+ */
 const PALETTE = {
 	light: {
-		crema: [226, 160, 84],
-		amber: [208, 132, 62],
-		rose: [190, 92, 104],
-		umber: [150, 84, 62],
-		peri: [118, 130, 206],
-		bone: [220, 204, 178],
-		lav: [148, 120, 182],
-		sage: [96, 168, 142],
-		foam: [146, 206, 184],
+		crema: [212, 168, 118],
+		amber: [198, 148, 104],
+		rose: [186, 124, 126],
+		umber: [152, 104, 88],
+		peri: [152, 138, 170],
+		bone: [222, 208, 188],
+		lav: [168, 138, 158],
+		sage: [172, 148, 140],
+		foam: [198, 178, 168],
 	},
 	dark: {
-		crema: [242, 200, 132],
-		amber: [234, 174, 100],
-		rose: [232, 150, 160],
-		umber: [214, 156, 124],
-		peri: [166, 178, 240],
-		bone: [240, 230, 210],
-		lav: [198, 176, 226],
-		sage: [148, 218, 194],
-		foam: [196, 238, 222],
+		crema: [232, 196, 148],
+		amber: [224, 174, 128],
+		rose: [218, 156, 156],
+		umber: [200, 156, 134],
+		peri: [186, 172, 202],
+		bone: [238, 228, 212],
+		lav: [204, 172, 190],
+		sage: [208, 182, 172],
+		foam: [226, 208, 196],
 	},
 } satisfies Record<string, Record<string, Rgb>>;
 type Pal = (typeof PALETTE)["light"];

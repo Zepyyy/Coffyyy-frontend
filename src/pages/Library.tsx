@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Link, useSearchParams } from "react-router";
 import { SlidersHorizontal } from "lucide-react";
+import PageGrain from "@/components/grain/PageGrain";
 import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
@@ -333,240 +334,255 @@ export default function Library() {
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-6xl">
-			<div className="space-y-6">
-				{/* Header: title, section switch, and search stay reachable on phones */}
-				<div className="space-y-4">
-					<div className="border-l-4 border-crema pl-5">
-						<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
-							Library
-						</h1>
-						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-							Your beans, brewers and recipes
-						</p>
-					</div>
+		<>
+			<PageGrain />
+			<div
+				className="relative z-[1] mx-auto w-full max-w-6xl"
+				data-grain-anchor="content"
+			>
+				<div className="space-y-6">
+					{/* Header: title, section switch, and search stay reachable on phones */}
+					<div className="space-y-4">
+						<div className="border-l-4 border-crema pl-5" data-grain-quiet>
+							<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
+								Library
+							</h1>
+							<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
+								Your beans, brewers and recipes
+							</p>
+						</div>
 
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-						<SegmentedControl
-							ariaLabel="Library section"
-							className="w-fit"
-							options={[
-								{
-									value: "beans",
-									label: `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`,
-								},
-								{
-									value: "machines",
-									label: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
-								},
-								{
-									value: "recipes",
-									label: `Recipes${allRecipes.length > 0 ? ` (${allRecipes.length})` : ""}`,
-								},
-							]}
-							value={tab}
-							onChange={setTab}
-						/>
-						<label className="relative block min-w-0 flex-1">
-							<input
-								className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-								placeholder={`Search ${SEARCH_LABEL[tab]}...`}
-								aria-label={`Search ${SEARCH_LABEL[tab]}`}
-								value={search}
-								onChange={(e) => setSearch(e.target.value)}
-							/>
-						</label>
-						{tab === "beans" && (
+						<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
 							<SegmentedControl
-								ariaLabel="Sort beans"
+								ariaLabel="Library section"
 								className="w-fit"
 								options={[
-									{ value: "order", label: "In order" },
-									{ value: "verdict", label: "By verdict" },
+									{
+										value: "beans",
+										label: `Beans${beansCount > 0 ? ` (${beansCount})` : ""}`,
+									},
+									{
+										value: "machines",
+										label: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
+									},
+									{
+										value: "recipes",
+										label: `Recipes${allRecipes.length > 0 ? ` (${allRecipes.length})` : ""}`,
+									},
 								]}
-								value={beanSort}
-								onChange={setBeanSort}
+								value={tab}
+								onChange={setTab}
 							/>
-						)}
+							<label className="relative block min-w-0 flex-1">
+								<input
+									className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+									placeholder={`Search ${SEARCH_LABEL[tab]}...`}
+									aria-label={`Search ${SEARCH_LABEL[tab]}`}
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+							</label>
+							{tab === "beans" && (
+								<SegmentedControl
+									ariaLabel="Sort beans"
+									className="w-fit"
+									options={[
+										{ value: "order", label: "In order" },
+										{ value: "verdict", label: "By verdict" },
+									]}
+									value={beanSort}
+									onChange={setBeanSort}
+								/>
+							)}
+						</div>
+
+						{/* Filters live on the sidebar on desktop, in a drawer here */}
+						<div className="lg:hidden">
+							<button
+								type="button"
+								onClick={() => setFiltersOpen((o) => !o)}
+								aria-expanded={filtersOpen}
+								aria-controls="library-mobile-filters"
+								className={cn(
+									"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
+									filtersOpen
+										? "border-crema bg-crema-tint text-foreground"
+										: "border-line-strong bg-paper-raised text-ink-soft hover:text-foreground",
+								)}
+							>
+								<SlidersHorizontal className="size-3.5" aria-hidden />
+								Filters
+								{activeFilterCount > 0 && (
+									<span className="rounded-full bg-ink px-1.5 font-data text-[10px] font-semibold text-paper">
+										{activeFilterCount}
+									</span>
+								)}
+							</button>
+							{filtersOpen && (
+								<div
+									id="library-mobile-filters"
+									className="rise mt-3 grid gap-4 sm:grid-cols-2"
+								>
+									{filtersNode}
+								</div>
+							)}
+						</div>
 					</div>
 
-					{/* Filters live on the sidebar on desktop, in a drawer here */}
-					<div className="lg:hidden">
-						<button
-							type="button"
-							onClick={() => setFiltersOpen((o) => !o)}
-							aria-expanded={filtersOpen}
-							aria-controls="library-mobile-filters"
-							className={cn(
-								"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
-								filtersOpen
-									? "border-crema bg-crema-tint text-foreground"
-									: "border-line-strong bg-paper-raised text-ink-soft hover:text-foreground",
-							)}
-						>
-							<SlidersHorizontal className="size-3.5" aria-hidden />
-							Filters
-							{activeFilterCount > 0 && (
-								<span className="rounded-full bg-ink px-1.5 font-data text-[10px] font-semibold text-paper">
-									{activeFilterCount}
-								</span>
-							)}
-						</button>
-						{filtersOpen && (
-							<div
-								id="library-mobile-filters"
-								className="rise mt-3 grid gap-4 sm:grid-cols-2"
-							>
+					<div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
+						<aside className="hidden lg:sticky lg:top-20 lg:block lg:self-start">
+							<div className="space-y-4 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
 								{filtersNode}
 							</div>
-						)}
-					</div>
-				</div>
+						</aside>
 
-				<div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-8">
-					<aside className="hidden lg:sticky lg:top-20 lg:block lg:self-start">
-						<div className="space-y-4 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
-							{filtersNode}
-						</div>
-					</aside>
-
-					<section className="min-w-0">
-						<div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
-							<p
-								role="status"
-								className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint"
+						<section className="min-w-0">
+							<div
+								className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3"
+								data-grain-quiet
 							>
-								{resultCount} of {totalCount} {SEARCH_LABEL[tab]}
-							</p>
-							{hasRestrictions && (
-								<Button variant="ghost" size="sm" onClick={clearCurrentFilters}>
-									Clear search and filters
-								</Button>
+								<p
+									role="status"
+									className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint"
+								>
+									{resultCount} of {totalCount} {SEARCH_LABEL[tab]}
+								</p>
+								{hasRestrictions && (
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={clearCurrentFilters}
+									>
+										Clear search and filters
+									</Button>
+								)}
+							</div>
+							{tab === "beans" && (
+								<div>
+									{sortedBeans.length === 0 ? (
+										<>
+											{allBeans.length === 0 ? (
+												<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+													<p className="font-display text-2xl text-foreground/60">
+														No beans
+													</p>
+													<p className="font-sans text-sm text-muted-foreground">
+														Add your first bean to get started.
+													</p>
+													<Button asChild variant="ink" className="mt-2">
+														<Link to="/log/bean">Add a bean</Link>
+													</Button>
+												</div>
+											) : (
+												<p className="text-sm text-muted-foreground">
+													No beans match your search.
+												</p>
+											)}
+										</>
+									) : (
+										<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+											{sortedBeans.map((bean) => (
+												<BeanCard
+													key={bean.id ?? `${bean.name}-${bean.brand}`}
+													bean={bean}
+													dialInState={
+														bean.id
+															? beanDialInStateMap.get(bean.id)
+															: undefined
+													}
+												/>
+											))}
+											<AddCard
+												to="/log/bean"
+												label="Add bean"
+												className="h-32 min-h-0 self-start"
+											/>
+										</div>
+									)}
+								</div>
 							)}
-						</div>
-						{tab === "beans" && (
-							<div>
-								{sortedBeans.length === 0 ? (
-									<>
-										{allBeans.length === 0 ? (
-											<div className="h-full w-full space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
+
+							{tab === "machines" && (
+								<div>
+									{filteredMachines.length === 0 ? (
+										<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
+											<p className="text-sm text-muted-foreground">
+												{activeMachines.length === 0
+													? "No brewers yet."
+													: "No brewers match your search."}
+											</p>
+											{activeMachines.length === 0 && (
+												<Button asChild variant="ink" className="mt-3">
+													<Link to="/log/machine">Add your first brewer</Link>
+												</Button>
+											)}
+										</div>
+									) : (
+										<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+											{filteredMachines.map((machine) => (
+												<MachineCard
+													key={machine.id ?? `${machine.name}-${machine.model}`}
+													machine={machine}
+												/>
+											))}
+											<AddCard
+												to="/log/machine"
+												label="Add brewer"
+												className="h-32 self-start"
+											/>
+										</div>
+									)}
+								</div>
+							)}
+
+							{tab === "recipes" && (
+								<div>
+									{filteredRecipes.length === 0 ? (
+										allRecipes.length === 0 ? (
+											<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
 												<p className="font-display text-2xl text-foreground/60">
-													No beans
+													No recipes
 												</p>
 												<p className="font-sans text-sm text-muted-foreground">
-													Add your first bean to get started.
+													Write down a target, or save a good brew as one from
+													History.
 												</p>
 												<Button asChild variant="ink" className="mt-2">
-													<Link to="/log/bean">Add a bean</Link>
+													<Link to="/log/recipe">Add a recipe</Link>
 												</Button>
 											</div>
 										) : (
 											<p className="text-sm text-muted-foreground">
-												No beans match your search.
+												No recipes match your search.
 											</p>
-										)}
-									</>
-								) : (
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-										{sortedBeans.map((bean) => (
-											<BeanCard
-												key={bean.id ?? `${bean.name}-${bean.brand}`}
-												bean={bean}
-												dialInState={
-													bean.id ? beanDialInStateMap.get(bean.id) : undefined
-												}
-											/>
-										))}
-										<AddCard
-											to="/log/bean"
-											label="Add bean"
-											className="h-32 min-h-0 self-start"
-										/>
-									</div>
-								)}
-							</div>
-						)}
-
-						{tab === "machines" && (
-							<div>
-								{filteredMachines.length === 0 ? (
-									<div className="rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-8 text-center">
-										<p className="text-sm text-muted-foreground">
-											{activeMachines.length === 0
-												? "No brewers yet."
-												: "No brewers match your search."}
-										</p>
-										{activeMachines.length === 0 && (
-											<Button asChild variant="ink" className="mt-3">
-												<Link to="/log/machine">Add your first brewer</Link>
-											</Button>
-										)}
-									</div>
-								) : (
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-										{filteredMachines.map((machine) => (
-											<MachineCard
-												key={machine.id ?? `${machine.name}-${machine.model}`}
-												machine={machine}
-											/>
-										))}
-										<AddCard
-											to="/log/machine"
-											label="Add brewer"
-											className="h-32 self-start"
-										/>
-									</div>
-								)}
-							</div>
-						)}
-
-						{tab === "recipes" && (
-							<div>
-								{filteredRecipes.length === 0 ? (
-									allRecipes.length === 0 ? (
-										<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
-											<p className="font-display text-2xl text-foreground/60">
-												No recipes
-											</p>
-											<p className="font-sans text-sm text-muted-foreground">
-												Write down a target, or save a good brew as one from
-												History.
-											</p>
-											<Button asChild variant="ink" className="mt-2">
-												<Link to="/log/recipe">Add a recipe</Link>
-											</Button>
-										</div>
+										)
 									) : (
-										<p className="text-sm text-muted-foreground">
-											No recipes match your search.
-										</p>
-									)
-								) : (
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-										{filteredRecipes.map((recipe) => (
-											<RecipeCard
-												key={recipe.id}
-												recipe={recipe}
-												beanName={
-													recipe.beanId
-														? beanNames.get(recipe.beanId)
-														: undefined
-												}
-												stats={recipeBrewStats[recipe.id]}
+										<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
+											{filteredRecipes.map((recipe) => (
+												<RecipeCard
+													key={recipe.id}
+													recipe={recipe}
+													beanName={
+														recipe.beanId
+															? beanNames.get(recipe.beanId)
+															: undefined
+													}
+													stats={recipeBrewStats[recipe.id]}
+												/>
+											))}
+											<AddCard
+												to="/log/recipe"
+												label="Add recipe"
+												className="h-32 self-start"
 											/>
-										))}
-										<AddCard
-											to="/log/recipe"
-											label="Add recipe"
-											className="h-32 self-start"
-										/>
-									</div>
-								)}
-							</div>
-						)}
-					</section>
+										</div>
+									)}
+								</div>
+							)}
+						</section>
+					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
