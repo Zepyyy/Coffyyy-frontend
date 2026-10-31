@@ -176,26 +176,40 @@ function animal(
 	}
 	c.restore();
 
+	// Flukes lie flat, unlike a fish's upright tail, so a side view foreshortens
+	// them to a shallow, lifted wing. This squash is most of what says "whale".
+	const flatY = (x: number, y: number) => y * 0.42 + (x + 978) * 0.16;
+	const tailMove = (x: number, y: number) => move(x, flatY(x, y));
+	const tailLine = (x: number, y: number) => line(x, flatY(x, y));
+	const tailCurve = (
+		ax: number,
+		ay: number,
+		bx: number,
+		by: number,
+		x: number,
+		y: number,
+	) => bezier(ax, flatY(ax, ay), bx, flatY(bx, by), x, flatY(x, y));
+
 	// A rolled fluke: unequal projected lobes, a deep notch and ragged trailing edges.
 	const fluke = () => {
 		c.beginPath();
-		move(-978, -7);
-		bezier(-1001, -32, -1007, -128, -1158, -143);
-		bezier(-1144, -115, -1120, -86, -1121, -74);
+		tailMove(-978, -7);
+		tailCurve(-1001, -32, -1007, -128, -1158, -143);
+		tailCurve(-1144, -115, -1120, -86, -1121, -74);
 		for (let j = 0; j <= 11; j++) {
 			const u = j / 11;
-			line(-1121 + u * 56, -74 + u * 84 + (j % 2 ? 5 : 0));
+			tailLine(-1121 + u * 56, -74 + u * 84 + (j % 2 ? 5 : 0));
 		}
-		line(-1082, 35);
+		tailLine(-1082, 35);
 		for (let j = 0; j <= 13; j++) {
 			const u = j / 13;
-			line(-1082 - u * 101, 35 + u * 119 + (j % 2 ? -7 : 0));
+			tailLine(-1082 - u * 101, 35 + u * 119 + (j % 2 ? -7 : 0));
 		}
-		bezier(-1046, 161, -1011, 55, -978, 9);
+		tailCurve(-1046, 161, -1011, 55, -978, 9);
 		c.closePath();
 	};
 	fluke();
-	const tailTone = c.createLinearGradient(-1040, -140, -1150, 165);
+	const tailTone = c.createLinearGradient(-1040, -70, -1150, 70);
 	tailTone.addColorStop(0, ink(0.45));
 	tailTone.addColorStop(0.48, ink(0.12));
 	tailTone.addColorStop(1, ink(0.26));
@@ -211,8 +225,8 @@ function animal(
 		for (let j = 0; j < 14; j++) {
 			const u = j / 14;
 			c.beginPath();
-			move(-992 - u * 158, side * (15 + u * 110));
-			bezier(
+			tailMove(-992 - u * 158, side * (15 + u * 110));
+			tailCurve(
 				-1030 - u * 120,
 				side * (8 + u * 90),
 				-1055 - u * 96,
