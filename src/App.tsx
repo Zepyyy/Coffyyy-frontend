@@ -5,6 +5,7 @@ import BottomNav from "./components/BottomNav";
 import SyncControl from "./components/SyncControl";
 import ToolsMenu from "./components/ToolsMenu";
 import { useTheme } from "./contexts/ThemeContext";
+import { useHistoryScroll } from "./hooks/useHistoryScroll";
 import { cn } from "./lib/utils";
 
 const NAV_LINKS = [
@@ -15,6 +16,7 @@ const NAV_LINKS = [
 
 export default function App() {
 	const { theme, toggleTheme } = useTheme();
+	useHistoryScroll();
 
 	return (
 		<div className="min-h-svh text-foreground flex flex-col blueprint-grid">
