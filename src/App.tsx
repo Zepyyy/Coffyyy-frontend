@@ -3,6 +3,7 @@ import { Moon, Sun } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router";
 import BottomNav from "./components/BottomNav";
 import SyncControl from "./components/SyncControl";
+import ToolsMenu from "./components/ToolsMenu";
 import { useTheme } from "./contexts/ThemeContext";
 import { cn } from "./lib/utils";
 
@@ -58,6 +59,7 @@ export default function App() {
 					</div>
 					<div className="ml-auto flex gap-1.5 sm:ml-5 sm:gap-2">
 						<SyncControl />
+						<ToolsMenu />
 						<button
 							type="button"
 							onClick={toggleTheme}

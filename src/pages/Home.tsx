@@ -281,32 +281,6 @@ export default function Home() {
 						</Button>
 					</div>
 				)}
-
-				{!import.meta.env.PROD && (
-					<div
-						className="rise flex gap-4"
-						style={{ "--rise-delay": "200ms" } as React.CSSProperties}
-					>
-						<Link
-							to="/dev"
-							className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-						>
-							Dev tools →
-						</Link>
-						<Link
-							to="/cta-lab"
-							className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-						>
-							Motion lab →
-						</Link>
-						<Link
-							to="/buttons"
-							className="font-data text-xs text-ink-faint transition-colors hover:text-foreground"
-						>
-							Design system →
-						</Link>
-					</div>
-				)}
 			</div>
 		</>
 	);
