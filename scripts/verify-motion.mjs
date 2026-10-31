@@ -14,7 +14,7 @@ try {
 	const base = process.env.BASE_URL ?? "http://127.0.0.1:5183";
 	for (const width of [320, 390, 640, 1280]) {
 		await page.setViewportSize({ width, height: 920 });
-		for (const study of ["current", "type", "continuity"]) {
+		for (const study of ["ascii", "dither", "blur", "continuity"]) {
 			await page.goto(`${base}/cta-lab?study=${study}`);
 			await page.locator(".motion-stage").waitFor();
 			await page.waitForTimeout(200);
@@ -30,25 +30,30 @@ try {
 		}
 	}
 	await page.setViewportSize({ width: 390, height: 920 });
-	await page.goto(`${base}/cta-lab?study=current`);
-	const canvas = page.locator(".current-study canvas");
-	await canvas.waitFor();
-	const live = await canvas.evaluate((e) => e.toDataURL());
-	await page.waitForTimeout(250);
-	assert.notEqual(
-		await canvas.evaluate((e) => e.toDataURL()),
-		live,
-		"field moves under explicit Motion on",
-	);
-	await page.getByRole("button", { name: /Motion on/ }).click();
-	await page.waitForTimeout(150);
-	const still = await canvas.evaluate((e) => e.toDataURL());
-	await page.waitForTimeout(250);
-	assert.equal(
-		await canvas.evaluate((e) => e.toDataURL()),
-		still,
-		"Motion off freezes the field",
-	);
+	for (const mode of ["ascii", "dither", "blur"]) {
+		await page.goto(`${base}/cta-lab?study=${mode}`);
+		const surface = page.locator(".motion-panel:not([hidden])");
+		await surface.waitFor();
+		await page.evaluate(() => document.fonts.ready);
+		await page.waitForTimeout(250);
+		const live = await surface.screenshot();
+		await page.waitForTimeout(350);
+		assert.notDeepEqual(
+			await surface.screenshot(),
+			live,
+			`${mode} moves with explicit Motion on`,
+		);
+		await page.getByRole("button", { name: /Motion on/ }).click();
+		await page.waitForTimeout(200);
+		const still = await surface.screenshot();
+		await page.waitForTimeout(250);
+		assert.deepEqual(
+			await surface.screenshot(),
+			still,
+			`${mode} holds still with Motion off`,
+		);
+	}
+
 	await page.goto(`${base}/cta-lab?study=continuity`);
 	await page.getByRole("button", { name: /Repeat this brew/ }).click();
 	const dose = page.getByRole("spinbutton", { name: "Demo dose in grams" });
@@ -73,24 +78,23 @@ try {
 	assert.match(await page.locator(".continuity-yield").innerText(), /39/);
 	await page.getByRole("button", { name: "Reset study" }).click();
 	assert.match(await page.locator(".continuity-yield").innerText(), /36/);
-	await page.goto(`${base}/cta-lab?study=type`);
+	await page.getByRole("button", { name: /Repeat this brew/ }).click();
 	await page
-		.getByRole("button", { name: "Try the kinetic type treatment" })
-		.tap();
+		.getByRole("spinbutton", { name: "Demo yield in grams" })
+		.fill("42");
+	await page.getByRole("button", { name: "ASCII", exact: true }).click();
+	await page.getByRole("button", { name: "Continuity", exact: true }).click();
 	assert.equal(
 		await page
-			.locator(".print-study")
-			.evaluate((e) =>
-				e
-					.getAnimations({ subtree: true })
-					.some((a) => a.playState === "running"),
-			),
-		true,
+			.getByRole("spinbutton", { name: "Demo yield in grams" })
+			.inputValue(),
+		"42",
+		"switching studies keeps the continuity draft",
 	);
 	await page.getByRole("button", { name: /Motion on/ }).click();
 	assert.equal(
 		await page
-			.locator(".print-study")
+			.locator(".continuity-study")
 			.evaluate((e) =>
 				e
 					.getAnimations({ subtree: true })
@@ -98,9 +102,10 @@ try {
 			),
 		false,
 	);
+
 	assert.deepEqual(errors, []);
 	console.log(
-		"PASS: twelve route/width checks; explicit motion, frozen field, editable morph, saved values, reset, type tap and stop; no page errors.",
+		"PASS: sixteen route/width checks; three moving/frozen textures; continuity edit/save/reset; draft retained across study tabs; no page errors.",
 	);
 } finally {
 	await browser.close();

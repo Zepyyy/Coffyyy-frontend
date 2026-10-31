@@ -1,18 +1,23 @@
-/* The folded tasting row opens into the full form as one attached surface:
-   the form's top edge stays put and the rest unrolls beneath it. Plain
-   animation, so an OS reduce collapses it to an instant swap. */
-.pending-open {
-    animation: pending-open 0.34s var(--ease-soft) both;
+/* One real brew keeps its frame and identity while its editor unfolds.
+   WAAPI controls the bounded height/name/date handoff; the mounted editor
+   preserves draft values when folded. */
+.pending-tasting {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    background: var(--paper-raised);
 }
-@keyframes pending-open {
-    from {
-        clip-path: inset(0 0 100% 0);
-        opacity: 0.4;
-    }
-    to {
-        clip-path: inset(0 0 0 0);
-        opacity: 1;
-    }
+.pending-tasting [data-tasting-anchor] {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: bottom;
+    transform-origin: top left;
 }
-
+.pending-tasting [data-tasting-anchor="name"] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 .pending-editor[hidden], .pending-row[hidden] { display: none; }
