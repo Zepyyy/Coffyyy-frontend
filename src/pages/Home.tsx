@@ -133,7 +133,10 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 				</p>
 			)}
 
-			<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+			<div
+				data-grain-anchor="shelf"
+				className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4"
+			>
 				{allBeans.map((bean) => (
 					<BeanSelectorCard
 						key={bean.id}
@@ -198,7 +201,10 @@ export default function Home() {
 			/>
 			<div className="relative z-[1] w-full mx-auto max-w-5xl space-y-8 sm:px-6 sm:space-y-10">
 				{/* The journal opens by talking to you */}
-				<section className="rise flex flex-col gap-5 pt-2 lg:flex-row lg:items-end lg:justify-between sm:gap-8">
+				<section
+					data-grain-anchor="content"
+					className="rise flex flex-col gap-5 pt-2 lg:flex-row lg:items-end lg:justify-between sm:gap-8"
+				>
 					<div className="min-w-0">
 						<p className="eyebrow" data-grain-quiet>
 							{now.toLocaleDateString(undefined, {
@@ -208,7 +214,7 @@ export default function Home() {
 							})}
 						</p>
 						<h1
-							data-grain-quiet="0.72"
+							data-grain-quiet
 							className="mt-1 text-balance font-display text-[clamp(2.5rem,11.5vw,3.25rem)] italic leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
 						>
 							{greetingForHour(now.getHours())}
@@ -227,12 +233,7 @@ export default function Home() {
 						className="censer-key key-line grain-glass group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong px-5 py-4 active:translate-y-px lg:w-[22rem] sm:px-7"
 					>
 						<span aria-hidden className="censer-halo" />
-						<span
-							data-grain-anchor="cup"
-							className="relative z-10 size-12 shrink-0"
-						>
-							<SteamCup className="size-12 text-crema" />
-						</span>
+						<SteamCup className="relative z-10 size-12 shrink-0 text-crema" />
 						<span className="relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
 							Log a brew
 						</span>

@@ -3,7 +3,7 @@
 .motion-lab-heading h1 {font-family:var(--font-display);font-style:italic;font-size:clamp(28px,5vw,40px);line-height:1.15;margin:6px 0 0;letter-spacing:-.025em}
 .motion-eyebrow {font-family:var(--font-data);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:0}
 .motion-switch {display:flex;align-items:center;gap:12px;flex:none;min-height:44px;border:1px solid var(--line);padding:0 14px;background:var(--paper-raised);font-size:12px;color:var(--ink-soft);cursor:pointer}
-.motion-tabs {display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);gap:24px;margin-bottom:28px}
+.motion-tabs {display:flex;flex-wrap:wrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);gap:0 24px;margin-bottom:28px}
 .motion-tabs a {display:inline-flex;align-items:center;min-height:48px;padding:0 2px;font-family:var(--font-data);font-size:12px;color:var(--ink-soft)}
 .motion-tabs a:hover {color:var(--ink)}
 .motion-context {margin-bottom:20px}
@@ -18,6 +18,6 @@
 .motion-shelf>div>span:last-child {font-size:12px;color:var(--ink-soft)}
 .motion-disclaimer {font-size:11px;line-height:1.5;color:var(--ink-faint);margin:0}
 .motion-lab button:focus-visible {outline:2px solid var(--accent);outline-offset:4px}
-@media(max-width:360px){.motion-tabs{gap:20px}.motion-lab-heading{gap:10px}.motion-switch{padding:0 10px}.motion-shelf>div{padding:14px}.motion-shelf>div>span:last-child{font-size:11px}}
+@media(max-width:360px){.motion-tabs{gap:0 20px}.motion-lab-heading{gap:10px}.motion-switch{padding:0 10px}.motion-shelf>div{padding:14px}.motion-shelf>div>span:last-child{font-size:11px}}
 
 .motion-panel[hidden] { display:none; }

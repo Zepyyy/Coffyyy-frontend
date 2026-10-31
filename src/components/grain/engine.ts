@@ -43,10 +43,10 @@ const ASCII_CH = 16;
 const BLUR_CELL = 16;
 const DOT = 2;
 /** Tone easing, seconds. Slow enough that no cell can pop between frames. */
-const ATTACK = 0.09;
-const DECAY = 0.26;
+const ATTACK = 0.05;
+const DECAY = 0.12;
 /** Hard limit on tone change per second: a cell cannot pop at any frame rate. */
-const MAX_SLEW = 1.4;
+const MAX_SLEW = 3.2;
 /** Width of the soft threshold: dots fade across this band, never flip. */
 const DITHER_BAND = 0.16;
 const STILL_T = 30;
@@ -207,6 +207,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	let lastScan = 0;
 
 	const pointer = { x: 0, y: 0, a: 0 };
+	let aimX = 0;
+	let aimY = 0;
 	let pointerOn = false;
 	let motion = true;
 	let visible = true;
@@ -352,7 +354,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		const data = s.ctx.getImageData(0, 0, s.w, s.h).data;
 		const up = instant ? 1 : 1 - Math.exp(-dt / ATTACK);
 		const down = instant ? 1 : 1 - Math.exp(-dt / DECAY);
-		const limit = instant ? 1 : MAX_SLEW * dt;
+		const limit = instant ? Number.POSITIVE_INFINITY : MAX_SLEW * dt;
 		const { cur, quiet, w, h } = s;
 		let x0 = w;
 		let y0 = h;
@@ -363,7 +365,15 @@ export function createGrain(options: GrainOptions): GrainEngine {
 				const c = cur[i];
 				const alpha = data[i * 4 + 3];
 				if (alpha === 0 && c === 0) continue;
-				const target = (alpha / 255) * quiet[i];
+				const tone = (alpha / 255) * quiet[i];
+				// Ease the visible dot, after thresholding. Easing the source tone
+				// first lets a narrow Bayer band amplify a small step into a blink.
+				let target = tone;
+				if (s === dither) {
+					const t = (tone - BAYER[(y & 7) * 8 + (x & 7)]) / DITHER_BAND + 0.5;
+					target = smooth(0, 1, t) * smooth(0, 0.08, tone);
+					if (tone > 0.6) target *= 1 + (tone - 0.6) * 1.4;
+				}
 				const move = (target - c) * (target > c ? up : down);
 				let next = c + (move > limit ? limit : move < -limit ? -limit : move);
 				if (Math.abs(target - next) < SETTLED) next = target;
@@ -391,21 +401,14 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		const [r, g, b] = palette.ink;
 		const ink = 0.62 * palette.gain * 255;
 		for (let y = y0; y <= y1; y++) {
-			const row = (y & 7) * 8;
 			for (let x = x0; x <= x1; x++) {
 				const i = y * w + x;
-				const v = cur[i];
-				let a = 0;
-				if (v > 0.003) {
-					// Soft threshold: a dot's alpha moves with the tone it holds.
-					const t = (v - BAYER[row + (x & 7)]) / DITHER_BAND + 0.5;
-					a = t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
-				}
 				const o = i * 4;
 				out[o] = r;
 				out[o + 1] = g;
 				out[o + 2] = b;
-				out[o + 3] = a * ink;
+				// The darkest tones also get denser ink, so a form has real blacks.
+				out[o + 3] = cur[i] * ink;
 			}
 		}
 		ditherOut.putImageData(ditherImage, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
@@ -536,7 +539,11 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		last = now;
 		lastDraw = now;
 		clock += dt;
-		pointer.a += ((pointerOn ? 1 : 0) - pointer.a) * (1 - Math.exp(-dt * 3));
+		// Scenes get a pointer with mass, so a flick of the mouse is a slow lean.
+		const glide = pointer.a < 0.02 ? 1 : 1 - Math.exp(-dt * 3.5);
+		pointer.x += (aimX - pointer.x) * glide;
+		pointer.y += (aimY - pointer.y) * glide;
+		pointer.a += ((pointerOn ? 1 : 0) - pointer.a) * (1 - Math.exp(-dt * 1.6));
 		if (now - lastScan > 900) {
 			lastScan = now;
 			scanDom();
@@ -558,8 +565,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	const onPointer = (e: PointerEvent) => {
 		if (e.pointerType !== "mouse" && e.type === "pointermove") return;
 		const b = root.getBoundingClientRect();
-		pointer.x = e.clientX - b.left;
-		pointer.y = e.clientY - b.top;
+		aimX = e.clientX - b.left;
+		aimY = e.clientY - b.top;
 		pointerOn = true;
 	};
 	const onLeave = () => {
