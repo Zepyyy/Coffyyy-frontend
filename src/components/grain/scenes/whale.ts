@@ -34,29 +34,31 @@ function curve(table: Table, q: number) {
 
 // The low rostrum, deep throat and narrow caudal stock are separate volumes.
 const BACK: Table = [
-	[0, -20],
-	[0.012, -35],
-	[0.035, -51],
-	[0.12, -79],
-	[0.27, -103],
-	[0.43, -94],
-	[0.59, -65],
-	[0.67, -59],
-	[0.705, -83],
-	[0.73, -51],
+	[0, -42],
+	[0.025, -46],
+	[0.1, -48],
+	[0.19, -51],
+	[0.27, -74],
+	[0.36, -86],
+	[0.46, -83],
+	[0.59, -61],
+	[0.67, -55],
+	[0.705, -77],
+	[0.73, -47],
 	[0.83, -25],
 	[0.94, -14],
 	[1, -12],
 ];
 const BELLY: Table = [
-	[0, -20],
-	[0.012, 8],
-	[0.025, 27],
-	[0.085, 78],
-	[0.19, 121],
-	[0.32, 141],
-	[0.47, 119],
-	[0.61, 78],
+	[0, -42],
+	[0.005, -12],
+	[0.025, 39],
+	[0.075, 104],
+	[0.16, 145],
+	[0.28, 158],
+	[0.38, 163],
+	[0.48, 137],
+	[0.61, 81],
 	[0.77, 37],
 	[0.9, 18],
 	[1, 12],
@@ -106,6 +108,8 @@ function animal(
 	t: number,
 	dark: boolean,
 	calf = false,
+	appendagesOnly = false,
+	family: "shoulder" | "chin" | null = null,
 ) {
 	const scale = length / 1000;
 	const width = Math.max(2.5, 1.8 / scale);
@@ -114,7 +118,10 @@ function animal(
 		const grow = Math.max(0, (q - 0.34) / 0.66);
 		return 36 * grow * grow * Math.sin(t * 0.6 - q * 3.5 - lag);
 	};
-	const point = (px: number, py: number): Point => [px, py + bend(-px / 1000)];
+	const point = (px: number, py: number): Point => [
+		calf && px < -280 ? -280 + (px + 280) * 0.78 : px,
+		py * (calf ? 1.1 : 1) + bend(-px / 1000),
+	];
 	const move = (px: number, py: number) => c.moveTo(...point(px, py));
 	const line = (px: number, py: number) => c.lineTo(...point(px, py));
 	const bezier = (
@@ -138,18 +145,6 @@ function animal(
 			else line(p.x, p.belly);
 		}
 		if (!outline) c.closePath();
-	};
-	const underside = () => {
-		c.beginPath();
-		move(0, -18);
-		bezier(-84, -4, -163, 29, -239, 30);
-		bezier(-336, 17, -376, 47, -453, 53);
-		bezier(-530, 48, -553, 78, -635, 65);
-		bezier(-735, 39, -815, 34, -950, 14);
-		line(-1000, 12);
-		for (let j = PROFILE.length - 1; j >= 0; j--)
-			line(PROFILE[j].x, PROFILE[j].belly);
-		c.closePath();
 	};
 	c.save();
 	c.translate(x, y);
@@ -232,118 +227,197 @@ function animal(
 	}
 	c.restore();
 
-	// Halftone paper is transparent; the animal still occludes its far appendages.
-	c.save();
-	c.globalCompositeOperation = "destination-out";
-	body();
-	c.fillStyle = "#000";
-	c.fill();
-	c.restore();
-	body();
-	const skin = c.createLinearGradient(0, -110, -40, 145);
-	skin.addColorStop(0, ink(0.4));
-	skin.addColorStop(0.34, ink(0.23));
-	skin.addColorStop(0.68, ink(0.055));
-	skin.addColorStop(1, ink(0.2));
-	c.fillStyle = skin;
-	c.fill();
-	c.save();
-	body();
-	c.clip();
-
-	// Broken meridians bow around the flank; their spacing survives the dot lattice.
-	const step = Math.max(15, 8 / scale);
-	for (let px = 24; px < 990; px += step) {
-		const q = px / 1000;
-		const top = curve(BACK, q);
-		const depth = curve(BELLY, q) - top;
-		const start = 0.04 + 0.035 * (1 + Math.sin(px * 0.039));
-		const end = 0.36 + 0.19 * Math.sin(px * 0.029) ** 2;
-		c.beginPath();
-		for (let k = 0; k <= 16; k++) {
-			const v = start + ((end - start) * k) / 16;
-			const bow = Math.sin(v * Math.PI) * 39 * Math.sin(q * Math.PI) ** 0.65;
-			const xx = -px - bow;
-			const yy = top + depth * v;
-			if (!k) move(xx, yy);
-			else line(xx, yy);
+	if (!appendagesOnly) {
+		// Halftone paper is transparent; the animal still occludes its far appendages.
+		c.save();
+		c.globalCompositeOperation = "destination-out";
+		body();
+		c.fillStyle = "#000";
+		c.fill();
+		c.restore();
+		if (calf) {
+			c.save();
+			c.globalCompositeOperation = "destination-out";
+			body(true);
+			c.strokeStyle = "#000";
+			c.lineWidth = width * 2.6;
+			c.stroke();
+			c.restore();
 		}
-		c.lineWidth = width;
-		c.strokeStyle = ink(0.64 + 0.1 * Math.sin(q * Math.PI));
-		c.stroke();
-		c.beginPath();
-		move(-px - 18, top + 4);
-		bezier(
-			-px - 2,
-			top + depth * 0.08,
-			-px + 8,
-			top + depth * 0.16,
-			-px + 16,
-			top + depth * 0.3,
-		);
-		c.strokeStyle = ink(0.27);
-		c.stroke();
-	}
-	for (let j = 0; j < 9; j++) {
-		c.beginPath();
-		move(-68, -34 - j * 6);
-		bezier(-247, -72 - j * 5, -484, -56 - j * 8, -664, -18 - j * 7);
-		bezier(-762, -6 - j * 5, -863, -7 - j * 3, -1005, -3 - j * 2);
-		c.strokeStyle = ink(j % 2 ? 0.48 : 0.3);
-		c.lineWidth = width;
-		c.stroke();
-	}
 
-	underside();
-	const pale = c.createLinearGradient(-150, -10, -290, 145);
-	pale.addColorStop(
-		0,
-		dark ? "rgb(162 177 212 / 0.72)" : "rgb(83 108 161 / 0.7)",
-	);
-	pale.addColorStop(
-		0.5,
-		dark ? "rgb(177 187 208 / 0.62)" : "rgb(112 127 163 / 0.6)",
-	);
-	pale.addColorStop(
-		1,
-		dark ? "rgb(214 202 169 / 0.65)" : "rgb(166 148 110 / 0.5)",
-	);
-	c.fillStyle = pale;
-	c.fill();
+		body();
+		const skin = c.createLinearGradient(0, -110, -40, 145);
+		skin.addColorStop(0, ink(calf ? 0.14 : 0.4));
+		skin.addColorStop(0.34, ink(calf ? 0.09 : 0.23));
+		skin.addColorStop(0.68, ink(calf ? 0.02 : 0.055));
+		skin.addColorStop(1, ink(calf ? 0.07 : 0.2));
+		c.fillStyle = skin;
+		c.fill();
+		c.save();
+		body();
+		c.clip();
 
-	// Throat grooves fan from the chin to the navel and wrap out of sight below.
-	const grooves = calf ? 6 : 12;
-	for (let j = 0; j < grooves; j++) {
-		const v = (j * 11) / (grooves - 1);
-		c.beginPath();
-		move(-16 - v * 4, -5 + v * 4);
-		bezier(
-			-119 - v * 7,
-			26 + v * 8.2,
-			-326 - v * 8.5,
-			63 + v * 6.7,
-			-542 - v * 7.4,
-			63 + v * 1.05,
+		const pale = c.createLinearGradient(-120, -50, -180, 160);
+		pale.addColorStop(0, dark ? "rgb(162 177 212 / 0)" : "rgb(83 108 161 / 0)");
+		pale.addColorStop(
+			0.28,
+			dark ? "rgb(162 177 212 / 0.12)" : "rgb(83 108 161 / 0.10)",
 		);
-		c.strokeStyle = ink(0.72);
-		c.lineWidth = width;
-		c.stroke();
-	}
-	if (!calf) {
-		for (let j = 0; j < 3; j++) {
+		pale.addColorStop(
+			0.58,
+			dark ? "rgb(177 187 208 / 0.58)" : "rgb(112 127 163 / 0.50)",
+		);
+		pale.addColorStop(
+			1,
+			dark ? "rgb(214 202 169 / 0.7)" : "rgb(166 148 110 / 0.55)",
+		);
+		c.save();
+		if (calf) c.globalAlpha = 0.38;
+		c.fillStyle = pale;
+		c.fillRect(-1000, -120, 1000, 320);
+		c.restore();
+
+		// Uneven islands of dark skin break into the countershaded throat.
+		for (let j = 0; j < (calf ? 11 : 36); j++) {
+			const q = 0.035 + j * (calf ? 0.078 : 0.025);
+			const px = -q * 1000;
+			const top = curve(BACK, q);
+			const depth = curve(BELLY, q) - top;
+			const py = top + depth * (0.34 + 0.18 * Math.sin(j * 1.71));
+			const r = 9 + 12 * Math.sin(j * 2.3) ** 2;
 			c.beginPath();
-			move(-402 - j * 16, -17);
-			bezier(-417 - j * 16, -9, -427 - j * 16, 2, -434 - j * 16, 17);
-			c.lineWidth = width * 0.8;
-			c.strokeStyle = ink(0.5);
+			move(px + r, py);
+			bezier(px + r * 0.7, py - 10, px - r * 0.6, py - r * 0.8, px - r, py - 3);
+			bezier(px - r * 1.4, py + 6, px - 3, py + 13, px + r, py);
+			c.fillStyle = ink(0.12 + 0.15 * Math.sin(j * 3.1) ** 2);
+			c.fill();
+		}
+
+		for (let j = 0; j < (calf ? 4 : 14); j++) {
+			const q = 0.08 + j * (calf ? 0.19 : 0.056) + 0.009 * Math.sin(j * 2.3);
+			const px = -q * 1000;
+			const top = curve(BACK, q);
+			const py =
+				top + (curve(BELLY, q) - top) * (0.2 + 0.27 * Math.sin(j * 1.3) ** 2);
+			c.beginPath();
+			move(px + 12, py - 3);
+			bezier(px - 3, py - 17, px - 22, py - 8, px - 28, py + 3);
+			bezier(px - 16, py + 12, px + 6, py + 8, px + 12, py - 3);
+			c.fillStyle = dark
+				? "rgb(174 187 203 / 0.26)"
+				: "rgb(126 143 169 / 0.22)";
+			c.fill();
+		}
+
+		// Broken meridians bow around the flank; their spacing survives the dot lattice.
+		const step = Math.max(15, 8 / scale);
+		for (let px = 24; px < 990; px += step) {
+			const q = px / 1000;
+			const top = curve(BACK, q);
+			const depth = curve(BELLY, q) - top;
+			const start = 0.04 + 0.035 * (1 + Math.sin(px * 0.039));
+			const end = 0.35 + 0.22 * Math.sin(px * 0.029) ** 2;
+			c.beginPath();
+			for (let k = 0; k <= 16; k++) {
+				const v = start + ((end - start) * k) / 16;
+				const bow = Math.sin(v * Math.PI) * 39 * Math.sin(q * Math.PI) ** 0.65;
+				const xx = -px - bow;
+				const yy = top + depth * v;
+				if (!k) move(xx, yy);
+				else line(xx, yy);
+			}
+			c.lineWidth = width;
+			c.strokeStyle = ink((calf ? 0.38 : 0.6) + 0.1 * Math.sin(q * Math.PI));
 			c.stroke();
 		}
+		for (let j = 0; j < (calf ? 3 : 7); j++) {
+			c.beginPath();
+			move(-286 - j * 14, -60 - j * 3);
+			bezier(-421, -90 - j * 2, -555, -44 - j * 4, -705, -17 - j * 5);
+			bezier(-792, -9 - j * 4, -874, -8 - j * 2, -1005, -3 - j * 2);
+			c.strokeStyle = ink(j % 2 ? 0.42 : 0.27);
+			c.lineWidth = width;
+			c.stroke();
+		}
+
+		if (!calf) {
+			const scars = [
+				[0.14, 0.29, 17, -9],
+				[0.34, 0.23, 23, 7],
+				[0.36, 0.29, 15, 4],
+				[0.49, 0.48, 34, -11],
+				[0.53, 0.51, 19, -6],
+				[0.63, 0.28, 27, 12],
+				[0.71, 0.37, 16, 8],
+				[0.74, 0.48, 32, 5],
+				[0.84, 0.43, 21, 3],
+			];
+			for (const [q, v, reach, lift] of scars) {
+				const px = -q * 1000;
+				const top = curve(BACK, q);
+				const py = top + (curve(BELLY, q) - top) * v;
+				c.save();
+				c.globalCompositeOperation = "destination-out";
+				c.beginPath();
+				move(px + 3, py);
+				bezier(
+					px - reach * 0.3,
+					py - 2,
+					px - reach * 0.6,
+					py + lift,
+					px - reach,
+					py + lift,
+				);
+				c.strokeStyle = "#000";
+				c.lineWidth = 3.8;
+				c.stroke();
+				c.restore();
+				if (dark) {
+					c.strokeStyle = "rgb(207 205 189 / 0.72)";
+					c.lineWidth = 3.8;
+					c.stroke();
+				}
+			}
+		}
+
+		// Throat grooves fan from the chin to the navel and wrap out of sight below.
+		const grooves = calf ? 5 : 11;
+		for (let j = 0; j < grooves; j++) {
+			const v = j / (grooves - 1);
+			c.beginPath();
+			move(-8 - v * 63, -21 + v * 106);
+			bezier(
+				-95 - v * 42,
+				40 + v * 119,
+				-257 - v * 47,
+				79 + v * 95,
+				-461 - v * 90,
+				69 + v * 30,
+			);
+			c.strokeStyle = ink(0.68);
+			c.lineWidth = width;
+			c.stroke();
+		}
+		if (!calf) {
+			for (let j = 0; j < 3; j++) {
+				c.beginPath();
+				move(-402 - j * 16, -17);
+				bezier(-417 - j * 16, -9, -427 - j * 16, 2, -434 - j * 16, 17);
+				c.lineWidth = width * 0.8;
+				c.strokeStyle = ink(0.5);
+				c.stroke();
+			}
+		}
+		c.restore();
+		body(true);
+		c.strokeStyle = ink(calf ? 0.94 : 0.72);
+		c.lineWidth = width;
+		c.stroke();
 	}
-	c.restore();
-	body(true);
-	c.strokeStyle = ink(0.72);
-	c.lineWidth = width;
-	c.stroke();
+
+	// A taller shelf leaves only the lower stage; the calf then shelters at the chin.
+	if (family === "shoulder") animal(c, -330, -85, 350, t - 1.9, dark, true);
+	if (family === "chin") animal(c, -100, 130, 250, t - 1.9, dark, true);
 
 	// The near pectoral hangs from the shoulder; its tip lags the body's stroke.
 	c.save();
@@ -354,7 +428,7 @@ function animal(
 		const scallop = edge > 0 ? 1 + 0.26 * Math.sin(u * Math.PI * 15) : 0.72;
 		return [
 			-326 * u + edge * 0.44 * half * scallop,
-			151 * u + 13 * Math.sin(Math.PI * u) + edge * 0.9 * half * scallop,
+			125 * u + 13 * Math.sin(Math.PI * u) + edge * 0.9 * half * scallop,
 		];
 	};
 	const fin = () => {
@@ -401,14 +475,14 @@ function animal(
 		const b = finPoint(u + 0.04, 0.93);
 		c.beginPath();
 		c.moveTo(...a);
-		c.quadraticCurveTo(-326 * u - 9, 151 * u + 7, ...b);
+		c.quadraticCurveTo(-326 * u - 9, 125 * u + 7, ...b);
 		c.strokeStyle = ink(0.53);
 		c.lineWidth = width;
 		c.stroke();
 	}
 	c.beginPath();
 	c.moveTo(-4, 2);
-	c.quadraticCurveTo(-139, 70, -316, 148);
+	c.quadraticCurveTo(-139, 59, -316, 123);
 	c.strokeStyle = ink(0.42);
 	c.stroke();
 	c.restore();
@@ -420,81 +494,104 @@ function animal(
 	}
 	c.restore();
 
-	// The jaw is a bowed lip, ending behind a small, hooded eye.
-	c.beginPath();
-	move(-2, -19);
-	bezier(-67, -6, -136, 17, -216, 24);
-	bezier(-233, 25, -246, 17, -252, 8);
-	c.strokeStyle = ink(0.92);
-	c.lineWidth = width * 1.22;
-	c.stroke();
-	c.beginPath();
-	move(-15, -8);
-	bezier(-85, 8, -149, 29, -219, 32);
-	c.strokeStyle = ink(0.43);
-	c.lineWidth = width;
-	c.stroke();
-	c.save();
-	c.globalCompositeOperation = "destination-out";
-	c.beginPath();
-	c.ellipse(-211, 0, 6.5, 4.2, -0.18, 0, TAU);
-	c.fillStyle = "#000";
-	c.fill();
-	c.restore();
-	c.beginPath();
-	c.ellipse(-211, 0, 3.3, 2.7, 0, 0, TAU);
-	c.fillStyle = ink(0.96);
-	c.fill();
-	c.beginPath();
-	c.moveTo(-223, 1);
-	c.bezierCurveTo(-221, -10, -207, -12, -201, -3);
-	c.moveTo(-226, -9);
-	c.bezierCurveTo(-218, -21, -202, -20, -193, -11);
-	c.strokeStyle = ink(0.9);
-	c.lineWidth = width;
-	c.stroke();
-	c.beginPath();
-	move(-236, -19);
-	bezier(-250, -11, -258, 2, -259, 17);
-	move(-245, -29);
-	bezier(-268, -15, -275, 11, -268, 33);
-	c.strokeStyle = ink(0.47);
-	c.stroke();
-
-	if (!calf) {
-		for (let row = 0; row < 2; row++) {
-			for (let j = 0; j < 7 - row; j++) {
-				const q = 0.017 + j * 0.025 + row * 0.014 + 0.003 * Math.sin(j * 2.6);
-				const px = -q * 1000;
-				const py = curve(BACK, q) + row * (21 + 6 * Math.sin(j * 1.9)) + 2;
-				c.beginPath();
-				c.ellipse(px, py, 5.1 + j * 0.18, 3.6, -0.24, 0, TAU);
-				c.fillStyle = dark
-					? "rgb(176 178 183 / 0.65)"
-					: "rgb(136 139 144 / 0.4)";
-				c.fill();
-				c.strokeStyle = ink(0.74);
-				c.lineWidth = width * 0.85;
-				c.stroke();
-				c.beginPath();
-				c.arc(px + 1, py, 1.6, 0, TAU);
-				c.fillStyle = ink(0.8);
-				c.fill();
-			}
-		}
-		for (let j = 0; j < 11; j++) {
-			const row = Math.floor(j / 4);
-			const px = -46 - (j % 4) * 11 - row * 4;
-			const py = curve(BELLY, -px / 1000) - 3 - row * 8 + 3 * Math.sin(j * 2.3);
-			barnacle(c, px, py, 4.5 + 2.5 * Math.sin(j * 1.7) ** 2, dark);
-		}
+	if (!appendagesOnly) {
+		// The flat rostrum is a thin plate above the great bowed lower jaw.
 		c.beginPath();
-		move(-158, -78);
-		bezier(-164, -85, -177, -86, -185, -82);
-		c.strokeStyle = ink(0.85);
-		c.lineWidth = width * 1.2;
+		move(-2, -37);
+		bezier(-65, -35, -126, -34, -182, -32);
+		bezier(-212, -31, -221, 27, -257, 31);
+		c.strokeStyle = ink(0.98);
+		c.lineWidth = width * 1.4;
 		c.stroke();
+		c.beginPath();
+		move(-9, -25);
+		bezier(-75, -24, -135, -23, -180, -20);
+		bezier(-208, -18, -216, 38, -253, 40);
+		c.strokeStyle = ink(0.45);
+		c.lineWidth = width;
+		c.stroke();
+
+		// A quiet patch of skin lets the pupil and heavy lid survive the lattice.
+		c.save();
+		c.globalCompositeOperation = "destination-out";
+		c.beginPath();
+		c.ellipse(-268, 11, calf ? 18 : 11, calf ? 13 : 8, -0.12, 0, TAU);
+		c.fillStyle = "#000";
+		c.fill();
+		c.restore();
+		c.beginPath();
+		c.ellipse(-268, 12, calf ? 12 : 6.4, calf ? 9 : 5.1, -0.1, 0, TAU);
+		c.fillStyle = dark ? "rgb(205 201 185 / 0.78)" : ink(0.14);
+		c.fill();
+		c.save();
+		if (dark) c.globalCompositeOperation = "destination-out";
+		c.beginPath();
+		c.ellipse(-268, 12, calf ? 8 : 4.1, calf ? 6 : 3.1, -0.1, 0, TAU);
+		c.fillStyle = "#000";
+		c.fill();
+		c.restore();
+		c.beginPath();
+		move(-282, 13);
+		bezier(-282, 1, -265, -2, -254, 9);
+		move(-287, 1);
+		bezier(-279, -11, -261, -12, -248, 0);
+		c.strokeStyle = ink(0.88);
+		c.lineWidth = width;
+		c.stroke();
+		c.beginPath();
+		move(-291, 21);
+		bezier(-300, 31, -303, 45, -300, 55);
+		c.strokeStyle = ink(0.42);
+		c.stroke();
+
+		for (let j = 0; j < (calf ? 3 : 5); j++) {
+			const px = -24 - j * (calf ? 56 : 33);
+			c.beginPath();
+			c.ellipse(px, -24 + j * 0.7, calf ? 7 : 5.8, calf ? 6 : 4, -0.1, 0, TAU);
+			c.fillStyle = dark ? "rgb(170 176 190 / 0.66)" : ink(0.35);
+			c.fill();
+			c.strokeStyle = ink(0.72);
+			c.lineWidth = width;
+			c.stroke();
+		}
+
+		if (!calf) {
+			for (let row = 0; row < 2; row++) {
+				for (let j = 0; j < 6 - row; j++) {
+					const q = 0.017 + j * 0.03 + row * 0.014 + 0.003 * Math.sin(j * 2.6);
+					const px = -q * 1000;
+					const py = curve(BACK, q) + row * (21 + 6 * Math.sin(j * 1.9)) - 1;
+					c.beginPath();
+					c.ellipse(px, py, 5.6 + j * 0.18, 5, -0.24, 0, TAU);
+					c.fillStyle = dark
+						? "rgb(176 178 183 / 0.65)"
+						: "rgb(136 139 144 / 0.4)";
+					c.fill();
+					c.strokeStyle = ink(0.74);
+					c.lineWidth = width * 0.85;
+					c.stroke();
+					c.beginPath();
+					c.arc(px + 1, py, 1.6, 0, TAU);
+					c.fillStyle = ink(0.8);
+					c.fill();
+				}
+			}
+			for (let j = 0; j < 11; j++) {
+				const row = Math.floor(j / 4);
+				const px = -46 - (j % 4) * 11 - row * 4;
+				const py =
+					curve(BELLY, -px / 1000) - 3 - row * 8 + 3 * Math.sin(j * 2.3);
+				barnacle(c, px, py, 4.5 + 2.5 * Math.sin(j * 1.7) ** 2, dark);
+			}
+			c.beginPath();
+			move(-235, -63);
+			bezier(-243, -69, -256, -72, -266, -69);
+			c.strokeStyle = ink(0.85);
+			c.lineWidth = width * 1.2;
+			c.stroke();
+		}
 	}
+
 	c.restore();
 }
 
@@ -504,30 +601,45 @@ export const whale: Scene = ({ dither: c }, { t, W, H, dark, anchors }) => {
 	const start = -10;
 	const end = W + L * 1.2 + 10;
 	const cycle = end - start + QUIET * SPEED;
-	const margin = Math.max(64, (W - 976) / 2);
-	const stillX = phone ? W * 0.86 : W - margin + L * 0.211 + 26;
+	const shelf = anchors.shelf;
+	const crowded = shelf && shelf.y + shelf.h > H - 230;
+	const stillX = phone ? W * 0.9 : W * (crowded ? 0.98 : 0.84);
 	const x = start + mod((t - 30) * SPEED + stillX - start, cycle);
 	if (x > end) return;
 	const contentBottom = anchors.content
 		? anchors.content.y + anchors.content.h
-		: 230;
+		: 300;
 	const y = phone
-		? contentBottom + 13
-		: H - 251 + 10 * Math.sin(((x - stillX) / (W + L)) * Math.PI);
+		? contentBottom + 254
+		: H - 165 + 8 * Math.sin(((x - stillX) / (W + L)) * Math.PI);
 	c.save();
-	if (phone) {
-		// Only the chin and eye cross the gap; the rest slips beneath the cards.
-		const shelfTop = anchors.shelf?.y ?? contentBottom + 138;
+	if (!phone && shelf) {
+		// The transparent Add bean tile must stay as quiet as the frosted cards.
 		c.beginPath();
-		c.rect(0, 0, W, contentBottom + 24);
-		c.rect(0, shelfTop, W, Math.max(0, H - shelfTop));
+		c.rect(0, 0, W, H);
+		c.rect(shelf.x, shelf.y, shelf.w, shelf.h);
+		c.clip("evenodd");
+	}
+	if (phone) {
+		// There is no portrait-height gap. Only appendages emerge between cards.
+		const shelfTop = anchors.shelf?.y ?? contentBottom + 100;
+		c.beginPath();
+		c.rect(0, shelfTop + 83, W, Math.max(0, H - shelfTop - 83));
 		c.clip();
 	}
-	const calfL = L * 0.32;
-	animal(c, x - L * 0.63, y + L * 0.155, calfL, t - 1.9, dark, true);
-	animal(c, x, y, L, t, dark);
+	animal(
+		c,
+		x,
+		y,
+		L,
+		t,
+		dark,
+		false,
+		phone,
+		phone ? null : crowded ? "chin" : "shoulder",
+	);
 	// A small wake remembers the head's earlier position, rather than orbiting it.
-	for (let j = 0; j < 9; j++) {
+	for (let j = 0; j < (phone ? 0 : 9); j++) {
 		const age = 1.8 + j * 0.85;
 		const bx = x - L * 0.08 - age * SPEED + 5 * Math.sin(t * 0.2 + j);
 		const by = y - L * 0.095 - age * 10 + 4 * Math.sin(j * 2.1);
@@ -537,18 +649,6 @@ export const whale: Scene = ({ dither: c }, { t, W, H, dark, anchors }) => {
 		c.lineWidth = 1.8;
 		c.stroke();
 	}
-	if (phone) {
-		c.globalCompositeOperation = "destination-out";
-		const fade = c.createLinearGradient(
-			0,
-			contentBottom + 14,
-			0,
-			contentBottom + 24,
-		);
-		fade.addColorStop(0, "rgb(0 0 0 / 0)");
-		fade.addColorStop(1, "#000");
-		c.fillStyle = fade;
-		c.fillRect(0, contentBottom + 14, W, 10);
-	}
+
 	c.restore();
 };
