@@ -211,11 +211,11 @@ export default function BrewFeedback({
 					</p>
 					{bean?.name && (
 						<p className="mt-1 truncate font-display text-xl italic tracking-tight text-foreground">
-							{bean.name}
+							<span data-tasting-anchor="name">{bean.name}</span>
 						</p>
 					)}
 					<p className="eyebrow mt-1.5">
-						{date}
+						<span data-tasting-anchor="date">{date}</span>
 						{specs ? ` · ${specs}` : ""}
 					</p>
 				</div>
