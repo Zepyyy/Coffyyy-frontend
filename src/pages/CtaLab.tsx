@@ -10,6 +10,8 @@ const FIELDS = [
 	{ id: "koi", name: "Koi" },
 	{ id: "whale", name: "Whale" },
 	{ id: "jelly", name: "Jellyfish" },
+	{ id: "bloom", name: "Bloom" },
+	{ id: "veil", name: "Betta" },
 ] as const;
 
 export default function CtaLab({

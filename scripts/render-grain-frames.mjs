@@ -36,7 +36,8 @@ for (const view of [
 			await page.evaluate((dark) => {
 				document.documentElement.classList.toggle("dark", dark);
 			}, theme === "dark");
-			await page.waitForTimeout(500);
+			// Quiet zones are rescanned every 900ms, so let the seeded page land.
+			await page.waitForTimeout(1400);
 			for (const t of times) {
 				await page.evaluate(
 					async ([name, at]) => {
