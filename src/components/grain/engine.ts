@@ -10,7 +10,10 @@
  * and that tone eases over time. So a passing shape fades cells in and out
  * rather than flipping them, which is what stops the dither from blinking.
  *
- * Scenes draw silhouettes in plain Canvas2D, in CSS pixels, with alpha as tone.
+ * Scenes draw in plain Canvas2D, in CSS pixels, with alpha as tone. On the
+ * dither layer, colour is a dot's hue: black means the page's ink, a colour pulls
+ * the dot toward itself. A dot keeps its hue while it fades, so a passing shape
+ * never leaves a flash of ink behind it, and hue eases just like tone.
  */
 
 export type Box = { x: number; y: number; w: number; h: number };
@@ -26,6 +29,8 @@ export type SceneEnv = {
 	pointer: { x: number; y: number; a: number };
 	/** Live rects of `[data-grain-anchor="name"]` elements in field space. */
 	anchors: Record<string, Box>;
+	/** Dark paper: dots read lighter, so colours usually need their own values. */
+	dark: boolean;
 };
 
 export type Layers = {
@@ -34,7 +39,7 @@ export type Layers = {
 	ascii: CanvasRenderingContext2D;
 };
 
-/** Draw with black at the wanted alpha. Erase with destination-out. */
+/** Draw with black (ink) or a colour at the wanted alpha. Erase with destination-out. */
 export type Scene = (layers: Layers, env: SceneEnv) => void;
 
 const FRAME_MS = 1000 / 24;
@@ -49,6 +54,8 @@ const DECAY = 0.12;
 const MAX_SLEW = 3.2;
 /** Width of the soft threshold: dots fade across this band, never flip. */
 const DITHER_BAND = 0.16;
+/** Hue easing, seconds. Fast enough to follow a body, too slow to flicker. */
+const HUE_EASE = 0.1;
 const STILL_T = 30;
 const TONE_LEVELS = 14;
 /** Close enough to its target that a cell stops costing anything. */
@@ -219,6 +226,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	let clock = 0;
 	let maxStep = 0;
 	let settled = false;
+	/** Per-dot hue, packed RGB; only meaningful where tone is above zero. */
+	let hue = new Float32Array(0);
 
 	function readPalette() {
 		const cs = getComputedStyle(root);
@@ -230,6 +239,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		};
 		fontFamily = cs.fontFamily || "monospace";
 	}
+
+	const isDark = () => document.documentElement.classList.contains("dark");
 
 	function resizeSource(s: Source, w: number, h: number) {
 		s.w = w;
@@ -316,6 +327,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		const dh = Math.ceil((H * dpr) / dot);
 		ditherScale = dw / W;
 		resizeSource(dither, dw, dh);
+		hue = new Float32Array(dw * dh * 3);
 		options.dither.width = dw;
 		options.dither.height = dh;
 		options.dither.style.width = `${(dw * dot) / dpr}px`;
@@ -355,6 +367,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		const up = instant ? 1 : 1 - Math.exp(-dt / ATTACK);
 		const down = instant ? 1 : 1 - Math.exp(-dt / DECAY);
 		const limit = instant ? Number.POSITIVE_INFINITY : MAX_SLEW * dt;
+		const hueStep = 1 - Math.exp(-dt / HUE_EASE);
 		const { cur, quiet, w, h } = s;
 		let x0 = w;
 		let y0 = h;
@@ -365,6 +378,22 @@ export function createGrain(options: GrainOptions): GrainEngine {
 				const c = cur[i];
 				const alpha = data[i * 4 + 3];
 				if (alpha === 0 && c === 0) continue;
+				let hueMoved = false;
+				if (s === dither && alpha > 0) {
+					// A dot's hue is its colour's pull away from ink; black has none.
+					const o = i * 4;
+					const pull = Math.max(data[o], data[o + 1], data[o + 2]) / 255;
+					const j = i * 3;
+					const blend = c === 0 || instant ? 1 : hueStep;
+					for (let k = 0; k < 3; k++) {
+						const ink = palette.ink[k];
+						const wanted = ink + (data[o + k] - ink) * pull;
+						const was = hue[j + k];
+						const now = was + (wanted - was) * blend;
+						if (Math.abs(now - was) > 0.5) hueMoved = true;
+						hue[j + k] = now;
+					}
+				}
 				const tone = (alpha / 255) * quiet[i];
 				// Ease the visible dot, after thresholding. Easing the source tone
 				// first lets a narrow Bayer band amplify a small step into a blink.
@@ -377,7 +406,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 				const move = (target - c) * (target > c ? up : down);
 				let next = c + (move > limit ? limit : move < -limit ? -limit : move);
 				if (Math.abs(target - next) < SETTLED) next = target;
-				if (next === c) continue;
+				if (next === c && !hueMoved) continue;
 				// Reported per nominal frame, so slow machines compare fairly.
 				const step = (Math.abs(next - c) * (FRAME_MS / 1000)) / (dt || 1);
 				if (step > maxStep && !instant) maxStep = step;
@@ -398,15 +427,14 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		if (!ditherImage || !ditherOut || dither.x1 < dither.x0) return;
 		const { w, cur, x0, y0, x1, y1 } = dither;
 		const out = ditherImage.data;
-		const [r, g, b] = palette.ink;
 		const ink = 0.62 * palette.gain * 255;
 		for (let y = y0; y <= y1; y++) {
 			for (let x = x0; x <= x1; x++) {
 				const i = y * w + x;
 				const o = i * 4;
-				out[o] = r;
-				out[o + 1] = g;
-				out[o + 2] = b;
+				out[o] = hue[i * 3];
+				out[o + 1] = hue[i * 3 + 1];
+				out[o + 2] = hue[i * 3 + 2];
 				// The darkest tones also get denser ink, so a form has real blacks.
 				out[o + 3] = cur[i] * ink;
 			}
@@ -505,7 +533,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		prepare(blurOut, 1 / BLUR_CELL, 1 / BLUR_CELL);
 		scene(
 			{ blur: blurOut, dither: dither.ctx, ascii: ascii.ctx },
-			{ t, dt, W, H, pointer, anchors },
+			{ t, dt, W, H, pointer, anchors, dark: isDark() },
 		);
 		ease(dither, dt, instant);
 		ease(ascii, dt, instant);
@@ -619,7 +647,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		layout,
 		refreshPalette() {
 			readPalette();
-			repaint();
+			if (motion) repaint();
+			else renderStill();
 		},
 		stats() {
 			let alive = 0;
