@@ -3,6 +3,7 @@ import type { Scene } from "../engine";
 import { espresso, moka, v60 } from "./brewer";
 import { jelly } from "./jelly";
 import { koi } from "./koi";
+import { veil } from "./veil";
 import { whale } from "./whale";
 
 export const SCENES: Record<string, Scene> = {
@@ -11,6 +12,7 @@ export const SCENES: Record<string, Scene> = {
 	koi,
 	moka,
 	v60,
+	veil,
 	whale,
 };
 
