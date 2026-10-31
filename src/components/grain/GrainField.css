@@ -1,0 +1,46 @@
+/*
+ * The page's own surface: a field sits on the blueprint grid, behind content.
+ * Cards with `.grain-glass` frost whatever passes under them, so blur is what
+ * a shape becomes under glass rather than a separate effect. Square corners.
+ */
+.grain-field {
+	--grain-ink: color-mix(in oklch, var(--ink-soft) 90%, var(--accent));
+	--grain-gain: 1;
+	position: absolute;
+	inset: 0 0 auto;
+	z-index: 0;
+	height: max(100svh, 720px);
+	overflow: hidden;
+	pointer-events: none;
+	font-family: var(--font-data, "Spline Sans Mono Variable", ui-monospace, monospace);
+}
+:where(.dark) .grain-field {
+	--grain-ink: color-mix(in oklch, var(--ink-soft) 86%, var(--accent));
+	--grain-gain: 0.82;
+}
+.grain-field canvas {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: block;
+}
+.grain-field__blur {
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	filter: blur(22px);
+	opacity: 0.2;
+}
+.grain-field__dither {
+	image-rendering: pixelated;
+}
+.grain-field__ascii {
+	width: 100%;
+	height: 100%;
+}
+
+.grain-glass {
+	background-color: color-mix(in oklch, var(--paper-raised) 74%, transparent);
+	backdrop-filter: blur(9px);
+	-webkit-backdrop-filter: blur(9px);
+}

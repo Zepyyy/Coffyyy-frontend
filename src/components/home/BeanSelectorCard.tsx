@@ -24,7 +24,7 @@ export default function BeanSelectorCard({
 			className={`hover-line group relative cursor-pointer rounded-xl border p-3.5 text-start shadow-card ${
 				selected
 					? "border-crema bg-crema-tint ring-1 ring-crema/40"
-					: "border-line bg-paper-raised hover:border-line-strong"
+					: "grain-glass border-line hover:border-line-strong"
 			}`}
 		>
 			<div className="flex items-start justify-between gap-2">
