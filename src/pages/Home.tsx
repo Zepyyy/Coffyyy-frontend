@@ -166,6 +166,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 }
 
 export default function Home() {
+	const [searchParams] = useSearchParams();
 	const recentBrews = useRecentBrews(20);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
@@ -187,7 +188,7 @@ export default function Home() {
 	}
 
 	const now = new Date();
-	const grainParam = new URLSearchParams(window.location.search).get("grain");
+	const grainParam = searchParams.get("grain");
 	const scene =
 		(grainParam && SCENES[grainParam]) ||
 		sceneForMethod(recentBrews[0]?.method);

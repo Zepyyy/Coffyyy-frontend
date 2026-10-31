@@ -39,7 +39,7 @@ export default function Library() {
 	const tabParam = searchParams.get("tab") as Tab | null;
 	const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : "beans";
 	const setTab = (next: Tab) =>
-		setSearchParams(next === "beans" ? {} : { tab: next }, { replace: true });
+		setSearchParams(next === "beans" ? {} : { tab: next });
 	const [beanSort, setBeanSort] = useState<BeanSort>("order");
 	const [search, setSearch] = useState("");
 	const [filtersOpen, setFiltersOpen] = useState(false);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import ContinuityStudy from "@/components/motion/ContinuityStudy";
 import "./CtaLab.css";
 
@@ -42,9 +43,9 @@ export default function CtaLab({
 			</header>
 			<nav className="motion-tabs" aria-label="Field studies on the real Home">
 				{FIELDS.map((field) => (
-					<a key={field.id} href={`/home?grain=${field.id}`}>
+					<Link key={field.id} to={`/home?grain=${field.id}`}>
 						{field.name}
-					</a>
+					</Link>
 				))}
 			</nav>
 			<div className="motion-stage">

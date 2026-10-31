@@ -9,7 +9,9 @@
 	position: absolute;
 	inset: 0 0 auto;
 	z-index: 0;
-	height: max(100svh, 720px);
+	/* Starts below the header and never reaches past the page's own end, so the
+	   field alone can't make a page scroll. */
+	height: min(100%, max(100svh - 4rem - env(safe-area-inset-top), 720px));
 	overflow: hidden;
 	pointer-events: none;
 	font-family: var(--font-data, "Spline Sans Mono Variable", ui-monospace, monospace);
