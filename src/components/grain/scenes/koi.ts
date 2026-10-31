@@ -190,24 +190,6 @@ const WATER: Pair = [
 	[118, 130, 190],
 	[166, 178, 226],
 ];
-const SAGE: Pair = [
-	[108, 146, 116],
-	[150, 188, 152],
-];
-const LEAF: Pair[] = [
-	[
-		[184, 102, 58],
-		[226, 140, 92],
-	],
-	[
-		[168, 124, 56],
-		[222, 176, 100],
-	],
-	[
-		[146, 92, 66],
-		[210, 150, 116],
-	],
-];
 
 // Scratch result of `place`, so a frame of geometry does not allocate.
 let ox = 0;
@@ -839,82 +821,6 @@ function ripples(
 	}
 }
 
-type Float = {
-	x: number;
-	y: number;
-	kind: "pad" | "leaf";
-	r: number;
-	tone: number;
-};
-
-/** Things that sit on the surface, drifting too slowly to draw the eye. */
-function floaters(
-	c: CanvasRenderingContext2D,
-	list: Float[],
-	t: number,
-	dark: boolean,
-	size: number,
-) {
-	list.forEach((f, i) => {
-		const x = f.x + 9 * Math.sin(t * 0.07 + i * 2.3);
-		const y = f.y + 7 * Math.sin(t * 0.052 + i * 1.7);
-		const rot = i * 1.9 + 0.3 * Math.sin(t * 0.09 + i);
-		const r = f.r * size;
-		c.save();
-		c.translate(x, y);
-		c.rotate(rot);
-		if (f.kind === "pad") {
-			c.beginPath();
-			c.moveTo(0, 0);
-			c.arc(0, 0, r, 0.22, TAU - 0.22);
-			c.closePath();
-			c.fillStyle = rgba(SAGE[dark ? 1 : 0], 0.16);
-			c.fill();
-			c.strokeStyle = ink(0.4);
-			c.lineWidth = 2;
-			c.stroke();
-			c.beginPath();
-			for (let k = 0; k < 9; k++) {
-				const a = 0.5 + (k / 8) * (TAU - 1);
-				c.moveTo(Math.cos(a) * r * 0.16, Math.sin(a) * r * 0.16);
-				c.lineTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
-			}
-			c.strokeStyle = ink(0.2);
-			c.lineWidth = 1.7;
-			c.stroke();
-		} else {
-			const tone = LEAF[f.tone % LEAF.length][dark ? 1 : 0];
-			// A maple: five lobes from one radius function, fallen face up.
-			c.beginPath();
-			for (let k = 0; k <= 60; k++) {
-				const a = (k / 60) * TAU;
-				const lobe = Math.abs(Math.cos(a * 2.5)) ** 2.4;
-				const rr = r * (0.34 + 0.66 * lobe);
-				if (k === 0) c.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
-				else c.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-			}
-			c.closePath();
-			c.fillStyle = rgba(tone, 0.5);
-			c.fill();
-			c.strokeStyle = ink(0.5);
-			c.lineWidth = 1.9;
-			c.stroke();
-			c.beginPath();
-			for (let k = 0; k < 5; k++) {
-				const a = (k / 5) * TAU * 1.0 + 0;
-				c.moveTo(0, 0);
-				c.lineTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
-			}
-			c.moveTo(0, 0);
-			c.lineTo(-r * 0.2, 0);
-			c.strokeStyle = ink(0.38);
-			c.lineWidth = 1.7;
-			c.stroke();
-		}
-		c.restore();
-	});
-}
-
 let cached = "";
 let loops: Loop[] = [];
 
@@ -940,19 +846,6 @@ export const koi: Scene = (layers, { t, W, H, anchors, dark }) => {
 	const c = layers.dither;
 	c.lineCap = "round";
 	c.lineJoin = "round";
-
-	const pads: Float[] = narrow
-		? [
-				{ x: W * 0.1, y: top + depth * 0.9, kind: "pad", r: 26, tone: 0 },
-				{ x: W * 0.9, y: top + depth * 0.45, kind: "leaf", r: 20, tone: 0 },
-			]
-		: [
-				{ x: W * 0.06, y: top + depth * 0.62, kind: "pad", r: 30, tone: 0 },
-				{ x: W * 0.94, y: top + depth * 0.5, kind: "leaf", r: 22, tone: 0 },
-				{ x: W * 0.17, y: top + depth * 0.93, kind: "leaf", r: 20, tone: 2 },
-				{ x: W * 0.83, y: top + depth * 0.96, kind: "pad", r: 24, tone: 1 },
-			];
-	floaters(c, pads, t, dark, size);
 
 	// The reduced-motion still (t=30) is where each fish is composed to be.
 	const starts = FISH.map(
@@ -982,6 +875,6 @@ export const koi: Scene = (layers, { t, W, H, anchors, dark }) => {
 			},
 			t,
 		);
-		drawFish(c, fish, index, s, t, dark, size, narrow ? 1.8 : 1);
+		drawFish(c, fish, index, s, t, dark, size, narrow ? 1.3 : 1);
 	});
 };
