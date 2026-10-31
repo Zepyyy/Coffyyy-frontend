@@ -1,23 +1,29 @@
 import { useEffect, useState } from "react";
-import CurrentStudy from "@/components/motion/CurrentStudy";
-import PrintStudy from "@/components/motion/PrintStudy";
+import TextureStudy from "@/components/motion/TextureStudy";
 import ContinuityStudy from "@/components/motion/ContinuityStudy";
 import "./CtaLab.css";
 
 const STUDIES = [
 	{
-		id: "current",
-		name: "Current",
-		title: "A surface with a pulse",
+		id: "ascii",
+		name: "ASCII",
+		title: "Characters carried by a soft shape",
 		description:
-			"Move across it, or tap. The current gathers around your touch, then finds its own rhythm again.",
+			"A sparse character texture leaves room around the action. Move across it, or tap to gently disturb it.",
 	},
 	{
-		id: "type",
-		name: "Type",
-		title: "Type you can play",
+		id: "dither",
+		name: "Dither",
+		title: "Ink becoming grain",
 		description:
-			"Move across the letters, or tap to roll the whole phrase. The motion lives in the typography.",
+			"A print-like texture drifts as one surface. Soft edges dissolve into an ordered pattern.",
+	},
+	{
+		id: "blur",
+		name: "Blur",
+		title: "Softness behind the action",
+		description:
+			"Quiet layers of ink move behind the label. The shape remains soft as it responds to touch.",
 	},
 	{
 		id: "continuity",
@@ -26,7 +32,7 @@ const STUDIES = [
 		description:
 			"Repeat, adjust, save. The values remain the same objects as the record changes shape. Demo data only.",
 	},
-];
+] as const;
 export default function CtaLab({
 	standalone = false,
 }: {
@@ -34,8 +40,11 @@ export default function CtaLab({
 }) {
 	const [selected, setSelected] = useState(() => {
 		const id = new URLSearchParams(window.location.search).get("study");
-		return STUDIES.some((study) => study.id === id) ? id! : "current";
+		return STUDIES.find((study) => study.id === id)?.id ?? "ascii";
 	});
+	const [textureMode, setTextureMode] = useState<"ascii" | "dither" | "blur">(
+		selected === "continuity" ? "ascii" : selected,
+	);
 	const [animated, setAnimated] = useState(true);
 	const active = STUDIES.find((study) => study.id === selected)!;
 	useEffect(() => {
@@ -67,7 +76,10 @@ export default function CtaLab({
 						key={study.id}
 						type="button"
 						aria-pressed={selected === study.id}
-						onClick={() => setSelected(study.id)}
+						onClick={() => {
+							setSelected(study.id);
+							if (study.id !== "continuity") setTextureMode(study.id);
+						}}
 					>
 						{study.name}
 					</button>
@@ -77,10 +89,16 @@ export default function CtaLab({
 				<p className="motion-eyebrow">Friday · your brew journal</p>
 				<p className="motion-greeting">Good morning.</p>
 			</div>
-			<div className="motion-stage" key={selected}>
-				{selected === "current" && <CurrentStudy animated={animated} />}
-				{selected === "type" && <PrintStudy animated={animated} />}
-				{selected === "continuity" && <ContinuityStudy animated={animated} />}
+			<div className="motion-stage">
+				<div className="motion-panel" hidden={selected === "continuity"}>
+					<TextureStudy
+						mode={textureMode}
+						animated={animated && selected !== "continuity"}
+					/>
+				</div>
+				<div className="motion-panel" hidden={selected !== "continuity"}>
+					<ContinuityStudy animated={animated && selected === "continuity"} />
+				</div>
 			</div>
 			<div className="motion-description">
 				<h2>{active.title}</h2>

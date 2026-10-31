@@ -421,3 +421,25 @@ has an explicit on/off control. These are exploratory surfaces, not journal
 writes or newly accepted owner preferences. The studies are loaded only when
 the lab opens. Current is the implementation team's strongest visual candidate;
 Continuity is the strongest candidate for useful motion across workflows.
+
+
+## Texture direction and approved continuity
+
+Owner feedback: Current was visually interesting but unpleasant and poorly
+integrated; Type felt janky and did not belong. Continuity's smooth changes of
+state were explicitly approved. Retired Current and Type from the lab rather
+than iterating their styling indefinitely.
+
+The new reference is animated, not a static ASCII composition:
+https://x.com/stackedlol/status/2112257760628986188/video/1 . Its useful qualities
+are coherent forms travelling through quiet space, fragmented character texture,
+and soft focus. Treat blur, dithering and ASCII as exploratory materials, not a
+requirement to reproduce its silhouettes or cover the whole app.
+
+The lab now compares three renderings of one field: ASCII, ordered dither and
+blur. The approved Continuity study remains intact. Real Home tasting uses a
+shared frame and name/date handoff during open/fold, retaining the mounted editor,
+draft, save/error behavior and keyboard focus. Folding a scrolled editor reveals
+the focused trigger above navigation; a long-shelf regression protects this.
+Production follows reduced motion;
+the lab retains an explicit animation switch. No new persistence or sync model.
