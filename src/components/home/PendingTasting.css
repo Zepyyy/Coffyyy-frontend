@@ -7,7 +7,6 @@
     padding: 16px;
     border: 1px solid var(--line);
     border-left: 2px solid var(--accent);
-    background: var(--paper-raised);
 }
 .pending-tasting [data-tasting-anchor] {
     display: inline-block;

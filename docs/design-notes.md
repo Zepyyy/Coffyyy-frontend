@@ -443,3 +443,34 @@ draft, save/error behavior and keyboard focus. Folding a scrolled editor reveals
 the focused trigger above navigation; a long-shelf regression protects this.
 Production follows reduced motion;
 the lab retains an explicit animation switch. No new persistence or sync model.
+
+
+## The grain field — one page, three depths
+
+Owner feedback on the texture studies: the dither blinked, the shapes were
+"kinda just random", and it needed to be better integrated. Blur was liked as
+it was. The animated reference turned out to be a shark demo for a product
+called haj (Swedish for shark): the shapes are the brand's own creature, and
+blur only appears where a shark passes under the frosted composer. That
+reframed all three complaints.
+
+- **Blink** was binary dots flipping as a shape moved through them, about 4% of
+  all dots per frame. Dots and glyphs now hold a tone on a fixed lattice, the
+  tone eases, and a slew limit caps how fast it can change. `verify-grain`
+  gates on this: under 0.001% hard flips and no on-off-on cells.
+- **Integration**: ASCII, dither and blur stopped being alternatives. They are
+  one field on the 32px blueprint grid behind Home (four columns and two rows
+  per square), and `.grain-glass` cards frost what passes under them. `.rise`
+  now fills backwards, because a forwards fill stopped the glass seeing past
+  its section.
+- **Shape**: a Home field needs a reason to exist and a name a stranger could
+  say from one frame. The plate is whatever the journal last brewed with, lit
+  by the real hour. Its steam travels from grain to letters to air, and the
+  letters are this journal's own beans and flavors. Below 1100px there is no
+  margin for a plate, so the steam leaves the cup on the Log a brew key.
+
+Kaldi (the origin-myth goat) reads as a goat on desktop but is a smear on
+phones and fails the blink gate, so it stays a lab scene. `/cta-lab` links
+each field on the real Home with `?grain=`, which also forces motion on. The
+old ASCII, dither and blur tabs are retired. Home follows the OS reduced-motion
+setting and draws one still frame.

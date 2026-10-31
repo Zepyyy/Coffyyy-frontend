@@ -278,9 +278,10 @@
 }
 
 /* Load choreography: stagger with `style={{ "--rise-delay": "60ms" }}`. */
+/* Fills backwards only: a forwards fill leaves opacity and transform on the
+   element for good, and that would stop `.grain-glass` seeing past it. */
 .rise {
-    opacity: 0;
-    animation: rise 0.5s var(--ease-soft) forwards;
+    animation: rise 0.5s var(--ease-soft) backwards;
     animation-delay: var(--rise-delay, 0ms);
 }
 

@@ -242,7 +242,11 @@ export default function PendingTasting({
 	const missing = openFields(brew);
 
 	return (
-		<div className="pending-tasting" ref={frameRef} data-open={open}>
+		<div
+			className="pending-tasting grain-glass"
+			ref={frameRef}
+			data-open={open}
+		>
 			<div
 				hidden={!open}
 				ref={regionRef}
