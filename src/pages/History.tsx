@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
+import PageGrain from "@/components/grain/PageGrain";
 import { BeanChapter } from "@/components/history/BeanChapter";
 import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
@@ -94,7 +95,10 @@ function StoryStrip({ brews }: { brews: Brews[] | undefined }) {
 		brews.flatMap((brew) => (brew.beanId == null ? [] : [brew.beanId])),
 	).size;
 	return (
-		<p className="flex flex-wrap gap-x-4 gap-y-1 font-data text-xs text-ink-soft">
+		<p
+			className="flex flex-wrap gap-x-4 gap-y-1 font-data text-xs text-ink-soft"
+			data-grain-quiet
+		>
 			<span>{brews.length} brews</span>
 			<span>{beans} beans</span>
 			{average != null && (
@@ -233,192 +237,198 @@ export default function History() {
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-5xl sm:px-6">
-			<div className="space-y-6">
-				<div className="border-l-4 border-crema pl-5">
-					<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
-						History
-					</h1>
-					<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-						What worked, and how to repeat it
-					</p>
-				</div>
-
-				<StoryStrip brews={brews} />
-
-				{hasRecipeFilter && (
-					<p className="flex flex-wrap items-baseline gap-3 border-b border-line pb-3 font-sans text-sm text-ink-soft">
-						<span>
-							Brews following{" "}
-							<strong className="text-foreground">
-								{recipeMap.get(recipeId)?.name ?? "this recipe"}
-							</strong>
-						</span>
-						<Link
-							to="/library?tab=recipes"
-							className="word-link font-data text-[10px] uppercase tracking-[0.12em]"
-						>
-							Recipes →
-						</Link>
-					</p>
-				)}
-
-				{/* Controls */}
-				<div className="flex flex-col gap-3 border-y border-line py-4 sm:flex-row sm:items-center">
-					<SegmentedControl
-						ariaLabel="History view"
-						className="w-fit"
-						options={[
-							{ value: "bean", label: "By bean" },
-							{ value: "timeline", label: "Timeline" },
-						]}
-						value={view}
-						onChange={setView}
-					/>
-					<label className="relative block min-w-0 flex-1">
-						<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
-						<input
-							className="h-11 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
-							placeholder="Search beans, brewers, recipes or notes"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							aria-label="Search brews by bean, brewer, recipe or notes"
-						/>
-					</label>
-					<label className="relative block">
-						<select
-							className="h-11 w-full appearance-none rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
-							value={ratingFilter === "all" ? "all" : String(ratingFilter)}
-							onChange={(e) => {
-								const v = e.target.value;
-								setRatingFilter(v === "all" ? "all" : Number(v));
-							}}
-							aria-label="Minimum rating filter"
-						>
-							{RATING_FILTER_OPTIONS.map((o) => (
-								<option
-									key={o.label}
-									value={o.value === "all" ? "all" : String(o.value)}
-								>
-									{o.label}
-								</option>
-							))}
-						</select>
-					</label>
-					{hasActiveFilters && (
-						<button
-							type="button"
-							onClick={clearFilters}
-							className="w-fit px-2 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
-						>
-							Clear
-						</button>
-					)}
-				</div>
-
-				{multiMethod && (
-					<MethodChips
-						methods={methodsInUse}
-						value={activeMethod}
-						onChange={setMethodFilter}
-					/>
-				)}
-
-				{brews === undefined && <HistorySkeleton />}
-
-				{brews !== undefined && brews.length === 0 && (
-					<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-10 text-center">
-						<p className="font-display text-2xl text-foreground/60">
-							{hasActiveFilters ? "Nothing matches" : "No brews yet"}
+		<>
+			<PageGrain />
+			<div
+				className="relative z-[1] mx-auto w-full max-w-5xl sm:px-6"
+				data-grain-anchor="content"
+			>
+				<div className="space-y-6">
+					<div className="border-l-4 border-crema pl-5" data-grain-quiet>
+						<h1 className="font-display text-4xl italic tracking-tight text-foreground/90">
+							History
+						</h1>
+						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
+							What worked, and how to repeat it
 						</p>
-						<p className="font-sans text-sm text-muted-foreground">
-							{hasActiveFilters
-								? "Try clearing the search or filters."
-								: "Log your first brew and the story starts here."}
-						</p>
-						{hasActiveFilters ? (
-							<Button
-								type="button"
-								variant="secondary"
-								className="mt-2"
-								onClick={clearFilters}
+					</div>
+
+					<StoryStrip brews={brews} />
+
+					{hasRecipeFilter && (
+						<p className="flex flex-wrap items-baseline gap-3 border-b border-line pb-3 font-sans text-sm text-ink-soft">
+							<span>
+								Brews following{" "}
+								<strong className="text-foreground">
+									{recipeMap.get(recipeId)?.name ?? "this recipe"}
+								</strong>
+							</span>
+							<Link
+								to="/library?tab=recipes"
+								className="word-link font-data text-[10px] uppercase tracking-[0.12em]"
 							>
-								Clear filters
-							</Button>
-						) : (
-							<Button asChild variant="ink" className="mt-2">
-								<Link to="/log/brew">Log a brew</Link>
-							</Button>
+								Recipes →
+							</Link>
+						</p>
+					)}
+
+					{/* Controls */}
+					<div className="flex flex-col gap-3 border-y border-line py-4 sm:flex-row sm:items-center">
+						<SegmentedControl
+							ariaLabel="History view"
+							className="w-fit"
+							options={[
+								{ value: "bean", label: "By bean" },
+								{ value: "timeline", label: "Timeline" },
+							]}
+							value={view}
+							onChange={setView}
+						/>
+						<label className="relative block min-w-0 flex-1">
+							<Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/60" />
+							<input
+								className="h-11 w-full min-w-0 rounded-lg border border-line-strong bg-paper-raised pl-9 pr-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+								placeholder="Search beans, brewers, recipes or notes"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								aria-label="Search brews by bean, brewer, recipe or notes"
+							/>
+						</label>
+						<label className="relative block">
+							<select
+								className="h-11 w-full appearance-none rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm text-ink-soft focus:outline-none focus:ring-1 focus:ring-crema/60"
+								value={ratingFilter === "all" ? "all" : String(ratingFilter)}
+								onChange={(e) => {
+									const v = e.target.value;
+									setRatingFilter(v === "all" ? "all" : Number(v));
+								}}
+								aria-label="Minimum rating filter"
+							>
+								{RATING_FILTER_OPTIONS.map((o) => (
+									<option
+										key={o.label}
+										value={o.value === "all" ? "all" : String(o.value)}
+									>
+										{o.label}
+									</option>
+								))}
+							</select>
+						</label>
+						{hasActiveFilters && (
+							<button
+								type="button"
+								onClick={clearFilters}
+								className="w-fit px-2 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+							>
+								Clear
+							</button>
 						)}
 					</div>
-				)}
 
-				{brews !== undefined && brews.length > 0 && (
-					<div className="space-y-4">
-						<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-							{hasActiveFilters ? "Matching: " : ""}
-							{shownCount} brew{shownCount === 1 ? "" : "s"}
-							{view === "bean"
-								? ` in ${chapters.length} bean chapter${chapters.length === 1 ? "" : "s"}`
-								: ""}
-						</p>
+					{multiMethod && (
+						<MethodChips
+							methods={methodsInUse}
+							value={activeMethod}
+							onChange={setMethodFilter}
+						/>
+					)}
 
-						{view === "bean" &&
-							chapters.map(([beanId, beanBrews]) => (
-								<BeanChapter
-									key={beanId ?? "unknown"}
-									bean={beanMap.get(beanId)}
-									brews={beanBrews}
-									machineNames={machineNameMap}
-									recipes={recipeMap}
-									showMethod={multiMethod}
-								/>
-							))}
+					{brews === undefined && <HistorySkeleton />}
 
-						{view === "timeline" &&
-							timeline.map(([day, dayBrews]) => (
-								<section
-									key={day}
-									className="rounded-xl border border-line bg-paper-raised shadow-card"
+					{brews !== undefined && brews.length === 0 && (
+						<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-10 text-center">
+							<p className="font-display text-2xl text-foreground/60">
+								{hasActiveFilters ? "Nothing matches" : "No brews yet"}
+							</p>
+							<p className="font-sans text-sm text-muted-foreground">
+								{hasActiveFilters
+									? "Try clearing the search or filters."
+									: "Log your first brew and the story starts here."}
+							</p>
+							{hasActiveFilters ? (
+								<Button
+									type="button"
+									variant="secondary"
+									className="mt-2"
+									onClick={clearFilters}
 								>
-									<header className="flex items-baseline justify-between border-b border-line/60 bg-paper-sunken/40 px-4 py-2.5">
-										<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
-											{day}
-										</h2>
-										<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-											{dayBrews.length} brew{dayBrews.length === 1 ? "" : "s"}
-										</span>
-									</header>
-									<div>
-										{dayBrews.map((brew) => (
-											<BrewLedgerRow
-												key={brew.id}
-												brew={brew}
-												machineName={
-													brew.machineId != null
-														? machineNameMap.get(brew.machineId)
-														: undefined
-												}
-												bean={
-													brew.beanId != null
-														? (beanMap.get(brew.beanId) ?? null)
-														: null
-												}
-												recipe={
-													brew.recipeId != null
-														? recipeMap.get(brew.recipeId)
-														: undefined
-												}
-												showMethod={multiMethod}
-												showBean
-											/>
-										))}
-									</div>
-								</section>
-							))}
-					</div>
-				)}
+									Clear filters
+								</Button>
+							) : (
+								<Button asChild variant="ink" className="mt-2">
+									<Link to="/log/brew">Log a brew</Link>
+								</Button>
+							)}
+						</div>
+					)}
+
+					{brews !== undefined && brews.length > 0 && (
+						<div className="space-y-4">
+							<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+								{hasActiveFilters ? "Matching: " : ""}
+								{shownCount} brew{shownCount === 1 ? "" : "s"}
+								{view === "bean"
+									? ` in ${chapters.length} bean chapter${chapters.length === 1 ? "" : "s"}`
+									: ""}
+							</p>
+
+							{view === "bean" &&
+								chapters.map(([beanId, beanBrews]) => (
+									<BeanChapter
+										key={beanId ?? "unknown"}
+										bean={beanMap.get(beanId)}
+										brews={beanBrews}
+										machineNames={machineNameMap}
+										recipes={recipeMap}
+										showMethod={multiMethod}
+									/>
+								))}
+
+							{view === "timeline" &&
+								timeline.map(([day, dayBrews]) => (
+									<section
+										key={day}
+										className="rounded-xl border border-line bg-paper-raised shadow-card"
+									>
+										<header className="flex items-baseline justify-between border-b border-line/60 bg-paper-sunken/40 px-4 py-2.5">
+											<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
+												{day}
+											</h2>
+											<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+												{dayBrews.length} brew{dayBrews.length === 1 ? "" : "s"}
+											</span>
+										</header>
+										<div>
+											{dayBrews.map((brew) => (
+												<BrewLedgerRow
+													key={brew.id}
+													brew={brew}
+													machineName={
+														brew.machineId != null
+															? machineNameMap.get(brew.machineId)
+															: undefined
+													}
+													bean={
+														brew.beanId != null
+															? (beanMap.get(brew.beanId) ?? null)
+															: null
+													}
+													recipe={
+														brew.recipeId != null
+															? recipeMap.get(brew.recipeId)
+															: undefined
+													}
+													showMethod={multiMethod}
+													showBean
+												/>
+											))}
+										</div>
+									</section>
+								))}
+						</div>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

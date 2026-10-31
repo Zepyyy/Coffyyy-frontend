@@ -1,4 +1,4 @@
-import type { Scene } from "../engine";
+import type { Box, Scene } from "../engine";
 
 const TAU = Math.PI * 2;
 const mod = (x: number, n: number) => ((x % n) + n) % n;
@@ -10,16 +10,83 @@ function pulse(t: number) {
 	return p < 1 ? ease(p) : 1 - ease((p - 1) / 2.5);
 }
 
-function pose(t: number, W: number, H: number, side: number) {
-	// The unseen part of the route is long enough to leave quiet paper.
-	const travel = mod(t - 30 + side * 70, 170);
-	const y =
-		H * (W < 600 ? 0.59 : 0.43) - travel * 9 - 21 * pulse(t + side * 1.7);
-	const lane = W < 600 ? 82 : Math.max(112, (W - 1024) / 2 + 6);
+type Cfg = {
+	/** 1 = right margin, 0 = left. */
+	side: number;
+	seed: number;
+	s: number;
+	/** Shift from the lane toward the screen edge, in px (desktop / phone). */
+	dx: number;
+	dxPhone: number;
+	alpha: number;
+	/** Place on the shared loop, in bell-size units; same-side gaps exceed any two bodies. */
+	u: number;
+};
+
+// One loop for all, so gaps never change: each jelly owns a slot in y, and
+// wraps only while fully off-screen. Left slots 0/4.2/8.4, right 2.1/6.3/10.5.
+const JELLIES: Cfg[] = [
+	{ side: 1, seed: 1, s: 0.79, dx: 0, dxPhone: 0, alpha: 1, u: 2.1 },
+	{ side: 0, seed: 0, s: 1, dx: 0, dxPhone: 0, alpha: 1, u: 0 },
+	{ side: 0, seed: 2.4, s: 0.36, dx: 46, dxPhone: 30, alpha: 0.6, u: 4.2 },
+	{ side: 1, seed: 3.1, s: 0.3, dx: 40, dxPhone: 42, alpha: 0.55, u: 10.5 },
+	{ side: 1, seed: 4.3, s: 0.42, dx: 20, dxPhone: 10, alpha: 0.5, u: 6.3 },
+	{ side: 0, seed: 5.2, s: 0.28, dx: 64, dxPhone: 44, alpha: 0.5, u: 8.4 },
+];
+
+/** Where the jellies may swim: gutter centres and a size factor per side. */
+type Lanes = { x: [number, number]; f: [number, number]; legacy: boolean };
+
+const MIN_GUTTER = 90;
+
+/**
+ * Lanes sit in the visible gutters beside the page's content column. A gutter
+ * too narrow to hold a bell (<90px) gets none; a modest one gets smaller jellies.
+ * Without an anchor, or on a phone, the old fixed lanes apply.
+ */
+function lanesFor(W: number, content: Box | undefined): Lanes {
+	if (!content || W < 600) {
+		const lane = W < 600 ? 82 : Math.max(112, (W - 1024) / 2 + 6);
+		return { x: [lane, W - lane], f: [1, 1], legacy: true };
+	}
+	const gl = Math.max(0, content.x);
+	const gr = Math.max(0, W - content.x - content.w);
+	const f = (g: number) =>
+		g < MIN_GUTTER ? 0 : Math.min(1, Math.max(0.3, (g - 30) / 230));
 	return {
-		x: (side ? W - lane : lane) + 21 * Math.sin(t * 0.085 + side * 2),
-		y: travel > 120 ? y + 170 * 9 : y,
-		p: pulse(t + side * 1.7),
+		x: [gl / 2, W - gr / 2],
+		f: [f(gl), f(gr)],
+		legacy: false,
+	};
+}
+
+function pose(t: number, W: number, H: number, cfg: Cfg, L: Lanes) {
+	const { side, seed } = cfg;
+	const fs = L.f[side];
+	const s = cfg.s * fs;
+	const size = W < 600 ? 68 : 100;
+	// Enters below the page, leaves above it, wraps unseen.
+	const loop = H + size * 4.3;
+	const y =
+		H +
+		size * 0.9 -
+		mod(t * 9 + cfg.u * size, loop) -
+		21 * pulse(t + seed * 1.7);
+	const inset = (W < 600 ? cfg.dxPhone : cfg.dx) * fs * (side ? 1 : -1);
+	const sway = 21 * s * Math.sin(t * 0.085 + seed * 2);
+	let x = L.x[side] + inset + sway;
+	if (!L.legacy) {
+		// Keep the whole bell inside its gutter.
+		const half = (side ? W - L.x[1] : L.x[0]) - 4;
+		const reach = size * s + 4;
+		const lo = L.x[side] - half + reach;
+		const hi = L.x[side] + half - reach;
+		x = lo < hi ? Math.min(hi, Math.max(lo, x)) : L.x[side];
+	}
+	return {
+		x,
+		y,
+		p: pulse(t + seed * 1.7),
 	};
 }
 
@@ -35,15 +102,50 @@ function dome(c: CanvasRenderingContext2D, r: number, h: number) {
 	c.closePath();
 }
 
-export const jelly: Scene = ({ dither: c }, { t, W, H }) => {
+/** A few slow specks adrift in the margins, never over the page body. */
+function snow(
+	c: CanvasRenderingContext2D,
+	t: number,
+	W: number,
+	H: number,
+	L: Lanes,
+) {
+	const phone = W < 600;
+	const n = phone ? 7 : 12;
+	c.fillStyle = "rgb(0 0 0 / 0.32)";
+	for (let i = 0; i < n; i++) {
+		const side = i % 2;
+		const u = mod(i * 0.618 + 0.13, 1);
+		const speed = 2.2 + (i % 4) * 0.7;
+		const y = mod(u * (H + 40) + t * speed, H + 40) - 20;
+		let base: number;
+		if (L.legacy) {
+			const margin = phone ? 36 : Math.max(60, (W - 1024) / 2 - 8);
+			base = side ? W - margin * (0.15 + u * 0.7) : margin * (0.15 + u * 0.7);
+		} else {
+			const half = side ? W - L.x[1] : L.x[0];
+			if (!L.f[side]) continue;
+			base = L.x[side] + (u - 0.5) * (half - 12) * 1.7;
+		}
+		const x = base + 5 * Math.sin(t * 0.1 + i * 2.3);
+		const d = i % 3 === 0 ? 3 : 2;
+		c.fillRect(x, y, d, d);
+	}
+}
+
+export const jelly: Scene = ({ dither: c }, { t, W, H, anchors }) => {
 	const size = W < 600 ? 68 : 100;
-	for (let side = 1; side >= 0; side--) {
-		const s = side ? 0.79 : 1;
-		const now = pose(t, W, H, side);
+	const L = lanesFor(W, anchors.content);
+	snow(c, t, W, H, L);
+	for (const cfg of JELLIES) {
+		if (!L.f[cfg.side]) continue;
+		const s = cfg.s * L.f[cfg.side];
+		const now = pose(t, W, H, cfg, L);
 		const r = size * s * (1 - now.p * 0.19);
 		const h = size * s * (0.65 + now.p * 0.12);
 		if (now.y < -size * 3.8 || now.y > H + size * 1.5) continue;
 		c.save();
+		c.globalAlpha = cfg.alpha;
 		c.translate(now.x, now.y);
 		c.lineCap = "round";
 		c.lineJoin = "round";
@@ -51,7 +153,7 @@ export const jelly: Scene = ({ dither: c }, { t, W, H }) => {
 		// Each point remembers the bell at an earlier time. The lag grows
 		// continuously down the filament, including through a propulsion stroke.
 		const strand = (q: number, root: number, length: number, id: number) => {
-			const past = pose(t - q * 2.3, W, H, side);
+			const past = pose(t - q * 2.3, W, H, cfg, L);
 			// Unwrap the route before comparing historical positions.
 			let dy = past.y - now.y;
 			if (Math.abs(dy) > 500) dy = q * 2.3 * 9;

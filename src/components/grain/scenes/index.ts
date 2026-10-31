@@ -1,16 +1,20 @@
 import type { BrewMethod } from "@/types/BrewTypes";
 import type { Scene } from "../engine";
+import { bloom } from "./bloom";
 import { espresso, moka, v60 } from "./brewer";
 import { jelly } from "./jelly";
 import { koi } from "./koi";
+import { veil } from "./veil";
 import { whale } from "./whale";
 
 export const SCENES: Record<string, Scene> = {
+	bloom,
 	espresso,
 	jelly,
 	koi,
 	moka,
 	v60,
+	veil,
 	whale,
 };
 

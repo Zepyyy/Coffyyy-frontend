@@ -506,3 +506,27 @@ verification samples its visible crossing instead of its intentional pause.
 Instant still rendering also bypasses the slew limit entirely: dense ink can
 exceed normalized opacity 1, so capping an instant change at 1 left a ghost of
 the old silhouette when motion stopped.
+
+## Grain, round three — a Haeckel plate in motion
+
+Owner feedback: jellyfish and the brewer plates were loved, but the whale and
+koi were "badly drawn", like "the docker logo" made to move. The jelly works
+because it is structure seen through translucent layers. The whale and koi were
+one flat outline with patches on top, and that is what a logo is. The direction
+is now 19th-century natural-history engraving: real anatomy, tone from line and
+overlap, parts that trail. A big flat area is the failure mode.
+
+- Dots now have a hue. Scenes draw in real colour on the dither layer, black
+  still means ink, and hue eases and survives a dot's fade so nothing flashes.
+  `env.dark` exists because a pastel needs different values on each paper.
+- Koi are three varieties with scale rows, ray fins and barbels. Colour sits in
+  the scales. Lily pads and leaves were cut: discs and starfish, not plants.
+- The whale took two rounds. First pass still read as a shark. The tells were a
+  pointed head, a lost eye, a calf that looked like a fish, and an upright tail.
+  A humpback is said by its flat rostrum and scooped jaw, and by flukes that lie
+  flat, foreshortened in side view.
+- `bloom` is four jelly species at depth. `veil` is a betta whose fins use the
+  jelly's trick, each ray remembering earlier poses. Both are lab scenes.
+- Phones still have no open paper, so koi there is a soft tint under the glass
+  and the whale shows only fin fragments in card gaps. Betta is desktop-only in
+  practice. `scripts/render-grain-frames.mjs` prints stills for judging by eye.

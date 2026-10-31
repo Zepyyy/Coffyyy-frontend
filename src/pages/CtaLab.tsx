@@ -1,16 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { BACKGROUNDS } from "@/components/grain/creatures";
+import { setGrainPrefs } from "@/components/grain/useGrainPrefs";
 import ContinuityStudy from "@/components/motion/ContinuityStudy";
 import "./CtaLab.css";
 
-const FIELDS = [
-	{ id: "moka", name: "Moka" },
-	{ id: "v60", name: "V60" },
-	{ id: "espresso", name: "Espresso" },
-	{ id: "koi", name: "Koi" },
-	{ id: "whale", name: "Whale" },
-	{ id: "jelly", name: "Jellyfish" },
-] as const;
+const FIELDS = BACKGROUNDS.filter((b) => b.id !== "auto");
 
 export default function CtaLab({
 	standalone = false,
@@ -43,7 +38,11 @@ export default function CtaLab({
 			</header>
 			<nav className="motion-tabs" aria-label="Field studies on the real Home">
 				{FIELDS.map((field) => (
-					<Link key={field.id} to={`/home?grain=${field.id}`}>
+					<Link
+						key={field.id}
+						to="/home"
+						onClick={() => setGrainPrefs({ scene: field.id })}
+					>
 						{field.name}
 					</Link>
 				))}

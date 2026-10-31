@@ -1,8 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import GrainField from "@/components/grain/GrainField";
-import { SCENES, sceneForMethod } from "@/components/grain/scenes";
+import PageGrain from "@/components/grain/PageGrain";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import SteamCup from "@/components/ui/SteamCup";
@@ -57,18 +56,6 @@ function dailyLine(
 		),
 	);
 	return `It's been ${days} days since the last brew.`;
-}
-
-/** The page the ASCII lattice holds: this journal's own beans and notes. */
-function journalText(beans: Beans[]) {
-	const words = beans.flatMap((bean) => [
-		bean.name,
-		...(bean.origin ?? []),
-		...(bean.flavors ?? []),
-	]);
-	const line =
-		words.length > 0 ? words.join(" · ") : "coffyyy · a brew journal";
-	return `${line} · `;
 }
 
 function BeanSection({ allBeans }: { allBeans: Beans[] }) {
@@ -166,7 +153,6 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 }
 
 export default function Home() {
-	const [searchParams] = useSearchParams();
 	const recentBrews = useRecentBrews(20);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
@@ -188,18 +174,10 @@ export default function Home() {
 	}
 
 	const now = new Date();
-	const grainParam = searchParams.get("grain");
-	const scene =
-		(grainParam && SCENES[grainParam]) ||
-		sceneForMethod(recentBrews[0]?.method);
 
 	return (
 		<>
-			<GrainField
-				scene={scene}
-				text={journalText(allBeans)}
-				animated={grainParam ? true : undefined}
-			/>
+			<PageGrain />
 			<div className="relative z-[1] w-full mx-auto max-w-5xl space-y-8 sm:px-6 sm:space-y-10">
 				{/* The journal opens by talking to you */}
 				<section
