@@ -530,3 +530,35 @@ overlap, parts that trail. A big flat area is the failure mode.
 - Phones still have no open paper, so koi there is a soft tint under the glass
   and the whale shows only fin fragments in card gaps. Betta is desktop-only in
   practice. `scripts/render-grain-frames.mjs` prints stills for judging by eye.
+
+## Grain, round four — autumn, and things that are not fish
+
+Owner asked for more backgrounds that are not animals. Three shipped, built by
+three models against a shared `margins.ts` (`lanesFor`, lifted out of jelly) and
+judged frame by frame by the lead. The coffee branch is the first-visit default
+(`useGrainPrefs` FALLBACK); a saved pick still wins and "Follow my brews" stays.
+
+The lesson is about **mechanic, not subject**. Jelly, koi, whale, a cabinet of
+instruments and falling leaves are all bodies drifting along a loop, and the
+owner rejected the last two for exactly that ("too simple, not different").
+What landed is each a different kind of scene:
+
+- `cherry` (default): rooted at the edge, one connected structure, moved by
+  wind. Coffea arabica, veined opposite leaves, ripening cherries, flowers.
+  Branches cache to a layer at 8Hz; output is still a function of quantised t.
+- `dandelion`: a source that is always there and produces the moving things.
+  Seeds are tilted parachute domes; first pass read as T shapes.
+- `atlas`: an antique star chart turning rigidly about a pole near a page
+  corner, one turn per 13 minutes. Coordinate wheel, a violet ecliptic band with
+  zodiac ticks, stippled Milky Way with rifts, six named constellations, and a
+  fixed edge ruler so the page reads as an instrument plate. First build was
+  speckle, not a chart: too sparse, no visible net. Fixed by compressing the
+  angular scale so several figures show at once and drawing the net as a
+  designed layer. Whole-page, with quiet zones keeping dots off small text.
+
+Cut: orb web and spider (not the vibe), armillary and autumn leaves (drift-loop
+mechanic), then a longcase clock and a frost pane, both judged poorly executed:
+the clock was thin dotted line-art, the frost a busy border. The owner's steer
+afterwards was the rotating celestial atlas. Lesson: judge a first build harder;
+two of the scenes accepted here were rejected on sight. The owner relaxed
+gutters-only for the atlas: it uses the whole page. Phone shows only fragments.

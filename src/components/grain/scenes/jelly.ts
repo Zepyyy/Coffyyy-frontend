@@ -1,4 +1,5 @@
-import type { Box, Scene } from "../engine";
+import type { Scene } from "../engine";
+import { type Lanes, lanesFor } from "./margins";
 
 const TAU = Math.PI * 2;
 const mod = (x: number, n: number) => ((x % n) + n) % n;
@@ -33,32 +34,6 @@ const JELLIES: Cfg[] = [
 	{ side: 1, seed: 4.3, s: 0.42, dx: 20, dxPhone: 10, alpha: 0.5, u: 6.3 },
 	{ side: 0, seed: 5.2, s: 0.28, dx: 64, dxPhone: 44, alpha: 0.5, u: 8.4 },
 ];
-
-/** Where the jellies may swim: gutter centres and a size factor per side. */
-type Lanes = { x: [number, number]; f: [number, number]; legacy: boolean };
-
-const MIN_GUTTER = 90;
-
-/**
- * Lanes sit in the visible gutters beside the page's content column. A gutter
- * too narrow to hold a bell (<90px) gets none; a modest one gets smaller jellies.
- * Without an anchor, or on a phone, the old fixed lanes apply.
- */
-function lanesFor(W: number, content: Box | undefined): Lanes {
-	if (!content || W < 600) {
-		const lane = W < 600 ? 82 : Math.max(112, (W - 1024) / 2 + 6);
-		return { x: [lane, W - lane], f: [1, 1], legacy: true };
-	}
-	const gl = Math.max(0, content.x);
-	const gr = Math.max(0, W - content.x - content.w);
-	const f = (g: number) =>
-		g < MIN_GUTTER ? 0 : Math.min(1, Math.max(0.3, (g - 30) / 230));
-	return {
-		x: [gl / 2, W - gr / 2],
-		f: [f(gl), f(gr)],
-		legacy: false,
-	};
-}
 
 function pose(t: number, W: number, H: number, cfg: Cfg, L: Lanes) {
 	const { side, seed } = cfg;
