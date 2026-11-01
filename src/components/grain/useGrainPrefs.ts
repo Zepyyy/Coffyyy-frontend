@@ -6,7 +6,8 @@ export type GrainPrefs = { scene: string; motion: boolean };
 
 const KEY = "coffyyy:grain";
 const listeners = new Set<() => void>();
-const FALLBACK: GrainPrefs = { scene: "auto", motion: true };
+/** First visit: the coffee branch. Any pick the owner makes is saved and wins. */
+const FALLBACK: GrainPrefs = { scene: "cherry", motion: true };
 let cache: GrainPrefs | null = null;
 
 function read(): GrainPrefs {
