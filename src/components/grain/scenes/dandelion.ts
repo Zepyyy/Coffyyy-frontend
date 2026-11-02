@@ -804,7 +804,7 @@ function plants(W: number, H: number, L: Lanes): Plant[] {
 
 export const dandelion: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
 	const pal = dark ? PALETTE.dark : PALETTE.light;
-	const L = lanesFor(W, anchors.content);
+	const L = lanesFor(W, anchors.frame ?? anchors.content);
 	const list = plants(W, H, L);
 	const phone = W < 600;
 	for (const p of list) {

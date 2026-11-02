@@ -538,19 +538,22 @@ function planBranches(
 		side(0, H * 0.68, 4, -3.1);
 		return out;
 	}
-	const leafFor = (g: number) => clamp(g * 0.6, 64, 150);
+	// Scale the whole plate together as the gutter narrows. Stretching the stem
+	// to the page height while shrinking only its leaves makes it look spindly.
+	const leafFor = (g: number) => (150 * Math.min(g, 420)) / 420;
 	// Wind can carry a blade this much past its resting reach.
 	const clear = 20;
 	if (gl >= 90) {
 		const g = Math.min(gl, 420);
 		const x = (u: number) => u * g;
+		const y = (u: number) => H * (0.07 + ((u - 0.07) * g) / 420);
 		out.push(
 			buildBranch({
 				curve: [
-					[x(-0.14), H * 0.07],
-					[x(0.62), H * 0.02],
-					[x(0.74), H * 0.5],
-					[x(0.42), H * 0.92],
+					[x(-0.14), y(0.07)],
+					[x(0.62), y(0.02)],
+					[x(0.74), y(0.5)],
+					[x(0.42), y(0.92)],
 				],
 				limit: gl - clear,
 				inward: 1,
@@ -571,13 +574,14 @@ function planBranches(
 	if (gr >= 90) {
 		const g = Math.min(gr, 420);
 		const x = (u: number) => W - u * g;
+		const y = (u: number) => H * (0.88 + ((u - 0.88) * g) / 420);
 		out.push(
 			buildBranch({
 				curve: [
-					[x(-0.14), H * 0.88],
-					[x(0.5), H * 0.84],
-					[x(0.72), H * 0.6],
-					[x(0.5), H * 0.26],
+					[x(-0.14), y(0.88)],
+					[x(0.5), y(0.84)],
+					[x(0.72), y(0.6)],
+					[x(0.5), y(0.26)],
 				],
 				limit: W - gr + clear,
 				inward: -1,
@@ -1198,7 +1202,7 @@ function paint(g: Ctx, b: Branch, ink: Ink, t: number) {
 const RATE = 8;
 
 export const cherry: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
-	const L = lanesFor(W, anchors.content);
+	const L = lanesFor(W, anchors.frame ?? anchors.content);
 	const phone = W < 600;
 	// Lanes centre each gutter, so a gutter is twice its lane. Without an anchor
 	// the page's own column applies.

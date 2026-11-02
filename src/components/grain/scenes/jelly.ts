@@ -110,7 +110,7 @@ function snow(
 
 export const jelly: Scene = ({ dither: c }, { t, W, H, anchors }) => {
 	const size = W < 600 ? 68 : 100;
-	const L = lanesFor(W, anchors.content);
+	const L = lanesFor(W, anchors.frame ?? anchors.content);
 	snow(c, t, W, H, L);
 	for (const cfg of JELLIES) {
 		if (!L.f[cfg.side]) continue;
