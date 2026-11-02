@@ -26,6 +26,12 @@
 	left: 0;
 	display: block;
 }
+@media (min-width: 600px) {
+	.grain-field {
+		/* Empty and populated desktop pages share one viewport-sized plate. */
+		height: min(100%, calc(100svh - 4rem - env(safe-area-inset-top)));
+	}
+}
 .grain-field__blur {
 	inset: 0;
 	width: 100%;

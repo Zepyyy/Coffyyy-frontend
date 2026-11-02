@@ -775,9 +775,10 @@ const UNDER_TEXT = 70;
 
 export const atlas: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
 	const content = anchors.content;
+	const frame = anchors.frame ?? content;
 	const shelf = anchors.shelf;
 	const phone = W < 600;
-	const gutter = content ? Math.max(0, W - content.x - content.w) : 200;
+	const gutter = frame ? Math.max(0, W - frame.x - frame.w) : 200;
 	const key = `${c.canvas.width}x${c.canvas.height}|${W}|${H}|${gutter | 0}|${phone}`;
 	if (key !== chartKey || !chart) {
 		chartKey = key;

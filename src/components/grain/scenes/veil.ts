@@ -492,13 +492,13 @@ export const veil: Scene = ({ dither: target }, env) => {
 			});
 		return;
 	}
-	const r = routeFor(W, H, env.anchors.content);
+	const frame = env.anchors.frame ?? env.anchors.content;
+	const r = routeFor(W, H, frame);
 	if (r.len < 1) return;
 	const gutter = Math.max(
-		env.anchors.content?.x ?? 0,
-		W -
-			(env.anchors.content ? env.anchors.content.x + env.anchors.content.w : W),
-		env.anchors.content ? 0 : Math.max(0, (W - 1024) / 2),
+		frame?.x ?? 0,
+		W - (frame ? frame.x + frame.w : W),
+		frame ? 0 : Math.max(0, (W - 1024) / 2),
 	);
 	const k = 0.8 * Math.min(0.45, Math.max(0.26, (gutter - 10) / 250));
 	const spread = Math.min(1.8, Math.max(0.5, (gutter - 170) / 90));

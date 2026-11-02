@@ -18,6 +18,13 @@
 
 export type Box = { x: number; y: number; w: number; h: number };
 
+/** Match Home's inner column, regardless of the current page's content width. */
+export function backgroundFrame(W: number, content: Box): Box {
+	if (W < 600) return content;
+	const w = Math.min(976, Math.max(0, W - 80));
+	return { ...content, x: (W - w) / 2, w };
+}
+
 export type SceneEnv = {
 	/** Seconds since the field started. Never jumps. */
 	t: number;
@@ -27,7 +34,7 @@ export type SceneEnv = {
 	H: number;
 	/** Pointer in field space; `a` eases 0 (absent) to 1 (present). */
 	pointer: { x: number; y: number; a: number };
-	/** Live rects of `[data-grain-anchor="name"]` elements in field space. */
+	/** Live content rects, plus a shared horizontal `frame` for scene sizing. */
 	anchors: Record<string, Box>;
 	/** Dark paper: dots read lighter, so colours usually need their own values. */
 	dark: boolean;
@@ -278,6 +285,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 			const name = el.getAttribute("data-grain-anchor");
 			if (name) next[name] = rel(el);
 		}
+		if (next.content) next.frame = backgroundFrame(W, next.content);
 		anchors = next;
 
 		// `data-grain-quiet` thins the field around small text. A value below 1

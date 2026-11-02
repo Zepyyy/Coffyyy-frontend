@@ -148,8 +148,8 @@ function plate(
 		target.restore();
 		const ox = x + outlet[0] * scale;
 		const oy = y + outlet[1] * scale;
-		// Steam only uses the margin that the page's content leaves free.
-		const edge = env.anchors.content;
+		// Keep the steam's proportions consistent across page layouts.
+		const edge = env.anchors.frame ?? env.anchors.content;
 		const left = edge ? edge.x + edge.w : W * 0.9;
 		steam(layers, env, {
 			x: ox,
