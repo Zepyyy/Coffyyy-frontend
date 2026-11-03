@@ -18,10 +18,11 @@
 
 export type Box = { x: number; y: number; w: number; h: number };
 
-/** Match Home's inner column, regardless of the current page's content width. */
+/** Shared journal column. Keep in sync with .journal-page in index.css. */
 export function backgroundFrame(W: number, content: Box): Box {
-	if (W < 600) return content;
-	const w = Math.min(976, Math.max(0, W - 80));
+	if (W < 640) return content;
+	const gutter = Math.max(40, Math.min(152, W * 0.1875 - 80));
+	const w = Math.min(976, Math.max(0, W - 2 * gutter));
 	return { ...content, x: (W - w) / 2, w };
 }
 
@@ -182,6 +183,7 @@ export type GrainEngine = {
 	setMotion: (on: boolean) => void;
 	layout: () => void;
 	refreshPalette: () => void;
+	refreshContent: () => void;
 	/** Test hook: tone statistics for the anti-blink check. */
 	stats: () => { alive: number; maxStep: number };
 	dispose: () => void;
@@ -285,7 +287,10 @@ export function createGrain(options: GrainOptions): GrainEngine {
 			const name = el.getAttribute("data-grain-anchor");
 			if (name) next[name] = rel(el);
 		}
-		if (next.content) next.frame = backgroundFrame(W, next.content);
+		if (next.content) {
+			const page = document.querySelector(".journal-page");
+			next.frame = page ? rel(page) : backgroundFrame(W, next.content);
+		}
 		anchors = next;
 
 		// `data-grain-quiet` thins the field around small text. A value below 1
@@ -653,6 +658,10 @@ export function createGrain(options: GrainOptions): GrainEngine {
 			}
 		},
 		layout,
+		refreshContent() {
+			scanDom();
+			if (!motion) renderStill();
+		},
 		refreshPalette() {
 			readPalette();
 			if (motion) repaint();

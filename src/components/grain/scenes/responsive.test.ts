@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { backgroundFrame, type Layers, type SceneEnv } from "../engine";
-import { cherry } from "./cherry";
 import { dandelion } from "./dandelion";
 import { jelly } from "./jelly";
 
@@ -29,10 +28,10 @@ function recordingContext() {
 	return { context, calls, stems };
 }
 
-function env(W: number, contentWidth: number): SceneEnv {
+function env(W: number, contentWidth: number, H = 800): SceneEnv {
 	return {
 		W,
-		H: 800,
+		H,
 		t: 0,
 		dt: 0,
 		pointer: { x: 0, y: 0, a: 0 },
@@ -69,9 +68,17 @@ describe("responsive background geometry", () => {
 	});
 
 	it.each([
-		1280, 1366, 1440,
-	])("preserves both branch proportions at %ipx", (width) => {
-		const ratio = (W: number) => {
+		[1024, 704],
+		[1280, 656],
+		[1366, 704],
+		[1440, 836],
+		[1920, 1016],
+		[1920, 656],
+		[2560, 1376],
+	])("preserves both branch proportions at %ix%i", async (width, height) => {
+		const ratio = async (W: number, H: number) => {
+			vi.resetModules();
+			const { cherry } = await import("./cherry");
 			const contexts: ReturnType<typeof recordingContext>[] = [];
 			vi.stubGlobal("document", {
 				createElement: () => {
@@ -80,7 +87,7 @@ describe("responsive background geometry", () => {
 					return { getContext: () => recording.context };
 				},
 			});
-			cherry(layers(recordingContext().context), env(W, 976));
+			cherry(layers(recordingContext().context), env(W, 976, H));
 			return contexts.map(({ stems }) => {
 				const stem = stems[0];
 				expect(stem).toHaveLength(146);
@@ -90,8 +97,8 @@ describe("responsive background geometry", () => {
 				return span(1) / span(0);
 			});
 		};
-		const wide = ratio(1920);
-		const laptop = ratio(width);
+		const wide = await ratio(2560, 1376);
+		const laptop = await ratio(width, height);
 		expect(laptop).toHaveLength(2);
 		laptop.forEach((value, side) => {
 			expect(Math.abs(value / wide[side] - 1)).toBeLessThan(0.15);

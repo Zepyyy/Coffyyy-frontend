@@ -25,8 +25,8 @@ let lastMethod: BrewMethod | null | undefined;
 let lastText: string | undefined;
 
 /**
- * The page's background creature, with the owner's saved pick. Mount it first
- * inside a `relative` page, and mark the page's content with
+ * The journal's background creature, with the owner's saved pick. Keep it in
+ * the shared app shell so navigation preserves its clock. Mark page content with
  * `data-grain-anchor="content"` plus `data-grain-quiet` so dots keep off text.
  */
 export default function PageGrain() {

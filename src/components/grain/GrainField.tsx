@@ -53,6 +53,22 @@ export default function GrainField({ scene, text, animated }: Props) {
 		const ro = new ResizeObserver(() => grain.layout());
 		ro.observe(root.current);
 		const mo = new MutationObserver(() => grain.refreshPalette());
+		// The field survives journal navigation. Refresh text masks when React
+		// replaces content, including while the scene is set to a still.
+		let contentFrame = 0;
+		const refreshContent = () => {
+			cancelAnimationFrame(contentFrame);
+			contentFrame = requestAnimationFrame(() => grain.refreshContent());
+		};
+		const contentObserver = new MutationObserver(refreshContent);
+		const contentResize = new ResizeObserver(refreshContent);
+		if (root.current.parentElement) {
+			contentObserver.observe(root.current.parentElement, {
+				childList: true,
+				subtree: true,
+			});
+			contentResize.observe(root.current.parentElement);
+		}
 		mo.observe(document.documentElement, {
 			attributes: true,
 			attributeFilter: ["class", "data-theme"],
@@ -62,6 +78,9 @@ export default function GrainField({ scene, text, animated }: Props) {
 		return () => {
 			ro.disconnect();
 			mo.disconnect();
+			contentObserver.disconnect();
+			contentResize.disconnect();
+			cancelAnimationFrame(contentFrame);
 			grain.dispose();
 			engine.current = null;
 		};

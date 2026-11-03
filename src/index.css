@@ -241,6 +241,9 @@
     * {
         @apply border-border outline-ring/50;
     }
+    html {
+        scrollbar-gutter: stable;
+    }
     body {
         @apply bg-paper text-ink;
     }
@@ -275,6 +278,22 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-faint);
+}
+
+/* Main journal pages share their reading width and leave space for the plate.
+   Keep the gutter formula in sync with backgroundFrame in grain/engine.ts. */
+.journal-page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin-inline: auto;
+}
+@media (min-width: 640px) {
+    .journal-page {
+        --journal-gutter: clamp(2.5rem, calc(18.75vw - 5rem), 9.5rem);
+        /* The app's main already supplies 1rem on each side. */
+        width: min(61rem, calc(100% - 2 * (var(--journal-gutter) - 1rem)));
+    }
 }
 
 /* Load choreography: stagger with `style={{ "--rise-delay": "60ms" }}`. */
