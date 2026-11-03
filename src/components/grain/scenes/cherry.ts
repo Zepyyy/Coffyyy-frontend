@@ -15,7 +15,7 @@ import { lanesFor } from "./margins";
  * underside comes round, with its veins raised instead of sunk.
  *
  * A branch is hundreds of antialiased strokes, but it moves under a pixel per
- * step on a 2px lattice. So each one paints into its own layer at 8Hz, the two
+ * step on a 2px lattice. So each one paints into its own layer at up to 8Hz, the two
  * branches on different frames, and the engine's easing carries the dots between
  * paints. The layout and layers are caches of pure functions, not state.
  */
@@ -540,13 +540,17 @@ function planBranches(
 	}
 	// Scale the whole plate together as the gutter narrows. Stretching the stem
 	// to the page height while shrinking only its leaves makes it look spindly.
-	const leafFor = (g: number) => (150 * Math.min(g, 420)) / 420;
+	// The 2560×1440 plate is the reference composition. Width and height must
+	// use the same scale, including on short laptop screens.
+	const plateHeight = 1376;
+	const fit = (g: number) => Math.min(g, 420, (H * 420) / plateHeight);
+	const leafFor = (g: number) => (150 * g) / 420;
 	// Wind can carry a blade this much past its resting reach.
 	const clear = 20;
 	if (gl >= 90) {
-		const g = Math.min(gl, 420);
+		const g = fit(gl);
 		const x = (u: number) => u * g;
-		const y = (u: number) => H * (0.07 + ((u - 0.07) * g) / 420);
+		const y = (u: number) => H * 0.07 + ((u - 0.07) * plateHeight * g) / 420;
 		out.push(
 			buildBranch({
 				curve: [
@@ -557,7 +561,7 @@ function planBranches(
 				],
 				limit: gl - clear,
 				inward: 1,
-				leafLen: leafFor(gl),
+				leafLen: leafFor(g),
 				seed: 1,
 				wp: 0,
 				fruitTo: 0.62,
@@ -566,15 +570,17 @@ function planBranches(
 				amp: clamp(g * 0.07, 6, 22),
 				clipX: 0,
 				clipW: gl - 6,
-				maxNodes: 11,
+				// Smaller plates need fewer clusters: dense fruit becomes a blur
+				// on a laptop and costs the same to paint as the full-size plate.
+				maxNodes: 11 * Math.sqrt(g / 420),
 				bare: 0.3,
 			}),
 		);
 	}
 	if (gr >= 90) {
-		const g = Math.min(gr, 420);
+		const g = fit(gr);
 		const x = (u: number) => W - u * g;
-		const y = (u: number) => H * (0.88 + ((u - 0.88) * g) / 420);
+		const y = (u: number) => H * 0.88 + ((u - 0.88) * plateHeight * g) / 420;
 		out.push(
 			buildBranch({
 				curve: [
@@ -585,7 +591,7 @@ function planBranches(
 				],
 				limit: W - gr + clear,
 				inward: -1,
-				leafLen: leafFor(gr) * 0.92,
+				leafLen: leafFor(g) * 0.92,
 				seed: 2,
 				wp: -2.6,
 				fruitTo: 0.3,
@@ -594,7 +600,7 @@ function planBranches(
 				amp: clamp(g * 0.06, 5, 18),
 				clipX: W - gr + 6,
 				clipW: gr - 6,
-				maxNodes: 8,
+				maxNodes: 8 * Math.sqrt(g / 420),
 				bare: 0.15,
 			}),
 		);
@@ -1198,7 +1204,7 @@ function paint(g: Ctx, b: Branch, ink: Ink, t: number) {
 	g.globalCompositeOperation = "source-over";
 }
 
-/** Paints per second. The engine runs at 24, so a branch paints every third. */
+/** Maximum paints per second; small desktop plates interpolate slower steps. */
 const RATE = 8;
 
 export const cherry: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
@@ -1220,7 +1226,10 @@ export const cherry: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
 		const w = Math.ceil(b.clipW * scale);
 		const h = Math.ceil(H * scale);
 		const offset = index / branches.length;
-		const beat = Math.floor(t * RATE + offset);
+		// At laptop scale the wind travels fractions of a pixel per paint. Let
+		// the engine interpolate those steps instead of repainting invisible detail.
+		const rate = phone ? RATE : RATE * clamp(b.scale, 0.5, 1);
+		const beat = Math.floor(t * rate + offset);
 		const key = `${beat}|${theme}|${w}|${h}|${scale}`;
 		if (key !== b.painted) {
 			b.painted = key;
@@ -1232,7 +1241,7 @@ export const cherry: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
 			g.setTransform(1, 0, 0, 1, 0, 0);
 			g.clearRect(0, 0, w, h);
 			g.setTransform(scale, 0, 0, scale, -x0, 0);
-			paint(g, b, ink, (beat - offset) / RATE);
+			paint(g, b, ink, (beat - offset) / rate);
 		}
 		c.drawImage(b.layer, x0 / scale, 0, w / scale, h / scale);
 	});

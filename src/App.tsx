@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/react";
 import { Moon, Sun } from "lucide-react";
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
+import PageGrain from "./components/grain/PageGrain";
 import BottomNav from "./components/BottomNav";
 import SyncControl from "./components/SyncControl";
 import ToolsMenu from "./components/ToolsMenu";
@@ -16,6 +17,10 @@ const NAV_LINKS = [
 
 export default function App() {
 	const { theme, toggleTheme } = useTheme();
+	const { pathname } = useLocation();
+	const journalPage = NAV_LINKS.some(
+		({ to }) => pathname === to || pathname === `${to}/`,
+	);
 	useHistoryScroll();
 
 	return (
@@ -75,6 +80,7 @@ export default function App() {
 			</header>
 
 			<main className="flex-1 mx-auto w-full min-w-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] py-6 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:pb-6 relative">
+				{journalPage && <PageGrain />}
 				<Outlet />
 			</main>
 

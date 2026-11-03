@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import PageGrain from "@/components/grain/PageGrain";
+import JournalPage from "@/components/layout/JournalPage";
 import BeanSelectorCard from "@/components/home/BeanSelectorCard";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import SteamCup from "@/components/ui/SteamCup";
@@ -176,91 +176,82 @@ export default function Home() {
 	const now = new Date();
 
 	return (
-		<>
-			<PageGrain />
-			<div className="relative z-[1] w-full mx-auto max-w-5xl space-y-8 sm:px-6 sm:space-y-10">
-				{/* The journal opens by talking to you */}
-				<section
-					data-grain-anchor="content"
-					className="rise flex flex-col gap-5 pt-2 lg:flex-row lg:items-end lg:justify-between sm:gap-8"
-				>
-					<div className="min-w-0">
-						<p className="eyebrow" data-grain-quiet>
-							{now.toLocaleDateString(undefined, {
-								weekday: "long",
-								month: "long",
-								day: "numeric",
-							})}
-						</p>
-						<h1
-							data-grain-quiet
-							className="mt-1 text-balance font-display text-[clamp(2.5rem,11.5vw,3.25rem)] italic leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
-						>
-							{greetingForHour(now.getHours())}
-						</h1>
-						<p
-							className="mt-3 font-sans text-sm text-ink-soft"
-							data-grain-quiet
-						>
-							{dailyLine(recentBrews, allBeans.length)}
-						</p>
-					</div>
-					{/* The censer, softened: the page's own paper, the house accent as
+		<JournalPage className="space-y-8 sm:space-y-10">
+			{/* The journal opens by talking to you */}
+			<section className="rise flex flex-col gap-5 pt-2 sm:pt-0 xl:flex-row xl:items-end xl:justify-between sm:gap-8">
+				<div className="min-w-0">
+					<p className="eyebrow" data-grain-quiet>
+						{now.toLocaleDateString(undefined, {
+							weekday: "long",
+							month: "long",
+							day: "numeric",
+						})}
+					</p>
+					<h1
+						data-grain-quiet
+						className="mt-1 text-balance font-display text-[clamp(2.5rem,11.5vw,3.25rem)] italic leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+					>
+						{greetingForHour(now.getHours())}
+					</h1>
+					<p className="mt-3 font-sans text-sm text-ink-soft" data-grain-quiet>
+						{dailyLine(recentBrews, allBeans.length)}
+					</p>
+				</div>
+				{/* The censer, softened: the page's own paper, the house accent as
 				    the one warm light, with the original cup's own steam. */}
-					<Link
-						to="/log/brew"
-						className="censer-key key-line grain-glass group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong px-5 py-4 active:translate-y-px lg:w-[22rem] sm:px-7"
-					>
-						<span aria-hidden className="censer-halo" />
-						<SteamCup className="relative z-10 size-12 shrink-0 text-crema" />
-						<span className="relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
-							Log a brew
-						</span>
-						<ArrowRight className="relative z-10 ml-auto size-5 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
-					</Link>
-				</section>
+				<Link
+					to="/log/brew"
+					className="censer-key key-line grain-glass group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong px-5 py-4 active:translate-y-px xl:w-[22rem] sm:px-7"
+				>
+					<span aria-hidden className="censer-halo" />
+					<SteamCup className="relative z-10 size-12 shrink-0 text-crema" />
+					<span className="relative z-10 font-display text-[1.75rem] italic leading-none tracking-tight">
+						Log a brew
+					</span>
+					<ArrowRight className="relative z-10 ml-auto size-5 text-ink-faint transition-all duration-300 ease-soft group-hover:translate-x-1 group-hover:text-ink" />
+				</Link>
+			</section>
 
-				{/* Taste feedback for the latest brew that still needs notes */}
-				{pendingRating && (
-					<div
-						className="rise"
-						style={{ "--rise-delay": "120ms" } as React.CSSProperties}
-					>
-						<PendingTasting
-							key={pendingRating.id}
-							brew={pendingRating}
-							bean={
-								pendingRating.beanId != null
-									? (beanMap.get(pendingRating.beanId) ?? null)
-									: null
-							}
-							onSaved={() => dismissFeedback(pendingRating.id)}
-							onDismiss={() => dismissFeedback(pendingRating.id)}
-						/>
-					</div>
-				)}
+			{/* Taste feedback for the latest brew that still needs notes */}
+			{pendingRating && (
+				<div
+					className="rise"
+					style={{ "--rise-delay": "120ms" } as React.CSSProperties}
+				>
+					<PendingTasting
+						key={pendingRating.id}
+						brew={pendingRating}
+						bean={
+							pendingRating.beanId != null
+								? (beanMap.get(pendingRating.beanId) ?? null)
+								: null
+						}
+						onSaved={() => dismissFeedback(pendingRating.id)}
+						onDismiss={() => dismissFeedback(pendingRating.id)}
+					/>
+				</div>
+			)}
 
-				{/* Bean selection + panel */}
-				{allBeans.length > 0 && <BeanSection allBeans={allBeans} />}
+			{/* Bean selection + panel */}
+			{allBeans.length > 0 && <BeanSection allBeans={allBeans} />}
 
-				{/* Empty state */}
-				{isEmpty && (
-					<div
-						className="rise rounded-xl border border-dashed border-line-strong bg-paper-raised/60 p-12 text-center space-y-3"
-						style={{ "--rise-delay": "160ms" } as React.CSSProperties}
-					>
-						<p className="font-display text-2xl italic text-foreground/70">
-							No beans yet
-						</p>
-						<p className="font-sans text-sm text-ink-soft">
-							Add your first bean — the story starts there.
-						</p>
-						<Button asChild variant="ink" className="mt-2">
-							<Link to="/log/bean">Add a bean</Link>
-						</Button>
-					</div>
-				)}
-			</div>
-		</>
+			{/* Empty state */}
+			{isEmpty && (
+				<div
+					className="rise rounded-xl border border-dashed border-line-strong bg-paper-raised/60 p-12 text-center space-y-3"
+					style={{ "--rise-delay": "160ms" } as React.CSSProperties}
+				>
+					<p className="font-display text-2xl italic text-foreground/70">
+						No beans yet
+					</p>
+					<p className="font-sans text-sm text-ink-soft">
+						Add your first bean — the story starts there.
+					</p>
+					<Button asChild variant="ink" className="mt-2">
+						<Link to="/log/bean">Add a bean</Link>
+					</Button>
+				</div>
+			)}
+		</JournalPage>
 	);
 }
