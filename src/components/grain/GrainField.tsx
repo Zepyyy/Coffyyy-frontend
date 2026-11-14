@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { createGrain, type GrainEngine, type Scene } from "./engine";
 import "./GrainField.css";
 
@@ -6,11 +7,9 @@ type Props = {
 	scene: Scene;
 	/** The page of text the ASCII lattice holds. */
 	text: string;
-	/** undefined follows the OS; true forces motion; false draws one still. */
+	/** undefined follows the device; booleans are explicit playback choices. */
 	animated?: boolean;
 };
-
-const reduceQuery = "(prefers-reduced-motion: reduce)";
 
 export default function GrainField({ scene, text, animated }: Props) {
 	const root = useRef<HTMLDivElement>(null);
@@ -19,18 +18,8 @@ export default function GrainField({ scene, text, animated }: Props) {
 	const ascii = useRef<HTMLCanvasElement>(null);
 	const engine = useRef<GrainEngine | null>(null);
 	const initial = useRef({ scene, text });
-	const [osReduce, setOsReduce] = useState(
-		() => window.matchMedia?.(reduceQuery).matches ?? false,
-	);
+	const osReduce = useReducedMotion();
 	const motion = animated ?? !osReduce;
-
-	useEffect(() => {
-		if (animated !== undefined || !window.matchMedia) return;
-		const mq = window.matchMedia(reduceQuery);
-		const on = () => setOsReduce(mq.matches);
-		mq.addEventListener("change", on);
-		return () => mq.removeEventListener("change", on);
-	}, [animated]);
 
 	useEffect(() => {
 		if (!root.current || !blur.current || !dither.current || !ascii.current)

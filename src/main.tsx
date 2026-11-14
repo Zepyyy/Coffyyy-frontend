@@ -4,6 +4,7 @@ import "./index.css";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./App.tsx";
 import Bean from "./pages/Bean.tsx";
+import Backgrounds from "./pages/Backgrounds.tsx";
 import Buttons from "./pages/Buttons.tsx";
 import { CatchAll } from "./pages/CatchAll.tsx";
 import Dev from "./pages/Dev.tsx";
@@ -25,6 +26,7 @@ createRoot(document.getElementById("root")!).render(
 					<Route path="/" element={<App />}>
 						<Route index element={<Navigate to="/home" replace />} />
 						<Route path="home" element={<Home />} />
+						<Route path="backgrounds" element={<Backgrounds />} />
 						<Route path="history" element={<History />} />
 						<Route path="library" element={<Library />} />
 						<Route path="log">

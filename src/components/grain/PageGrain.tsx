@@ -5,6 +5,7 @@ import * as data from "@/lib/data";
 import type { Beans } from "@/types/BeanTypes";
 import type { BrewMethod } from "@/types/BrewTypes";
 import GrainField from "./GrainField";
+import { pageMotion } from "./motion";
 import { SCENES, sceneForMethod } from "./scenes";
 import { useGrainPrefs } from "./useGrainPrefs";
 
@@ -35,6 +36,11 @@ export default function PageGrain() {
 	const beans = useLiveQuery(() => data.getAllBeans(), []);
 	const prefs = useGrainPrefs();
 	const grainParam = searchParams.get("grain");
+	const motion = pageMotion(
+		prefs.motion,
+		Boolean(grainParam && SCENES[grainParam]),
+		searchParams.get("motion") ?? searchParams.get("grainMotion"),
+	);
 	const method = recent ? (recent[0]?.method ?? null) : lastMethod;
 	const text = beans ? journalText(beans) : lastText;
 	useEffect(() => {
@@ -50,9 +56,7 @@ export default function PageGrain() {
 		<GrainField
 			scene={scene}
 			text={text ?? "coffyyy · a brew journal · "}
-			animated={
-				grainParam ? searchParams.get("grainMotion") !== "off" : prefs.motion
-			}
+			animated={motion ?? undefined}
 		/>
 	);
 }

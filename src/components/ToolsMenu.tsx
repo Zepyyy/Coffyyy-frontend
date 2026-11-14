@@ -3,10 +3,13 @@ import { Popover } from "radix-ui";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BACKGROUNDS } from "@/components/grain/creatures";
+import { pageMotion } from "@/components/grain/motion";
 import { setGrainPrefs, useGrainPrefs } from "@/components/grain/useGrainPrefs";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
 const TOOLS = [
+	{ to: "/backgrounds", label: "Background studies" },
 	{ to: "/cta-lab", label: "Motion lab" },
 	{ to: "/dev", label: "Dev tools" },
 ];
@@ -19,13 +22,40 @@ export default function ToolsMenu() {
 	const [open, setOpen] = useState(false);
 	const prefs = useGrainPrefs();
 	const [params, setParams] = useSearchParams();
+	const reducedMotion = useReducedMotion();
+	const preview = BACKGROUNDS.some(
+		({ id }) => id !== "auto" && id === params.get("grain"),
+	);
+	const motion =
+		pageMotion(prefs.motion, preview, params.get("motion")) ?? !reducedMotion;
 
 	// A lingering ?grain= from the lab would otherwise outrank this choice.
 	function pick(scene: string) {
 		setGrainPrefs({ scene });
-		if (params.has("grain")) {
-			params.delete("grain");
-			setParams(params, { replace: true });
+		if (params.has("grain") || params.has("motion")) {
+			setParams(
+				(current) => {
+					const next = new URLSearchParams(current);
+					next.delete("grain");
+					next.delete("motion");
+					return next;
+				},
+				{ replace: true },
+			);
+		}
+	}
+
+	function toggleMotion() {
+		setGrainPrefs({ motion: !motion });
+		if (params.has("motion")) {
+			setParams(
+				(current) => {
+					const next = new URLSearchParams(current);
+					next.delete("motion");
+					return next;
+				},
+				{ replace: true },
+			);
 		}
 	}
 
@@ -75,12 +105,12 @@ export default function ToolsMenu() {
 					<button
 						type="button"
 						role="switch"
-						aria-checked={prefs.motion}
-						onClick={() => setGrainPrefs({ motion: !prefs.motion })}
+						aria-checked={motion}
+						onClick={toggleMotion}
 						className={cn(row, "mt-1 border-t border-line")}
 					>
 						Motion
-						<span>{prefs.motion ? "on" : "off"}</span>
+						<span>{motion ? "on" : "off"}</span>
 					</button>
 					<nav className="mt-1 flex flex-col border-t border-line pt-1">
 						{TOOLS.map(({ to, label }) => (

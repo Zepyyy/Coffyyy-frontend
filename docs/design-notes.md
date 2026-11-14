@@ -137,3 +137,88 @@ and validation with their delivery record. Agent preferences are not standing ru
 For a specific historical decision only, consult
 [the archived chronology](archive/design-notes-history.md). Its old current labels
 and test results describe their original iterations, not today's state.
+
+## Grain, round five — five candidates for the next default
+
+Owner opened the whole canvas and palette, then steered toward autumn and trees.
+Opus led the final art direction: replaced Grove with Willow, rebuilt Stillwater
+and Windfall, strengthened Ginkgo's anatomy/colour, and retained Shore.
+
+- `willow` / **Willow**: golden hanging whips. A gust turns the leaves silver,
+  then long and short whips swing at different rates and drift out of step.
+  The first-visit default; saved choices still win.
+- `reflection` / **Stillwater**: birches and a copper fern bank over a pond.
+  Level engraved water lines break into dashes. A leaf and its reflection
+  meet at the surface, sending rings through the mirrored trunks.
+- `windfall` / **Windfall**: large five-lobed maple leaves on one connected bough.
+  Gusts release a leaf from its real attachment; it slips, tumbles and settles
+  into the drift below.
+- `canopy` / **Ginkgo**: overhead boughs, butter-yellow fan-shaped leaves, forked
+  veins and knobby spur shoots. Turning faces open skylights in the crown.
+- `shore` / **Shore**: swash, backwash, drying sand and foam lace along a moving
+  tide line. Foam holes erase opaquely on both papers; inheriting the night
+  glow's partial opacity previously left grey sheets instead of open lace.
+
+`/backgrounds` compares one live scene at a time, with native keyboard-selectable
+radios, pause, dashboard trials and an explicit **Use this background** action.
+Previewing never changes the saved choice. Choosing writes the normal background
+preference and returns to the journal. Coffee branch and Bloom remain selectable.
+
+The existing grain lattice, quiet masks and glass remain responsible for the
+material. Willow and Stillwater share `scenes/raster.ts`, which paints blades,
+polylines and water marks directly into the dither source grid, then lets the
+engine apply its usual masking, hue and tone easing. Caches contain pure
+time-derived drawings: backward seeks and `t=30` stills must reproduce the
+same image. Expensive anatomy uses cached paths or raster profiles; intermediate
+canvases are CPU-backed to avoid transfers into the readback layer.
+
+Motion has three saved states: `null` follows the device, `true` is explicit
+On, and `false` is explicit Off. Existing saved booleans keep that meaning.
+Dashboard On/Off overrides the device setting and survives scene selection,
+reselection and navigation. An unset choice follows live OS reduced motion.
+
+Studies and the dashboard share the same saved motion choice. Explicit study
+Play/Pause updates playback immediately, including after returning to the
+journal without choosing a new background. Selecting a scene only previews it;
+**Use this background** saves the background. Dashboard trials can carry
+playback as `?grain=<scene>&motion=on` (or `off`); changing a playback control
+clears that temporary override. Both controls report actual playback. `scripts/verify-grain-motion.mjs` checks the real
+controls and moving/still canvas pixels, including the reduced-motion case. Populated phone cards
+conceal much of every scene; mobile is a close crop and edge colour rather than
+an unobstructed miniature of the desktop scene. Wide-screen engine cost remains
+substantial even with the established Coffee branch; scene-only timings do not
+establish full-frame performance.
+
+Final validation: build, lint and all 170 tests passed. Desktop/phone light/dark
+chooser checks, six default/persistence cases and sixteen temporal/still cases
+passed, including dark Shore. No hard flips or on-off-on reversals; backward
+seeks and theme roundtrips reproduce the same still. Full engine measurements
+still warn on 2560px canvases and on Ginkgo at 390px with 4x CPU throttling.
+These are local Chromium measurements, not physical-phone performance claims.
+
+
+## Cleanup and Nocturne rebuild (Opus, 2026-11-14)
+
+Owner rejected Murmuration outright ("the plague"). Removed rejected scenes from
+code and menus: murmuration, whale, star atlas, horizon, leaffall, windfall,
+ginkgo (canopy), shore, daylight, orbital, penumbra, rain. Saved choices that
+pointed at them fall back to the default.
+
+Nocturne rebuilt from scratch, now in the regular menu. Real near-side moon
+(maria layout, crater height fields, Tycho/Copernicus/Kepler rays), waning
+gibbous, lit limb facing the page. Lesson: mid-tone grey dithers into a
+checkerboard; the moon prints at full dot density with luminance carried by
+hue (ivory, slate, indigo). Diffuse Milky Way stipple read as dirt on light
+paper and was cut. One radiant beyond the moon; overlapping families (bursty
+streaks, coloured bright meteors with wind-twisted trains, slow grazers, a rare
+fireball that breaks up). No cirrus haze, no twinkling.
+
+Owner then rejected the realistic moon: too realistic, too filled, too big.
+Replaced with a small crescent drawn in the grain (gold limb dissolving through
+a dithered falloff, open disc with a dotted earthshine rim). Trains no longer
+wiggle: they stay where they formed and fade from the oldest end.
+
+Owner disliked the crescent too, and called sparse single-pixel stars "dirt".
+With the new 1px blue-noise engine underway, Nocturne dropped the moon: a soft
+Milky Way band (star clouds, warm core, dust lane) rises up the left side,
+crowded with stars; the open sky keeps a few bright stars with halos.

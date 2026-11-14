@@ -8,12 +8,6 @@ export const BACKGROUND_EXPLORATIONS = [
 	{
 		id: "nocturne",
 		name: "Nocturne",
-		note: "Moonlit sky with varied meteor showers and drifting fireball trails.",
-	},
-
-	{
-		id: "leaffall",
-		name: "Leaffall",
-		note: "Hanging autumn leaves descend into wind-rippled water.",
+		note: "A meteor shower fanning out beneath a waxing gibbous moon.",
 	},
 ] as const;
