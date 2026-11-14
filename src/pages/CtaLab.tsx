@@ -6,7 +6,6 @@ import { setGrainPrefs } from "@/components/grain/useGrainPrefs";
 import ContinuityStudy from "@/components/motion/ContinuityStudy";
 import "./CtaLab.css";
 
-const FIELDS = BACKGROUNDS.filter((b) => b.id !== "auto");
 
 export default function CtaLab({
 	standalone = false,
@@ -38,7 +37,7 @@ export default function CtaLab({
 				</button>
 			</header>
 			<nav className="motion-tabs" aria-label="Field studies on the real Home">
-				{FIELDS.map((field) => (
+				{BACKGROUNDS.map((field) => (
 					<Link
 						key={field.id}
 						to="/home"

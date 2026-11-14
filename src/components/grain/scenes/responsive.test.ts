@@ -49,7 +49,7 @@ function env(W: number, contentWidth: number, H = 800): SceneEnv {
 }
 
 function layers(context: CanvasRenderingContext2D): Layers {
-	return { dither: context, ascii: context, blur: context };
+	return { dither: context };
 }
 
 afterEach(() => vi.unstubAllGlobals());

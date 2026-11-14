@@ -1,6 +1,5 @@
 /** Names for the picker. Kept apart from the scenes so the header stays light. */
 export const BACKGROUNDS = [
-	{ id: "auto", name: "Follow my brews" },
 	{ id: "koi", name: "Koi" },
 	{ id: "jelly", name: "Jellyfish" },
 	{ id: "veil", name: "Betta" },
@@ -11,7 +10,4 @@ export const BACKGROUNDS = [
 	{ id: "dandelion", name: "Dandelion" },
 	{ id: "moonflower", name: "Passionflower" },
 	{ id: "horizon", name: "Horizon" },
-	{ id: "moka", name: "Moka" },
-	{ id: "v60", name: "V60" },
-	{ id: "espresso", name: "Espresso" },
 ] as const;
