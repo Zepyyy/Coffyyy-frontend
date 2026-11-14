@@ -1,4 +1,5 @@
 import type { Scene } from "../engine";
+import { jellyfish } from "./jelly";
 
 /**
  * A small bloom: four animals of different families at different depths.
@@ -871,7 +872,10 @@ function stage(W: number, H: number): Spec[] {
 	];
 }
 
-export const bloom: Scene = ({ dither: c }, { t, W, H, dark }) => {
+export const bloom: Scene = ({ dither: c }, { t, W, H, dark, anchors }) => {
+	// The ink moon jelly, adopted from the retired Jellyfish scene, rises
+	// behind the coloured bodies in the right gutter.
+	jellyfish(c, t, W, H, anchors.frame ?? anchors.content, 0);
 	const pal = dark ? PALETTE.dark : PALETTE.light;
 	for (const s of stage(W, H)) {
 		const now = poseOf(s, t);

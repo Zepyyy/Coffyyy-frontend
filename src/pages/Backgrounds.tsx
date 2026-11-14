@@ -2,7 +2,7 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import GrainField from "@/components/grain/GrainField";
 import { pageMotion } from "@/components/grain/motion";
 import { SCENES } from "@/components/grain/scenes";
-import { BACKGROUND_STUDIES } from "@/components/grain/studies";
+import { BACKGROUNDS } from "@/components/grain/creatures";
 import { setGrainPrefs, useGrainPrefs } from "@/components/grain/useGrainPrefs";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import "./Backgrounds.css";
@@ -15,9 +15,9 @@ export default function Backgrounds() {
 	const requestedMotion = pageMotion(prefs.motion, true, params.get("motion"));
 	const playing = requestedMotion ?? !reducedMotion;
 	const selected =
-		BACKGROUND_STUDIES.find((s) => s.id === params.get("scene")) ??
-		BACKGROUND_STUDIES.find((s) => s.id === prefs.scene) ??
-		BACKGROUND_STUDIES[0];
+		BACKGROUNDS.find((s) => s.id === params.get("scene")) ??
+		BACKGROUNDS.find((s) => s.id === prefs.scene) ??
+		BACKGROUNDS[0];
 
 	function choose(id: string) {
 		setParams(
@@ -52,13 +52,13 @@ export default function Backgrounds() {
 	return (
 		<div className="background-studies">
 			<header className="background-studies__intro">
-				<p className="background-studies__eyebrow">Field studies</p>
+				<p className="background-studies__eyebrow">Backgrounds</p>
 				<h1>Choose your background.</h1>
 				<p>Preview each scene, then choose your favorite for the journal.</p>
 			</header>
 			<fieldset className="background-studies__choices">
 				<legend className="sr-only">Background candidates</legend>
-				{BACKGROUND_STUDIES.map(({ id, name }) => (
+				{BACKGROUNDS.map(({ id, name, exploration }) => (
 					<label key={id}>
 						<input
 							type="radio"
@@ -67,7 +67,12 @@ export default function Backgrounds() {
 							checked={selected.id === id}
 							onChange={() => choose(id)}
 						/>
-						<span>{name}</span>
+						<span>
+							{name}
+							{exploration && (
+								<em className="background-studies__tag">exploration</em>
+							)}
+						</span>
 					</label>
 				))}
 			</fieldset>
@@ -91,7 +96,7 @@ export default function Backgrounds() {
 			<div className="background-studies__caption">
 				<div aria-live="polite" aria-atomic="true">
 					<h2>{selected.name}</h2>
-					<p>{selected.description}</p>
+					{selected.note && <p>{selected.note}</p>}
 				</div>
 				<div className="background-studies__actions">
 					<Link

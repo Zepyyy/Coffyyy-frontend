@@ -42,12 +42,21 @@ export type Layers = {
 /** Draw with black (ink) or a colour at the wanted alpha. Erase with destination-out. */
 export type Scene = (layers: Layers, env: SceneEnv) => void;
 
-const FRAME_MS = 1000 / 24;
-/** Half rate, for machines that cannot hold full rate comfortably. */
-const SLOW_FRAME_MS = 1000 / 12;
-/** Main-thread ms per frame that moves the field to half rate, and back. */
-const SLOW_ABOVE = 14;
-const FAST_BELOW = 6;
+/**
+ * Frame pacing: the display's rate while frames are cheap, stepping down only
+ * when the main thread is genuinely loaded. A fixed 24fps reads as lag.
+ * Each entry: [ms between frames, average cost (ms) that moves down a tier].
+ */
+const TIERS: [number, number][] = [
+	[0, 7],
+	[1000 / 30, 11],
+	[1000 / 20, Number.POSITIVE_INFINITY],
+];
+const FRAME_MS = 1000 / 60;
+/** Cost below which a tier steps back up. */
+const RECOVER_BELOW = 4;
+/** After a scene or theme change, dots stop holding old steps for this long. */
+const RELEASE_S = 0.6;
 /** CSS pixels per dot, before rounding to whole device pixels. */
 const DOT = 1;
 const STILL_T = 30;
@@ -130,7 +139,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	let lastDraw = 0;
 	let clock = 0;
 	let frames = 0;
-	let frameMs = FRAME_MS;
+	let tier = 0;
+	let releaseUntil = 0;
 	/** Smoothed main-thread cost of a frame, ms. */
 	let cost = 0;
 	let settled = false;
@@ -232,7 +242,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		if (!W || !H) return;
 		prepare(ctx, ditherScale, ditherScale);
 		scene({ dither: ctx }, { t, dt, W, H, pointer, anchors, dark: isDark() });
-		gl.frame(source, dt, instant);
+		gl.frame(source, dt, instant, clock < releaseUntil ? 0 : 1);
 		frames++;
 	}
 
@@ -244,7 +254,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		raf = 0;
 		if (!motion || !visible || disposed || document.hidden) return;
 		raf = requestAnimationFrame(loop);
-		if (now - lastDraw < frameMs) return;
+		// A few ms of slack so a 60Hz tier never skips frames to vsync jitter.
+		if (now - lastDraw < TIERS[tier][0] - 2) return;
 		const dt = Math.min(0.1, last ? (now - last) / 1000 : FRAME_MS / 1000);
 		last = now;
 		lastDraw = now;
@@ -261,8 +272,8 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		const start = performance.now();
 		render(clock, dt, false);
 		cost += (performance.now() - start - cost) * 0.05;
-		if (cost > SLOW_ABOVE) frameMs = SLOW_FRAME_MS;
-		else if (cost < FAST_BELOW) frameMs = FRAME_MS;
+		if (cost > TIERS[tier][1] && tier < TIERS.length - 1) tier++;
+		else if (cost < RECOVER_BELOW && tier > 0) tier--;
 	}
 
 	function start() {
@@ -309,6 +320,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	return {
 		setScene(next) {
 			scene = next;
+			releaseUntil = clock + RELEASE_S;
 			if (!motion) renderStill();
 		},
 		setMotion(on) {
@@ -326,6 +338,7 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		},
 		refreshPalette() {
 			readPalette();
+			releaseUntil = clock + RELEASE_S;
 			// Steps are measured from the paper, so a theme change re-dithers at once.
 			if (motion) render(clock, 0, true);
 			else renderStill();

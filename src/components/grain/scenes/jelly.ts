@@ -1,4 +1,4 @@
-import type { Scene } from "../engine";
+import type { Box } from "../engine";
 import { type Lanes, lanesFor } from "./margins";
 
 const TAU = Math.PI * 2;
@@ -77,42 +77,21 @@ function dome(c: CanvasRenderingContext2D, r: number, h: number) {
 	c.closePath();
 }
 
-/** A few slow specks adrift in the margins, never over the page body. */
-function snow(
+/**
+ * The moon jelly from the retired Jellyfish scene, drawn in ink and rising
+ * through a gutter. Bloom keeps one of them; `pick` indexes JELLIES.
+ */
+export function jellyfish(
 	c: CanvasRenderingContext2D,
 	t: number,
 	W: number,
 	H: number,
-	L: Lanes,
+	frame: Box | undefined,
+	pick: number,
 ) {
-	const phone = W < 600;
-	const n = phone ? 7 : 12;
-	c.fillStyle = "rgb(0 0 0 / 0.32)";
-	for (let i = 0; i < n; i++) {
-		const side = i % 2;
-		const u = mod(i * 0.618 + 0.13, 1);
-		const speed = 2.2 + (i % 4) * 0.7;
-		const y = mod(u * (H + 40) + t * speed, H + 40) - 20;
-		let base: number;
-		if (L.legacy) {
-			const margin = phone ? 36 : Math.max(60, (W - 1024) / 2 - 8);
-			base = side ? W - margin * (0.15 + u * 0.7) : margin * (0.15 + u * 0.7);
-		} else {
-			const half = side ? W - L.x[1] : L.x[0];
-			if (!L.f[side]) continue;
-			base = L.x[side] + (u - 0.5) * (half - 12) * 1.7;
-		}
-		const x = base + 5 * Math.sin(t * 0.1 + i * 2.3);
-		const d = i % 3 === 0 ? 3 : 2;
-		c.fillRect(x, y, d, d);
-	}
-}
-
-export const jelly: Scene = ({ dither: c }, { t, W, H, anchors }) => {
 	const size = W < 600 ? 68 : 100;
-	const L = lanesFor(W, anchors.frame ?? anchors.content);
-	snow(c, t, W, H, L);
-	for (const cfg of JELLIES) {
+	const L = lanesFor(W, frame);
+	for (const cfg of [JELLIES[pick]]) {
 		if (!L.f[cfg.side]) continue;
 		const s = cfg.s * L.f[cfg.side];
 		const now = pose(t, W, H, cfg, L);
@@ -242,4 +221,4 @@ export const jelly: Scene = ({ dither: c }, { t, W, H, anchors }) => {
 		c.stroke();
 		c.restore();
 	}
-};
+}

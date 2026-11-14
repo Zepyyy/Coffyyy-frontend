@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { BACKGROUNDS } from "./creatures";
+import { BACKGROUNDS, DEFAULT_BACKGROUND } from "./creatures";
 import type { MotionPreference } from "./motion";
 
 /** Which background the owner picked. */
@@ -7,8 +7,8 @@ export type GrainPrefs = { scene: string; motion: MotionPreference };
 
 const KEY = "coffyyy:grain";
 const listeners = new Set<() => void>();
-/** First visit: the golden willow. Any pick the owner makes is saved and wins. */
-const FALLBACK: GrainPrefs = { scene: "willow", motion: null };
+/** First visit. Any pick the owner makes is saved and wins. */
+const FALLBACK: GrainPrefs = { scene: DEFAULT_BACKGROUND, motion: null };
 let cache: GrainPrefs | null = null;
 
 function read(): GrainPrefs {

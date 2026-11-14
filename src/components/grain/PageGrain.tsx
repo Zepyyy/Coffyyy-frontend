@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router";
+import { DEFAULT_BACKGROUND } from "./creatures";
 import GrainField from "./GrainField";
 import { pageMotion } from "./motion";
 import { SCENES } from "./scenes";
@@ -19,6 +20,8 @@ export default function PageGrain() {
 		searchParams.get("motion") ?? searchParams.get("grainMotion"),
 	);
 	const scene =
-		(grainParam && SCENES[grainParam]) || SCENES[prefs.scene] || SCENES.cherry;
+		(grainParam && SCENES[grainParam]) ||
+		SCENES[prefs.scene] ||
+		SCENES[DEFAULT_BACKGROUND];
 	return <GrainField scene={scene} animated={motion ?? undefined} />;
 }

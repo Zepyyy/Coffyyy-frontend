@@ -222,3 +222,18 @@ Owner disliked the crescent too, and called sparse single-pixel stars "dirt".
 With the new 1px blue-noise engine underway, Nocturne dropped the moon: a soft
 Milky Way band (star clouds, warm core, dust lane) rises up the left side,
 crowded with stars; the open sky keeps a few bright stars with halos.
+
+## Cleanup and engine fixes (2026-11-14, owner direction)
+
+Owner rejected Stained glass, Caustic floor, Extraction (all deleted), then
+retired Willow, Stillwater, Betta, Nocturne (too laggy) and Jellyfish. One
+ink moon jelly from Jellyfish now swims in Bloom. Motion lab removed; one
+"Preview backgrounds" page remains. Explorations live in the regular picker
+with an "exp" tag (`exploration: true` in creatures.ts). Default is Coffee
+branch. Engine: frame pacing now follows the display (60 → 30 → 20 under
+load; fixed 24fps read as lag), and dots stop holding old steps for 0.6s
+after a scene/theme switch (fixes ghosts of the previous scene).
+
+Lakeside is liked as a concept. Owner wants full-page scene variations that are
+different worlds in the same spirit (cozy, full width/height illustrated
+landscape, small life, chill), not the same lake with swapped props.

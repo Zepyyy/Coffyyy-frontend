@@ -108,6 +108,7 @@ uniform vec4 uZones[${MAX_ZONES}];
 uniform float uDepth[${MAX_ZONES}];
 uniform int uZoneCount;
 uniform bool uInstant;
+uniform float uHold;
 uniform float uSlew;
 uniform float uHueStep;
 out vec4 outState;
@@ -158,7 +159,7 @@ void main() {
 	} else {
 		// The band narrows to nothing at bare paper. A fixed band would let dots
 		// with a low threshold hold their first step forever once inked: ghosts.
-		float band = min(HYST, max(f, 0.0));
+		float band = min(HYST * uHold, max(f, 0.0));
 		target = clamp(held, stepAt(f - band, threshold), stepAt(f + band, threshold));
 		shown += clamp(target - shown, -uSlew, uSlew);
 		// A dot arriving from paper takes its colour at once; a fading one keeps it.
@@ -205,7 +206,13 @@ export type DitherGL = {
 	/** Quiet zones in CSS pixels, `css` CSS pixels per dot, field height `H`. */
 	setZones: (zones: Zone[], css: number, H: number) => void;
 	/** Reads the scene canvas and advances every dot by `dt` seconds. */
-	frame: (source: HTMLCanvasElement, dt: number, instant: boolean) => void;
+	/** `hold` 0..1 scales hysteresis; 0 lets every dot follow the new source. */
+	frame: (
+		source: HTMLCanvasElement,
+		dt: number,
+		instant: boolean,
+		hold?: number,
+	) => void;
 	/** Repaints the current state, e.g. after a palette change. */
 	redraw: () => void;
 	/** Displayed step per dot (0..255 = 0..LEVELS), for tests. */
@@ -431,7 +438,7 @@ export function createDitherGL(
 			css = cssPerDot;
 			fieldH = H;
 		},
-		frame(source, dt, instant) {
+		frame(source, dt, instant, hold = 1) {
 			if (lost) return;
 			const { paperL, range } = tones();
 			gl.activeTexture(gl.TEXTURE0);
@@ -477,6 +484,7 @@ export function createDitherGL(
 			gl.uniform1fv(u("uDepth"), depths);
 			gl.uniform1i(u("uZoneCount"), zones.length);
 			gl.uniform1i(u("uInstant"), instant ? 1 : 0);
+			gl.uniform1f(u("uHold"), hold);
 			// Capped per frame, so a slow frame still cannot snap a dot.
 			gl.uniform1f(u("uSlew"), Math.min(SLEW * dt, 0.5));
 			gl.uniform1f(u("uHueStep"), 1 - Math.exp(-dt / HUE_EASE));

@@ -92,6 +92,11 @@ type Pal = {
 	hat: Rgb;
 	skin: Rgb;
 	bobber: Rgb;
+	/** Clear sky overhead, for full-height looks. */
+	sky: Rgb;
+	snow: Rgb;
+	pine: Rgb;
+	hull: Rgb;
 };
 
 const PALS: Record<"light" | "dark", Pal> = {
@@ -135,6 +140,10 @@ const PALS: Record<"light" | "dark", Pal> = {
 		hat: [96, 80, 62],
 		skin: [214, 164, 132],
 		bobber: [196, 78, 60],
+		sky: [184, 204, 226],
+		snow: [250, 238, 226],
+		pine: [72, 88, 78],
+		hull: [150, 82, 62],
 	},
 	dark: {
 		night: true,
@@ -176,8 +185,116 @@ const PALS: Record<"light" | "dark", Pal> = {
 		hat: [0, 0, 0],
 		skin: [0, 0, 0],
 		bobber: [255, 170, 120],
+		sky: [40, 48, 92],
+		snow: [190, 200, 230],
+		pine: [0, 0, 0],
+		hull: [0, 0, 0],
 	},
 };
+
+/* ----------------------------------------------------------------- looks */
+
+type Ridge = {
+	lift: number;
+	rough: number;
+	seed: number;
+	/** [x, height, width], as fractions of the page. */
+	peaks: [number, number, number][];
+};
+
+/** One composition of the same world: where things sit, and how the air is. */
+type Look = {
+	/** The far shore, as a fraction of the page height. */
+	shore: number;
+	sun: { x: number; y: number };
+	sunR: number;
+	ridges: Ridge[];
+	village: {
+		x: number;
+		span: number;
+		count: number;
+		size: number;
+		rows: number;
+		/** Height of each back row up the hillside, px. */
+		rise: number;
+	};
+	/** Where the angler fishes from. */
+	angler: "dock" | "boat";
+	/** Boats moored at the village. */
+	moored: number;
+	/** Strength of the full-height clear sky; 0 leaves the top as paper. */
+	sky: number;
+	clouds: number;
+	/** Snow line on the far range, as a fraction of page height; 0 for none. */
+	snow: number;
+	/** A fringe of conifers along the nearest ridge. */
+	pines: boolean;
+	/** Windows lit even by day: the sun has nearly gone. */
+	dusk: boolean;
+	/** Per-look colour changes over the base palettes. */
+	tint?: { light?: Partial<Pal>; dark?: Partial<Pal> };
+};
+
+const RANGE: Ridge[] = [
+	{
+		lift: 0.07,
+		rough: 0.5,
+		seed: 11,
+		peaks: [
+			[0.16, 0.33, 0.18],
+			[0.48, 0.25, 0.17],
+			[0.97, 0.22, 0.1],
+		],
+	},
+	{
+		lift: 0.05,
+		rough: 0.55,
+		seed: 23,
+		peaks: [
+			[0.3, 0.26, 0.15],
+			[0.62, 0.17, 0.12],
+			[0.06, 0.18, 0.1],
+		],
+	},
+	{
+		lift: 0.03,
+		rough: 0.6,
+		seed: 37,
+		peaks: [
+			[0.08, 0.2, 0.14],
+			[0.42, 0.12, 0.16],
+			[0.86, 0.11, 0.12],
+		],
+	},
+	{
+		lift: 0.012,
+		rough: 0.7,
+		seed: 51,
+		peaks: [
+			[0.0, 0.1, 0.12],
+			[0.24, 0.05, 0.12],
+			[0.98, 0.07, 0.1],
+		],
+	},
+];
+
+const LOOKS = {
+	/** The first study: golden hour, a village across the water, a dock. */
+	lakeside: {
+		shore: 0.7,
+		sun: { x: 0.87, y: 0.5 },
+		sunR: 0.04,
+		ridges: RANGE,
+		village: { x: 0.62, span: 0.13, count: 14, size: 1, rows: 3, rise: 4 },
+		angler: "dock",
+		moored: 0,
+		sky: 0,
+		clouds: 4,
+		snow: 0,
+		pines: false,
+		dusk: false,
+	},
+} satisfies Record<string, Look>;
 
 /* ----------------------------------------------------------------- plan */
 
@@ -200,65 +317,19 @@ type Plan = {
 	}[];
 	dock: { x0: number; x1: number; deck: number; water: number };
 	man: { x: number; y: number; s: number };
+	look: Look;
 	land: HTMLCanvasElement;
 	landKey: string;
 };
 
-let memo: Plan | null = null;
-let memoKey = "";
-
-function plan(W: number, H: number): Plan {
-	const shore = Math.round(H * 0.7);
-	const sun = { x: W * 0.87, y: shore - H * 0.2, r: clamp(H * 0.04, 20, 40) };
-	// Peaks placed by hand, shaped by noise: a big range left of the sun,
-	// a gentler shoulder behind the village on the right.
-	const specs: {
-		lift: number;
-		peaks: [number, number, number][];
-		rough: number;
-		seed: number;
-	}[] = [
-		{
-			lift: 0.07,
-			rough: 0.5,
-			seed: 11,
-			peaks: [
-				[0.16, 0.33, 0.18],
-				[0.48, 0.25, 0.17],
-				[0.97, 0.22, 0.1],
-			],
-		},
-		{
-			lift: 0.05,
-			rough: 0.55,
-			seed: 23,
-			peaks: [
-				[0.3, 0.26, 0.15],
-				[0.62, 0.17, 0.12],
-				[0.06, 0.18, 0.1],
-			],
-		},
-		{
-			lift: 0.03,
-			rough: 0.6,
-			seed: 37,
-			peaks: [
-				[0.08, 0.2, 0.14],
-				[0.42, 0.12, 0.16],
-				[0.86, 0.11, 0.12],
-			],
-		},
-		{
-			lift: 0.012,
-			rough: 0.7,
-			seed: 51,
-			peaks: [
-				[0.0, 0.1, 0.12],
-				[0.24, 0.05, 0.12],
-				[0.98, 0.07, 0.1],
-			],
-		},
-	];
+function plan(W: number, H: number, look: Look): Plan {
+	const shore = Math.round(H * look.shore);
+	const sun = {
+		x: W * look.sun.x,
+		y: H * look.sun.y,
+		r: clamp(H * look.sunR, 18, 48),
+	};
+	const specs = look.ridges;
 	const ridges = specs.map((sp) => {
 		const a = new Float32Array(Math.ceil(W) + 2);
 		for (let x = 0; x < a.length; x++) {
@@ -277,30 +348,31 @@ function plan(W: number, H: number): Plan {
 	});
 	const houses: Plan["houses"] = [];
 	// A village gathered at the foot of the hill, back rows set higher.
-	const vx = W * 0.62;
-	for (let i = 0; i < 14; i++) {
-		const row = i % 3;
-		const x = vx + hash(i, 3) * W * 0.13 + row * 6;
+	const v = look.village;
+	const vx = W * v.x;
+	for (let i = 0; i < v.count; i++) {
+		const row = i % v.rows;
+		const x = vx + hash(i, 3) * W * v.span + row * 6;
 		houses.push({
 			x,
-			w: 10 + 9 * hash(i, 4),
-			h: 8 + 7 * hash(i, 5) - row * 1.5,
-			roof: 5 + 5 * hash(i, 6),
+			w: (10 + 9 * hash(i, 4)) * v.size,
+			h: (8 + 7 * hash(i, 5) - row * 1.5) * v.size,
+			roof: (5 + 5 * hash(i, 6)) * v.size,
 			lit: hash(i, 7) < 0.65,
 			smoke: i === 3 || i === 10,
-			lift: row * 4,
+			lift: row * v.rise + (hash(i, 8) - 0.5) * v.rise * 0.6,
 		});
 	}
 	houses.sort((a, b) => b.lift - a.lift);
 	// A church, for the silhouette.
 	houses.push({
-		x: vx + W * 0.07,
-		w: 11,
-		h: 30,
-		roof: 14,
+		x: vx + W * v.span * 0.5,
+		w: 11 * v.size,
+		h: 30 * v.size,
+		roof: 14 * v.size,
 		lit: false,
 		smoke: false,
-		lift: 3,
+		lift: Math.max(3, v.rise * (v.rows - 1) * 0.6),
 	});
 	const deck = H * 0.8;
 	const dock = {
@@ -319,6 +391,7 @@ function plan(W: number, H: number): Plan {
 		houses,
 		dock,
 		man,
+		look,
 		land: document.createElement("canvas"),
 		landKey: "",
 	};
@@ -337,6 +410,18 @@ function paintLand(p: Plan, pal: Pal, scale: number) {
 	g.setTransform(scale, 0, 0, scale, 0, 0);
 	g.clearRect(0, 0, W, H);
 
+	// A clear sky overhead, for the full-height looks.
+	if (p.look.sky > 0) {
+		const sky = g.createLinearGradient(0, 0, 0, shore);
+		sky.addColorStop(0, rgba(pal.sky, p.look.sky * (pal.night ? 0.7 : 0.45)));
+		sky.addColorStop(
+			0.55,
+			rgba(mix(pal.sky, pal.horizon, 0.5), p.look.sky * 0.4),
+		);
+		sky.addColorStop(1, rgba(pal.horizon, p.look.sky * 0.6));
+		g.fillStyle = sky;
+		g.fillRect(0, 0, W, shore);
+	}
 	// Air: paper up high, warming down to the horizon.
 	const top = shore - H * 0.62;
 	const air = g.createLinearGradient(0, top, 0, shore);
@@ -416,6 +501,17 @@ function paintLand(p: Plan, pal: Pal, scale: number) {
 				}
 				const sunlit = light * (1 - smooth(0.05, 0.55, down));
 				let c = mix(shade, lit, sunlit);
+				// Snow on the far range, above its line, thinning down the gullies.
+				if (k === 0 && p.look.snow > 0) {
+					const above = shore - yTop - p.look.snow * H;
+					const cap = above * 0.55 * (0.7 + 0.6 * noise1(X * 0.08, 7));
+					if (above > 0 && Y - yTop < cap)
+						c = mix(
+							c,
+							mix(pal.snow, pal.haze, 0.25 * (1 - light)),
+							0.85 * (0.45 + 0.55 * light),
+						);
+				}
 				// Haze gathers at the foot of each ridge, more so far away.
 				c = mix(c, pal.haze, smooth(0.15, 1, down) * (0.55 - depth * 0.35));
 				// Forest grain on the nearer slopes.
@@ -427,6 +523,43 @@ function paintLand(p: Plan, pal: Pal, scale: number) {
 		}
 	});
 	g.putImageData(img, 0, 0);
+
+	// Conifers along the nearest ridge, each a narrow stacked spire.
+	if (p.look.pines) {
+		const near = p.ridges[p.ridges.length - 1];
+		const ridge2 = p.ridges[p.ridges.length - 2];
+		for (let i = 0; i < W / 7; i++) {
+			const x = hash(i, 801) * W;
+			const onNear = hash(i, 802) < 0.6;
+			const r = onNear ? near : ridge2;
+			const base = r[Math.min(r.length - 1, x | 0)] + 3;
+			const h = (onNear ? 14 : 8) + 12 * hash(i, 803);
+			if (shore - base > H * 0.2) continue;
+			if (pal.night) {
+				g.globalCompositeOperation = "destination-out";
+				g.fillStyle = "#000";
+			} else
+				g.fillStyle = rgba(mix(pal.pine, pal.haze, onNear ? 0 : 0.35), 0.95);
+			g.beginPath();
+			g.moveTo(x, base - h);
+			for (let k = 1; k <= 3; k++) {
+				const y = base - h + (h * k) / 3;
+				const w = (h * 0.16 * k) / 3 + 1;
+				g.lineTo(x + w, y);
+				g.lineTo(x + w * 0.4, y - 1);
+			}
+			g.lineTo(x - (h * 0.16 + 1) * 0.4, base - 1);
+			for (let k = 3; k >= 1; k--) {
+				const y = base - h + (h * k) / 3;
+				const w = (h * 0.16 * k) / 3 + 1;
+				g.lineTo(x - w, y);
+				g.lineTo(x - w * 0.4, y - 1);
+			}
+			g.closePath();
+			g.fill();
+			g.globalCompositeOperation = "source-over";
+		}
+	}
 
 	// The village on the far shore.
 	for (const h of p.houses) {
@@ -461,7 +594,16 @@ function paintLand(p: Plan, pal: Pal, scale: number) {
 			g.closePath();
 			g.fill();
 			if (h.lit) {
-				g.fillStyle = rgba(pal.window, 0.8);
+				if (p.look.dusk) {
+					const wx = h.x + h.w * 0.45;
+					const wy = y - h.h * 0.5;
+					const lg = g.createRadialGradient(wx, wy, 0, wx, wy, 5);
+					lg.addColorStop(0, rgba(pal.window, 0.8));
+					lg.addColorStop(1, rgba(pal.window, 0));
+					g.fillStyle = lg;
+					g.fillRect(wx - 5, wy - 5, 10, 10);
+				}
+				g.fillStyle = rgba(pal.window, 0.9);
 				g.fillRect(h.x + h.w * 0.35, y - h.h * 0.6, 2, 2);
 			}
 		}
@@ -542,8 +684,8 @@ function drawWater(c: Ctx, p: Plan, pal: Pal, t: number, scale: number) {
 		c.fillStyle = rgba(pal.night ? pal.glint : pal.haze, a);
 		c.fillRect(x, y, len, 1);
 	}
-	// Village lights stretched down the water at night.
-	if (pal.night)
+	// Village lights stretched down the water at night, and at dusk.
+	if (pal.night || p.look.dusk)
 		for (const h of p.houses) {
 			if (!h.lit) continue;
 			const x = h.x + h.w * 0.5;
@@ -609,7 +751,7 @@ function drawClouds(c: Ctx, p: Plan, pal: Pal, t: number) {
 		c.fill();
 		c.restore();
 	};
-	for (let i = 0; i < 4; i++) {
+	for (let i = 0; i < p.look.clouds; i++) {
 		const span = W + 700;
 		const speed = 2.5 + 2.5 * hash(i, 401);
 		const x = ((hash(i, 402) * span + t * speed) % span) - 350;
@@ -669,10 +811,9 @@ function biteAt(t: number) {
 	return t - start;
 }
 
-function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
-	const { dock, man } = p;
-	const s = man.s;
-	const fill = (col: Rgb, a = 1) => {
+/** Pure black in a night palette means "cut a silhouette out of the glow". */
+function filler(c: Ctx, pal: Pal) {
+	return (col: Rgb, a = 1) => {
 		if (pal.night && col[0] + col[1] + col[2] === 0) {
 			c.globalCompositeOperation = "destination-out";
 			c.fillStyle = "#000";
@@ -681,6 +822,11 @@ function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
 			c.fillStyle = rgba(col, a);
 		}
 	};
+}
+
+function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
+	const { dock, man } = p;
+	const fill = filler(c, pal);
 	// Posts, then their wobbling reflections.
 	const posts: number[] = [];
 	for (let x = dock.x0 + 30; x < dock.x1; x += 38) posts.push(x);
@@ -702,9 +848,132 @@ function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
 	c.fillStyle = rgba(pal.woodLit, pal.night ? 0.35 : 0.9);
 	c.fillRect(dock.x0, dock.deck - 6, dock.x1 - dock.x0, 1.5);
 
-	// The fisherman, sitting at the end, facing the lake.
-	const bx = man.x;
-	const by = man.y - 6;
+	drawAngler(c, pal, t, man.x, man.y - 6, man.s, dock.water, true);
+	if (pal.night) lantern(c, pal, t, dock.x1 - 40, dock.deck - 9, dock.water);
+}
+
+/** A small hull, rocking on the swell, with its reflection. */
+function hull(
+	c: Ctx,
+	pal: Pal,
+	t: number,
+	x: number,
+	y: number,
+	len: number,
+	seed: number,
+) {
+	const fill = filler(c, pal);
+	const rock = 0.03 * Math.sin(t * 1.1 + seed);
+	const bob = Math.sin(t * 1.3 + seed * 2) * 0.8;
+	const draw = (flip: number, a: number) => {
+		c.save();
+		c.translate(x, y + bob * flip);
+		c.rotate(rock * flip);
+		c.scale(1, flip);
+		fill(pal.hull, a);
+		c.beginPath();
+		c.moveTo(-len / 2, -len * 0.16);
+		c.lineTo(len / 2, -len * 0.2);
+		c.quadraticCurveTo(len * 0.36, len * 0.02, len * 0.1, len * 0.04);
+		c.lineTo(-len * 0.3, len * 0.04);
+		c.quadraticCurveTo(-len * 0.46, len * 0.0, -len / 2, -len * 0.16);
+		c.closePath();
+		c.fill();
+		// The gunwale catches the light.
+		c.globalCompositeOperation = "source-over";
+		c.fillStyle = rgba(pal.woodLit, (pal.night ? 0.35 : 0.85) * a);
+		c.fillRect(-len / 2, -len * 0.2, len, 1.2);
+		c.restore();
+	};
+	draw(-1, 0.3);
+	draw(1, 1);
+	c.globalCompositeOperation = "source-over";
+}
+
+function drawBoat(c: Ctx, p: Plan, pal: Pal, t: number) {
+	const s = p.man.s;
+	const x = p.W * 0.2;
+	const y = p.shore + (p.H - p.shore) * 0.42;
+	const len = 64 * s;
+	hull(c, pal, t, x, y, len, 1.7);
+	const bob = Math.sin(t * 1.3 + 3.4) * 0.8;
+	drawAngler(
+		c,
+		pal,
+		t,
+		x - len * 0.08,
+		y - len * 0.14 + bob,
+		s * 0.9,
+		y + 4,
+		false,
+	);
+	if (pal.night)
+		lantern(c, pal, t, x + len * 0.36, y - len * 0.24 + bob, y + 2);
+}
+
+function drawMoored(c: Ctx, p: Plan, pal: Pal, t: number) {
+	const v = p.look.village;
+	for (let i = 0; i < p.look.moored; i++) {
+		const x = p.W * (v.x + v.span * (0.1 + 0.8 * hash(i, 901)));
+		const y = p.shore + 8 + 10 * hash(i, 902);
+		const len = (22 + 12 * hash(i, 903)) * v.size;
+		hull(c, pal, t, x, y, len, i * 2.1);
+		// Some carry a mast.
+		if (hash(i, 904) < 0.5) {
+			const rock = 0.03 * Math.sin(t * 1.1 + i * 2.1);
+			c.strokeStyle = rgba(
+				pal.night ? pal.woodLit : pal.wood,
+				pal.night ? 0.5 : 0.9,
+			);
+			c.lineWidth = 1;
+			c.beginPath();
+			c.moveTo(x, y - len * 0.18);
+			c.lineTo(x + Math.sin(rock) * len, y - len * 1.3);
+			c.stroke();
+		}
+	}
+}
+
+function lantern(
+	c: Ctx,
+	pal: Pal,
+	t: number,
+	lx: number,
+	ly: number,
+	water: number,
+) {
+	const lg = c.createRadialGradient(lx, ly, 0, lx, ly, 34);
+	lg.addColorStop(0, rgba(pal.window, 0.5));
+	lg.addColorStop(1, rgba(pal.window, 0));
+	c.fillStyle = lg;
+	c.fillRect(lx - 34, ly - 34, 68, 68);
+	c.fillStyle = rgba(pal.window, 1);
+	c.fillRect(lx - 1.5, ly - 3, 3, 4);
+	const rg = c.createLinearGradient(0, water, 0, water + 40);
+	rg.addColorStop(0, rgba(pal.window, 0.4));
+	rg.addColorStop(1, rgba(pal.window, 0));
+	c.fillStyle = rg;
+	for (let k = 0; k < 8; k++)
+		c.fillRect(
+			lx - 1.5 + Math.sin(t * 1.3 + k) * k * 0.5,
+			water + 2 + k * 5,
+			3,
+			3,
+		);
+}
+
+/** Someone fishing, from the dock or a boat, facing the lake. */
+function drawAngler(
+	c: Ctx,
+	pal: Pal,
+	t: number,
+	bx: number,
+	by: number,
+	s: number,
+	water: number,
+	legs: boolean,
+) {
+	const fill = filler(c, pal);
 	const b = biteAt(t);
 	const bite = b > 0 && b < 2.2 ? Math.sin((b / 2.2) * Math.PI) : 0;
 	const breathe = Math.sin(t * 0.9) * 0.4;
@@ -720,7 +989,7 @@ function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
 	c.lineTo(5, 12);
 	c.lineTo(3, 3);
 	c.closePath();
-	c.fill();
+	if (legs) c.fill();
 	// Body: a rounded coat, leaning forward a little.
 	fill(pal.coat);
 	c.beginPath();
@@ -767,7 +1036,7 @@ function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
 	c.stroke();
 	// Line to the bobber, which rides the swell and goes under on a bite.
 	const fx = tipX + 34 * s;
-	const fy = dock.water + 10 + Math.sin(t * 1.1) * 0.8 + bite * 3;
+	const fy = water + 10 + Math.sin(t * 1.1) * 0.8 + bite * 3;
 	c.strokeStyle = rgba(pal.night ? pal.glint : pal.wood, 0.4);
 	c.lineWidth = 0.7;
 	c.beginPath();
@@ -781,60 +1050,45 @@ function drawDock(c: Ctx, p: Plan, pal: Pal, t: number) {
 	if (b > 0 && b < 5)
 		ring(c, fx, fy, b, 4.5, 26, pal.night ? pal.glint : pal.haze);
 	ring(c, fx, fy, (t % 6) + 0.01, 3, 6, pal.night ? pal.glint : pal.haze);
-
-	// A lantern on the dock at night.
-	if (pal.night) {
-		const lx = dock.x1 - 40;
-		const ly = dock.deck - 9;
-		const lg = c.createRadialGradient(lx, ly, 0, lx, ly, 34);
-		lg.addColorStop(0, rgba(pal.window, 0.5));
-		lg.addColorStop(1, rgba(pal.window, 0));
-		c.fillStyle = lg;
-		c.fillRect(lx - 34, ly - 34, 68, 68);
-		c.fillStyle = rgba(pal.window, 1);
-		c.fillRect(lx - 1.5, ly - 3, 3, 4);
-		const rg = c.createLinearGradient(0, dock.water, 0, dock.water + 40);
-		rg.addColorStop(0, rgba(pal.window, 0.4));
-		rg.addColorStop(1, rgba(pal.window, 0));
-		c.fillStyle = rg;
-		for (let k = 0; k < 8; k++)
-			c.fillRect(
-				lx - 1.5 + Math.sin(t * 1.3 + k) * k * 0.5,
-				dock.water + 2 + k * 5,
-				3,
-				3,
-			);
-	}
 }
 
 /* ---------------------------------------------------------------- scene */
 
-export const lakeside: Scene = ({ dither: c }, { t, W, H, dark }) => {
-	const key = `${W}|${H}`;
-	if (key !== memoKey || !memo) {
-		memoKey = key;
-		memo = plan(W, H);
-	}
-	const p = memo;
-	const pal = PALS[dark ? "dark" : "light"];
-	const scale = c.getTransform().a;
-	const landKey = `${dark}|${scale}`;
-	if (landKey !== p.landKey) {
-		p.landKey = landKey;
-		paintLand(p, pal, scale);
-	}
-	drawClouds(c, p, pal, t);
-	c.drawImage(p.land, 0, 0, p.land.width / scale, p.land.height / scale);
-	drawSmoke(c, p, pal, t);
-	drawWater(c, p, pal, t, scale);
-	// Fish rising out on the lake, away from the dock.
-	for (let k = Math.floor(t / 7) - 1; k <= Math.floor(t / 7); k++) {
-		const t0 = k * 7 + hash(k, 601) * 5;
-		const age = t - t0;
-		if (age < 0 || age > 4) continue;
-		const x = p.W * (0.25 + 0.7 * hash(k, 602));
-		const y = p.shore + (p.H - p.shore) * (0.2 + 0.6 * hash(k, 603));
-		ring(c, x, y, age, 3.8, 22, pal.night ? pal.glint : pal.haze);
-	}
-	drawDock(c, p, pal, t);
-};
+function makeLake(look: Look): Scene {
+	let memo: Plan | null = null;
+	let memoKey = "";
+	return ({ dither: c }, { t, W, H, dark }) => {
+		const key = `${W}|${H}`;
+		if (key !== memoKey || !memo) {
+			memoKey = key;
+			memo = plan(W, H, look);
+		}
+		const p = memo;
+		const base = PALS[dark ? "dark" : "light"];
+		const pal = { ...base, ...look.tint?.[dark ? "dark" : "light"] };
+		const scale = c.getTransform().a;
+		const landKey = `${dark}|${scale}`;
+		if (landKey !== p.landKey) {
+			p.landKey = landKey;
+			paintLand(p, pal, scale);
+		}
+		drawClouds(c, p, pal, t);
+		c.drawImage(p.land, 0, 0, p.land.width / scale, p.land.height / scale);
+		drawSmoke(c, p, pal, t);
+		drawWater(c, p, pal, t, scale);
+		// Fish rising out on the lake, away from the angler.
+		for (let k = Math.floor(t / 7) - 1; k <= Math.floor(t / 7); k++) {
+			const t0 = k * 7 + hash(k, 601) * 5;
+			const age = t - t0;
+			if (age < 0 || age > 4) continue;
+			const x = p.W * (0.25 + 0.7 * hash(k, 602));
+			const y = p.shore + (p.H - p.shore) * (0.2 + 0.6 * hash(k, 603));
+			ring(c, x, y, age, 3.8, 22, pal.night ? pal.glint : pal.haze);
+		}
+		drawMoored(c, p, pal, t);
+		if (look.angler === "boat") drawBoat(c, p, pal, t);
+		else drawDock(c, p, pal, t);
+	};
+}
+
+export const lakeside = makeLake(LOOKS.lakeside);

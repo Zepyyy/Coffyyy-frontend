@@ -24,3 +24,17 @@
 .background-studies__actions button { border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer; }
 .background-studies button:focus-visible,.background-studies a:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
 @media(max-width:700px) { .background-studies__caption { align-items:stretch;flex-direction:column;gap:18px; }.background-studies__actions { flex-wrap:wrap;justify-content:space-between;gap:8px; }.background-studies__choices label { min-width:30%; }.background-studies__stage { height:520px; }.background-studies__intro { padding-top:0; } }
+
+/* Work-in-progress scenes: selectable like any other, just labelled. */
+.background-studies__tag {
+	margin-left: 0.5em;
+	padding: 0 0.35em;
+	border: 1px solid var(--line);
+	font-family: var(--font-data, ui-monospace, monospace);
+	font-size: 9px;
+	font-style: normal;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+	vertical-align: 0.15em;
+}
