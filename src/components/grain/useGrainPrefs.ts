@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { BACKGROUNDS } from "./creatures";
 import type { MotionPreference } from "./motion";
 
-/** Which background the owner picked; `auto` follows the last brew method. */
+/** Which background the owner picked. */
 export type GrainPrefs = { scene: string; motion: MotionPreference };
 
 const KEY = "coffyyy:grain";

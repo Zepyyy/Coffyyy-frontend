@@ -5,36 +5,29 @@ import "./GrainField.css";
 
 type Props = {
 	scene: Scene;
-	/** The page of text the ASCII lattice holds. */
-	text: string;
 	/** undefined follows the device; booleans are explicit playback choices. */
 	animated?: boolean;
 };
 
-export default function GrainField({ scene, text, animated }: Props) {
+export default function GrainField({ scene, animated }: Props) {
 	const root = useRef<HTMLDivElement>(null);
-	const blur = useRef<HTMLCanvasElement>(null);
 	const dither = useRef<HTMLCanvasElement>(null);
-	const ascii = useRef<HTMLCanvasElement>(null);
 	const engine = useRef<GrainEngine | null>(null);
-	const initial = useRef({ scene, text });
+	const initial = useRef({ scene });
 	const osReduce = useReducedMotion();
 	const motion = animated ?? !osReduce;
 
 	useEffect(() => {
-		if (!root.current || !blur.current || !dither.current || !ascii.current)
-			return;
+		if (!root.current || !dither.current) return;
 		let grain: GrainEngine;
 		try {
 			grain = createGrain({
 				root: root.current,
-				blur: blur.current,
 				dither: dither.current,
-				ascii: ascii.current,
 				...initial.current,
 			});
 		} catch {
-			// Decoration only: no canvas support simply means plain paper.
+			// Decoration only: no WebGL2 or canvas simply means plain paper.
 			return;
 		}
 		engine.current = grain;
@@ -76,14 +69,11 @@ export default function GrainField({ scene, text, animated }: Props) {
 	}, []);
 
 	useEffect(() => engine.current?.setScene(scene), [scene]);
-	useEffect(() => engine.current?.setText(text), [text]);
 	useEffect(() => engine.current?.setMotion(motion), [motion]);
 
 	return (
 		<div ref={root} className="grain-field" aria-hidden>
-			<canvas ref={blur} className="grain-field__blur" />
 			<canvas ref={dither} className="grain-field__dither" />
-			<canvas ref={ascii} className="grain-field__ascii" />
 		</div>
 	);
 }

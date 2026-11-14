@@ -14,7 +14,6 @@
 	height: min(100%, max(100svh - 4rem - env(safe-area-inset-top), 720px));
 	overflow: hidden;
 	pointer-events: none;
-	font-family: var(--font-data, "Spline Sans Mono Variable", ui-monospace, monospace);
 }
 :where(.dark) .grain-field {
 	--grain-ink: color-mix(in oklch, var(--ink-soft) 86%, var(--accent));
@@ -32,19 +31,8 @@
 		height: min(100%, calc(100svh - 4rem - env(safe-area-inset-top)));
 	}
 }
-.grain-field__blur {
-	inset: 0;
-	width: 100%;
-	height: 100%;
-	filter: blur(22px);
-	opacity: 0.2;
-}
 .grain-field__dither {
 	image-rendering: pixelated;
-}
-.grain-field__ascii {
-	width: 100%;
-	height: 100%;
 }
 
 .grain-glass {

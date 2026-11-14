@@ -77,7 +77,6 @@ export default function Backgrounds() {
 			>
 				<GrainField
 					scene={SCENES[selected.id]}
-					text="coffyyy · a brew journal · "
 					animated={requestedMotion ?? undefined}
 				/>
 				<button

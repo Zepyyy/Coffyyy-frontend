@@ -23,9 +23,7 @@ export default function ToolsMenu() {
 	const prefs = useGrainPrefs();
 	const [params, setParams] = useSearchParams();
 	const reducedMotion = useReducedMotion();
-	const preview = BACKGROUNDS.some(
-		({ id }) => id !== "auto" && id === params.get("grain"),
-	);
+	const preview = BACKGROUNDS.some(({ id }) => id === params.get("grain"));
 	const motion =
 		pageMotion(prefs.motion, preview, params.get("motion")) ?? !reducedMotion;
 
