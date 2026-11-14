@@ -1,3 +1,9 @@
+import { passionflowerStudy } from "./passionflower-study";
+import { horizon } from "./horizon";
+import { nocturne } from "./nocturne";
+import { leaffall } from "./leaffall";
+import { daylight } from "./daylight";
+import { moonflower } from "./moonflower";
 import type { BrewMethod } from "@/types/BrewTypes";
 import type { Scene } from "../engine";
 import { atlas } from "./atlas";
@@ -11,6 +17,12 @@ import { veil } from "./veil";
 import { whale } from "./whale";
 
 export const SCENES: Record<string, Scene> = {
+	"passionflower-study": passionflowerStudy,
+	horizon,
+	nocturne,
+	leaffall,
+	daylight,
+	moonflower,
 	atlas,
 	bloom,
 	cherry,

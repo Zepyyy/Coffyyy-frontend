@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { BACKGROUND_EXPLORATIONS } from "@/components/grain/explorations";
 import { BACKGROUNDS } from "@/components/grain/creatures";
 import { setGrainPrefs } from "@/components/grain/useGrainPrefs";
 import ContinuityStudy from "@/components/motion/ContinuityStudy";
@@ -47,6 +48,26 @@ export default function CtaLab({
 					</Link>
 				))}
 			</nav>
+			<section
+				className="background-studies"
+				aria-labelledby="background-studies-title"
+			>
+				<h2 id="background-studies-title">Background explorations</h2>
+				<p>
+					Desktop studies, still under review. Try them on your Home; your saved
+					background stays yours.
+				</p>
+				{BACKGROUND_EXPLORATIONS.map((study) => (
+					<div className="background-study" key={study.id}>
+						<div>
+							<h3>{study.name}</h3>
+							<p>{study.note}</p>
+						</div>
+						<Link to={`/home?grain=${study.id}`}>Watch</Link>
+						<Link to={`/home?grain=${study.id}&grainMotion=off`}>Still</Link>
+					</div>
+				))}
+			</section>
 			<div className="motion-stage">
 				<ContinuityStudy animated={animated} />
 			</div>

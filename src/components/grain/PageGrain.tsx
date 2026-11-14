@@ -50,7 +50,9 @@ export default function PageGrain() {
 		<GrainField
 			scene={scene}
 			text={text ?? "coffyyy · a brew journal · "}
-			animated={grainParam ? true : prefs.motion}
+			animated={
+				grainParam ? searchParams.get("grainMotion") !== "off" : prefs.motion
+			}
 		/>
 	);
 }

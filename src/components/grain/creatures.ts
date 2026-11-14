@@ -9,6 +9,8 @@ export const BACKGROUNDS = [
 	{ id: "cherry", name: "Coffee branch" },
 	{ id: "atlas", name: "Star atlas" },
 	{ id: "dandelion", name: "Dandelion" },
+	{ id: "moonflower", name: "Passionflower" },
+	{ id: "horizon", name: "Horizon" },
 	{ id: "moka", name: "Moka" },
 	{ id: "v60", name: "V60" },
 	{ id: "espresso", name: "Espresso" },
