@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { backgroundFrame, type Layers, type SceneEnv } from "../engine";
+import {
+	backgroundFrame,
+	type Layers,
+	type Scene,
+	type SceneEnv,
+} from "../engine";
 import { dandelion } from "./dandelion";
-import { jelly } from "./jelly";
+import { jellyfish } from "./jelly";
 
 type Point = [number, number];
 
@@ -49,7 +54,7 @@ function env(W: number, contentWidth: number, H = 800): SceneEnv {
 }
 
 function layers(context: CanvasRenderingContext2D): Layers {
-	return { dither: context, ascii: context, blur: context };
+	return { dither: context };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -57,7 +62,18 @@ afterEach(() => vi.unstubAllGlobals());
 describe("responsive background geometry", () => {
 	it.each([
 		["dandelion", dandelion],
-		["jellyfish", jelly],
+		[
+			"jellyfish",
+			((l, e) =>
+				jellyfish(
+					l.dither,
+					e.t,
+					e.W,
+					e.H,
+					e.anchors.frame ?? e.anchors.content,
+					0,
+				)) as Scene,
+		],
 	] as const)("keeps %s the same size on Home and Library", (_, scene) => {
 		const draw = (contentWidth: number) => {
 			const { context, calls } = recordingContext();

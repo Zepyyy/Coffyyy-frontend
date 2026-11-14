@@ -1,13 +1,14 @@
 import { useSyncExternalStore } from "react";
-import { BACKGROUNDS } from "./creatures";
+import { BACKGROUNDS, DEFAULT_BACKGROUND } from "./creatures";
+import type { MotionPreference } from "./motion";
 
-/** Which background the owner picked; `auto` follows the last brew method. */
-export type GrainPrefs = { scene: string; motion: boolean };
+/** Which background the owner picked. */
+export type GrainPrefs = { scene: string; motion: MotionPreference };
 
 const KEY = "coffyyy:grain";
 const listeners = new Set<() => void>();
-/** First visit: the coffee branch. Any pick the owner makes is saved and wins. */
-const FALLBACK: GrainPrefs = { scene: "cherry", motion: true };
+/** First visit. Any pick the owner makes is saved and wins. */
+const FALLBACK: GrainPrefs = { scene: DEFAULT_BACKGROUND, motion: null };
 let cache: GrainPrefs | null = null;
 
 function read(): GrainPrefs {
@@ -18,7 +19,8 @@ function read(): GrainPrefs {
 			BACKGROUNDS.some((b) => b.id === raw.scene)
 				? raw.scene
 				: FALLBACK.scene;
-		return { scene, motion: raw?.motion !== false };
+		const motion = typeof raw?.motion === "boolean" ? raw.motion : null;
+		return { scene, motion };
 	} catch {
 		return FALLBACK;
 	}

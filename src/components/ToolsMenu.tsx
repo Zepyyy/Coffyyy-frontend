@@ -3,11 +3,13 @@ import { Popover } from "radix-ui";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BACKGROUNDS } from "@/components/grain/creatures";
+import { pageMotion } from "@/components/grain/motion";
 import { setGrainPrefs, useGrainPrefs } from "@/components/grain/useGrainPrefs";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
 const TOOLS = [
-	{ to: "/cta-lab", label: "Motion lab" },
+	{ to: "/backgrounds", label: "Preview backgrounds" },
 	{ to: "/dev", label: "Dev tools" },
 ];
 
@@ -19,13 +21,38 @@ export default function ToolsMenu() {
 	const [open, setOpen] = useState(false);
 	const prefs = useGrainPrefs();
 	const [params, setParams] = useSearchParams();
+	const reducedMotion = useReducedMotion();
+	const preview = BACKGROUNDS.some(({ id }) => id === params.get("grain"));
+	const motion =
+		pageMotion(prefs.motion, preview, params.get("motion")) ?? !reducedMotion;
 
 	// A lingering ?grain= from the lab would otherwise outrank this choice.
 	function pick(scene: string) {
 		setGrainPrefs({ scene });
-		if (params.has("grain")) {
-			params.delete("grain");
-			setParams(params, { replace: true });
+		if (params.has("grain") || params.has("motion")) {
+			setParams(
+				(current) => {
+					const next = new URLSearchParams(current);
+					next.delete("grain");
+					next.delete("motion");
+					return next;
+				},
+				{ replace: true },
+			);
+		}
+	}
+
+	function toggleMotion() {
+		setGrainPrefs({ motion: !motion });
+		if (params.has("motion")) {
+			setParams(
+				(current) => {
+					const next = new URLSearchParams(current);
+					next.delete("motion");
+					return next;
+				},
+				{ replace: true },
+			);
 		}
 	}
 
@@ -57,7 +84,7 @@ export default function ToolsMenu() {
 						aria-label="Background"
 						className="flex flex-col"
 					>
-						{BACKGROUNDS.map(({ id, name }) => (
+						{BACKGROUNDS.map(({ id, name, exploration }) => (
 							// biome-ignore lint/a11y/useSemanticElements: a styled menu row
 							<button
 								key={id}
@@ -67,7 +94,14 @@ export default function ToolsMenu() {
 								onClick={() => pick(id)}
 								className={cn(row, prefs.scene === id && "text-foreground")}
 							>
-								{name}
+								<span>
+									{name}
+									{exploration && (
+										<em className="ml-1.5 border border-line px-1 align-[0.15em] font-data text-[9px] not-italic uppercase tracking-[0.08em] text-ink-faint">
+											exp
+										</em>
+									)}
+								</span>
 								{prefs.scene === id && <Check size={13} aria-hidden />}
 							</button>
 						))}
@@ -75,12 +109,12 @@ export default function ToolsMenu() {
 					<button
 						type="button"
 						role="switch"
-						aria-checked={prefs.motion}
-						onClick={() => setGrainPrefs({ motion: !prefs.motion })}
+						aria-checked={motion}
+						onClick={toggleMotion}
 						className={cn(row, "mt-1 border-t border-line")}
 					>
 						Motion
-						<span>{prefs.motion ? "on" : "off"}</span>
+						<span>{motion ? "on" : "off"}</span>
 					</button>
 					<nav className="mt-1 flex flex-col border-t border-line pt-1">
 						{TOOLS.map(({ to, label }) => (

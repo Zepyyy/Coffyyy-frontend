@@ -102,7 +102,11 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 			className="rise space-y-4 w-full"
 			style={{ "--rise-delay": "160ms" } as React.CSSProperties}
 		>
-			<div className="flex items-baseline justify-between" data-grain-quiet>
+			<div
+				className="flex items-baseline justify-between"
+				data-grain-anchor="shelf-heading"
+				data-grain-quiet
+			>
 				<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
 					Beans
 				</h2>

@@ -1,564 +1,239 @@
-# Design notes — "Roastery Notebook"
+# Design brief
 
-Working notes for the identity pass on the UX-overhaul branch. This is the plan I
-cooked against, plus the reasoning worth keeping.
+Current owner preferences and review criteria. Updated 2026-11-13.
+Read for visual work; domain facts live in CONTEXT.md, implementation in code.
+An implemented experiment is not an approved direction. Latest owner feedback wins.
 
-## The brief, as I understood it
+## Product character
 
-"Cool design system, but no wow effect, not personalized, not established."
-Translation after looking at every page: the app has a *voice* (quiet journal,
-Newsreader italics, mono labels) but no *material world* and no *signature
-moment*. Every surface is the same flat hairline box on cream; type comes from
-five competing families; the one interactive gem (the brew dial) is visually
-whispering; nothing moves, nothing celebrates, nothing is yours.
+Coffyyy is a personal brew journal used in everyday brewing. Keep information
+clear, controls precise, and the surrounding world alive without demanding attention.
+Established UI: sharp surfaces, hairlines, restrained color, expressive serif
+headings and quiet body/data typography. Background exploration preserves the
+existing tokens and component behavior.
 
-## Direction
+## Owner preferences
 
-**A barista's field notebook strapped to a precision instrument.**
+Latest background feedback, 2026-11-12:
 
-- Warmth comes from material: unbleached paper, espresso-brown ink (never
-  black, never cold grey), warm shadows instead of neutral ones.
-- Structure comes from instruments: mono data everywhere a number matters,
-  tick scales, a machined knob.
-- One living color: **crema amber** — reserved for what is active, filled, or
-  true ("this shot worked"). Everything else stays ink-on-paper.
-- Flavor notes keep their tag hues, recalibrated to sit on paper instead of
-  shouting over it.
-
-Why not the obvious "dark moody coffee site": it would fight the morning-light
-reality of brewing and read as template. Why not photography: no assets, and
-the app's world is numbers + notes, not latte art.
-
-## Tokens
-
-Color is defined once in `src/index.css` as semantic vars (paper / ink /
-crema / roast / line), then mapped onto the existing shadcn variable names so
-every component keeps working:
-
-| Token        | Light                  | Role                          |
-| ------------ | ---------------------- | ----------------------------- |
-| `paper`      | warm unbleached cream  | app background                |
-| `paper-raised` | near-white cream     | cards, popovers               |
-| `paper-sunken` | deeper paper         | wells, inputs, code           |
-| `ink`        | espresso brown-black   | text, primary buttons         |
-| `ink-soft` / `ink-faint` |            | secondary / labels            |
-| `crema`      | amber, hue ~76         | accent: active, needle, fill  |
-| `crema-deep` | darker amber           | hover/pressed                 |
-| `crema-tint` | pale amber wash        | selected backgrounds          |
-| `roast`      | near-black brown       | strongest surfaces (CTA)      |
-| `line` / `line-strong` | warm hairlines | borders                    |
-
-Type roles (three faces, no more):
-
-- **Fraunces** — display. Heroes, section titles, bean names, the ratio
-  numeral, the brand wordmark. Italics for the human voice.
-- **Instrument Sans** — body and UI. Buttons, chips, hints, forms.
-- **Spline Sans Mono** — data. Eyebrow labels, recipes, ledger rows, dates,
-  dials.
-
-## Signature + echoes
-
-One big bet, three quiet echoes:
-
-1. **The machined dial** (log-a-brew): knurled ring, ideal-zone arc, crema
-   needle with a spring settle. The most-used control becomes the most
-   beautiful object in the app.
-2. Bean cards read as **coffee-bag labels** (roaster eyebrow, origin line,
-   tasting strip) instead of pastel billboards.
-3. Saving a shot plays a one-time **crema-fill cup** animation.
-4. The dashboard opens with a **time-of-day greeting** — the journal talks to
-   you.
-
-## Motion
-
-- Load: 300ms rise + fade, 45ms stagger per element (`rise` utility), disabled
-  under `prefers-reduced-motion`.
-- Hover: 2px lift + shadow deepen on interactive cards.
-- The dial needle settles on a soft spring when nudged.
-- Everything under 400ms; nothing loops except the save celebration.
-
-## What was cut (Chanel rule)
-
-- 11 Google font families → 3.
-- Giant watermark text behind bean-card headers.
-- Squiggly dividers everywhere → one squiggle under the ratio numeral only.
-- Dot grid stays but quieter, in crema instead of brown confetti.
-
-## Verification log
-
-- `tsc -b`, ESLint and `vite build` all pass after the sweep.
-- Every page screenshotted headlessly against seeded data (small/demo preset via
-  `/dev`) in light + dark + 390px mobile, before and after. The screenshots and
-  the capture scripts live outside the repo in `/tmp/coffyyy-shots/`.
-- Issues caught and fixed during self-review: mobile header collision
-  (brand vs nav), stray dark "stripe" bar on the add-a-bean live preview,
-  duplicate `onClick` in the quick-pick cards, `BeanHeader` swatch prop type,
-  button sizes without radii (`icon` variants), and the unused `Separator`
-  import in `SectionTitle`.
-
-## Ideas parked (deliberately not done)
-
-- A "roast spectrum" color scale instead of 10 roast dots.
-- Chart tooltips styled as specimen labels.
-- Sound on the dial detents (no — it's a coffee app, not a slot machine).
-- Migrating `TasteRatingPrompt` sliders to the dial as a radial control
-  (worth prototyping before committing; the linear deviation gauge is honest
-  and readable, the radial one may be cute-but-worse).
-
-## Revision 2 — after human review (current)
-
-The first pass ("roastery notebook") was too warm, too round, and too colorful.
-Review feedback, and the revision it produced:
-
-| Feedback | Change |
-| --- | --- |
-| "I absolutely HATE those rounded corners" | Radius is 0 everywhere. Only things that are physically round stay round: the dial, slider thumbs, spinner. |
-| "cheap hover effect" | The 2px lift + growing shadow is gone. Cards now answer with a border-color shift (`hover-line`); buttons darken in place. Nothing moves on hover. |
-| "too colorful, don't like brown as background/primary" | Light is near-white neutral paper, dark is near-black neutral (no espresso cast). Brown/crema demoted to ONE dusty caramel accent: the dial arc + needle, active states, focus ring, nav underline, small labels. CTAs are ink. |
-| "random color gradients in the background? bottom right a red one" | Real bugs, not imagination: the roast-level scale on add-a-bean was a teal→yellow→orange→**red** gradient bar (pre-existing), and the grind scale had a brown gradient bar. Roast scale is now a monochrome light→dark ramp; grind scale is a tick ruler. The soft dot-grid (radial-gradient dots) is replaced by a crisp hairline blueprint grid. |
-| "the three colored y's, lmao I hate it" | Wordmark is single-color ink again. |
-
-Inspiration that anchored the revision (in `/home/quent/dev/inspi`, the user's
-own collection): the Zed landing page (white, hairline grid + ruler ticks, blue
-serif italic, square key-cap buttons) and the "Delta" landing (near-black, mono
-labels, one muted red accent, outlined mark). The gradient/shader swatch images
-in the same folder were reviewed and deliberately *not* applied — the user's
-own feedback rules out surface color and soft gradients.
-
-## Revision 3 — the CTA and the view switches (current)
-
-Feedback: the dashboard "Log a brew" ink slab with the caramel arrow read as
-"dark maroon with a light brown arrow"; the Library beans/machines toggle was a
-card inside a card; the same washed-fill toggle lived on History; Library cards
-ballooned when there were only one or two; the Add-Bean card shared the fill
-problem and squashed flat when alone in its grid row.
-
-Changes, all inside the existing system (no new tokens, no gradients — the
-revision-2 rule stands):
-
-- **The shot key** (dashboard CTA): ink stays the strongest surface, but the
-  button now speaks in the app's two voices — a mono eyebrow ("Next shot") over
-  Fraunces italic ("Log a brew"). The caramel left the arrow and moved to a 3px
-  crema marker on the bottom edge: a stub at rest that pulls across the full
-  edge on hover, echoing the crema-fill save celebration and the page-title
-  crema markers. Arrow slides, background darkens in place, 1px press. Nothing
-  lifts, nothing glows.
-- **View switch** (`SegmentedControl`): the header nav's underline ported down —
-  mono uppercase labels, hairline crema underline under the active view, half
-  underline on hover. No track, no nested boxes. Used on Library
-  (beans/machines) and History (by bean/timeline); documented on /buttons.
-- **Library grids**: `auto-fit` → `auto-fill` so tracks keep their width when
-  the list is short; cards no longer stretch to fill the row.
-- **Add-Bean card**: the caramel tint wash on hover is gone — the border
-  answers and the ghost card solidifies to paper-raised. On the dashboard it
-  gets a min height so it holds its own in the grid.
-- The beans empty state no longer nests a dashed Add-Bean card inside the
-  dashed empty-state panel (the no-card-in-card rule); it uses the same ink
-  button as the other empty states.
-
-## Revision 4 — the CTA gets a pulse (current)
-
-The first CTA rework (eyebrow + crema stub that extended on hover) failed:
-at rest the stub read as a rendering glitch — a partial mark — and the hover
-payoff was too timid. Lesson learned: a resting state must look complete;
-life has to come from motion or state change, not from a static fragment.
-
-The user asked for something alive — an animated inner field, an SVG that runs
-until hover, or something better. Five directions were prototyped live on
-`/cta-lab` (shot timer, crema pour, cup sketch, standby key, the flip); the
-shipped **shot key** combines the two strongest:
-
-- At rest, a crema needle idles along a tick rail on the key's bottom edge —
-  the machine is on, counting toward the next shot. This is the app's first
-  deliberate ambient loop; the "nothing loops" rule is relaxed for this one
-  element only.
-- On hover, the key floods with crema rising from the bottom edge, the
-  meniscus line leading, and the text yields to ink-on-caramel (dark text on
-  caramel in both themes). The needle goes under: the shot has been pulled.
-- Click presses the key 1px. `prefers-reduced-motion` parks the needle; the
-  flood stays as an instant state change.
-
-Gradients stay out; the flood is a liquid state change, not a surface gradient.
-The lab page stays up (dev-only link) so any alternative can swap in by
-request.
-
-## Revision 5 — the pulse survives reduced motion (current)
-
-The owner's browser reports `prefers-reduced-motion: reduce` (Windows
-"Animation effects" off does this), and the app's blanket reduced-motion rule
-was killing every CTA animation: no needle, no flood, instant color swaps.
-Diagnosed from exactly that symptom set. The blanket rule stays for the rest
-of the app, but the shot key and the `/cta-lab` variants now opt back in
-explicitly — the owner's call, recorded here on purpose.
-
-While in there the ambient layer got louder, per the same feedback:
-
-- The needle sweeps right, holds at the end like a settling gauge, and sweeps
-  back (7s loop) instead of ping-ponging.
-- The espresso sheen from the lab's pour variant now drifts across the shot
-  key in both rest and flooded states.
-- The flood eases with `easeOutCubic` over 600ms so the liquid front is
-  readable instead of snapping visually complete in the first 200ms.
-
-## Revision 6 — expressive over literal (current)
-
-The instrument-literalism ran its course: the owner's verdict on the needle /
-flood / crema family was "trying too hard to fit the design system," and
-"everything coffee-inspired gets boring fast." New direction, owner-specified:
-
-- The CTA's life is **ambient, not hover-gated**: a layer of blurred color
-  spots drifts forever behind the label, each spot on its own clock (17s /
-  21s / 23s / 29s alternate), so the composition never repeats. Gradients are
-  officially allowed in this one place — blurred, slow, multi-spot.
-- The one coffee nod that survives: a line-drawn cup with two steam wisps
-  rising and dissolving out of phase (`SteamCup`).
-- **No warm dark fills.** Owner's words: dark maroon reads like poop. The
-  morning-haze key is cream with latte amber leading, foam rose answering,
-  matcha sage low, cream melting the seams. The night variant uses a *cool*
-  charcoal (hue 260) — never the warm ink slab.
-- Hover only warms the haze (saturate + brightness) and slides the arrow; the
-  eyebrow is gone — one confident line of Fraunces italic.
-- Dark mode adapts for free via tokens; the night variant keeps fixed colors.
-  The reduced-motion carve-out now covers the haze and steam, verified under
-  emulated `prefers-reduced-motion: reduce` (spot transforms and steam
-  opacity both change over time).
-
-The lab keeps the three takes (morning haze / night haze / latte art) at
-`/cta-lab`; the needle, flood, sketch, standby, and flip variants were
-deleted with their CSS.
-
-## Revision 7 — back to the sources (current)
-
-The pastel three-spot haze failed on color: amber + green + rose on one
-surface is a fruit salad, and the owner killed it. Two standing rules came
-out of that: **one hue family per surface, ever** (the latte amber/beige is
-the house warm and stays), and **lab buttons must be vastly different from
-each other** — one idea per button, no merging concepts into variants.
-
-The rework went back to the owner's inspiration folder (`/home/quent/dev/inspi`)
-— the same well the revision-1 identity pass drank from — and each button now
-traces to a specific source:
-
-| Button | Source | Mechanism |
+| Direction | Owner response | Useful distinction |
 | --- | --- | --- |
-| **0 · The censer** (ships on Home) | The golden censer with luminous vapor in a cold cavern (the owner's game screenshot) | Cold near-black key (hue 250, never warm-brown); a gold line-drawn cup, a breathing warm halo behind it, glowing vapor, embers drifting up |
-| **1 · Ember rise** | Wonder Shader_9 (vertical ember streaks, burnt orange → cream) | Tall blurred amber-only heat columns rising forever, out of phase; ink text |
-| **2 · Live word** | G2 DEFEAT poster (smoke inside the letterforms) | Calm paper face; an amber light sweeps through the word itself (`background-clip: text`) |
-| **3 · Obsidian glow** | Delta's near-black + the owner's animated-gradient idea | Cool slate; amber gradient sweeps inside forever; brightens on hover, flashes on click |
-| **4 · Amber beam** | Zed's key-cap solidity | Cream face; a light runs the perimeter via an animated conic mask |
+| Coffee branch | Loved; current default | Color, motion, theme and implementation work together. |
+| Dandelion, Bloom | Loved | Distinct ideas with convincing life, color and motion. |
+| Star atlas | Disliked | Space remains welcome; this execution is not a template. |
+| Whale, Koi | Indifferent; not used | Shipping is not evidence of quality. |
+| Ginkgo, Shore | Disliked | Rejected execution does not ban plants or water. |
+| Willow | Indifferent | Subject alone does not supply character. |
+| Stillwater | Not keeping | Reflection/water mechanism is interesting. |
+| Windfall | Not keeping | Falling leaves are interesting; execution fell short. |
+| Canopy, Unfurl, Penumbra, Rain garden (Sol exploration) | Rejected | Too timid, unattractive or unconvincing; a barely moving isolated moon is not enough. |
+| Moonflower (Sol exploration) | Flower rejected; butterfly promising | A much more impressive, beautifully designed flower could be worth considering. |
 
-All five loop infinitely and are carved back into motion under the owner's
-reduced-motion OS (verified by probing computed styles over time under
-emulated `prefers-reduced-motion: reduce`). The pastel haze, night, and vivid
-variants were deleted.
+These judgments concern explored versions; not all exist in this checkout.
+The owner wants surprise, visual ambition, and visibly meaningful motion. The
+rejected atlas at least occupied space and attempted something innovative.
+Tiny decorative vignettes do not satisfy this brief; recognizability and passing
+technical checks are insufficient. Do not shrink ambition into spare card gaps.
+Whole-page composition is open for exploration. Two lateral corridors are an
+existing technique, not a requirement. Coffee imagery is welcome when it works;
+the background need not illustrate coffee literally.
 
-## Revision 8 — round two on the source-mapped set (current)
+Earlier preferences still relevant: text stays quiet and readable; moving haze
+behind exposed text was rejected. Avoid generic rounded UI and hover lift.
+Continuity of useful UI state changes was approved. Old CTA-specific motion or
+color exceptions do not authorize equivalent changes across the app.
 
-Per-button verdicts and what changed:
+Latest owner feedback on the desktop studies (2026-11-13):
 
-- **The censer** (owner's favorite) — dark mode clashed ("looks almost dark
-  blue"): the cold hue-250 base fought the warm dark theme. Dark mode now
-  uses a deep warm espresso (`oklch(0.165 0.024 48)`) — the one sanctioned
-  warm-dark — with a warm gold border; light theme keeps the cold cavern.
-  The vapor pushed toward the thing the owner actually loved in the shot
-  (Clair-Obscur, not Dark Souls — corrected): brighter white-gold strokes,
-  double drop-shadow bloom, stronger halo.
-- **Ember rise → the hearth** — columns were boring. Owner's suggestion
-  adopted verbatim: blurred round amber circles beneath the label, each on a
-  slow repeated bob (4.6–6.4s, staggered phases). A film-grain overlay
-  (SVG turbulence tile jittering in `steps()`) nods to the Wonder swatches'
-  dithered texture.
-- **Live word** — the shimmer was invisible until you caught it, and it's a
-  link treatment, not a button. Now a bare link in the lab (no frame), with a
-  dark-mode gradient so the words shimmer on dark too.
-- **Obsidian glow** — killed; the slate+amber pairing didn't work for the
-  owner. Replaced by **Calmer**: Arc's aubergine panel with lavender petals
-  breathing beneath a cream serif label.
-- **Amber beam** — killed; broken under the owner's browser and the concept
-  itself rejected.
+- Keep the material quality: Orbital gradients, Passionflower's petal shadows and
+  contrast, Leaffall's colors. Texture alone does not make a successful scene.
+- Daylight rejected: orange carpet with arbitrary branch cutouts; visual premise
+  does not make sense. Owner considers Aurora more convincing; lead rejection
+  was not an owner rejection or a ban on aurora.
+- Nocturne: moon and meteors look good, but scene is too empty. Identical isolated
+  meteor trajectory/timing is inadequate. Wants varied sizes, colors, pace and
+  patterns with overlapping activity, as in Bloom, without random visual noise.
+- Leaffall: low branch, upward launch, invisible water and tiny ripples rejected.
+  Earlier composition was better integrated. Falling and reflected-water physics
+  must be visible and coherent, not merely present in the source.
+- Passionflower: flower and butterfly loved. Improve composition and enrich the
+  scene moderately; no entire jungle. Existing petal rendering is worth preserving.
+- Orbital: orbiting moon and its shadow are excellent. Big planet's rendering is
+  nice, but the scene feels empty and outer rings add only meaningless pixel area.
+  Compose around purposeful interactions; filled area is not visual interest.
 
-Owner's taxonomy for using the folder (recorded): sometimes it's the color
-(G2 poster combo, Arc's aubergine), sometimes the vibe/graphics (Zed, Delta,
-the esports schedule), sometimes the composition (the Clair-Obscur
-white-glow-on-dark). And the Wonder frames: small surfaces, complex color,
-dithering/grain.
+Latest clarification: the owner is a heavy light-mode user. Treat light mode as
+the primary design target, with deliberate dark-mode treatment too. The shared
+landscape screenshot was praised for its framing, not a request for a faithful
+copy, orange palette, or specific terrain. Use spatial depth and focal hierarchy
+as inspiration while giving new explorations their own identity.
 
-## Revision 9 — blend in, don't shout (current)
+Latest owner verdict after the Sonnet revisions:
 
-The round-two verdict made the meta-lesson explicit: every attempt so far was
-a loud object on a quiet page, and the page always wins. New standing rule:
-**CTA faces use the app's own tokens (paper / ink / line / crema) — no
-hardcoded off-palette surfaces — and their character comes from whisper-level
-ambient motion.**
+- Passionflower and Horizon are approved for the regular background menu.
+  Preserve both current versions; they are no longer exploration entries.
+- Passionflower: preserve the liked baseline. The separate variant should explore
+  additional flower types integrated into the composition, possibly with a bee.
+  Botanical variety is the main exploration; butterfly motion still needs attention
+  but a motion-only variant does not answer the request. Avoid turning it into a jungle.
+- Nocturne is much better; align meteor families to a shared general direction.
+  The near-vertical versus horizontal crossing feels disorganized. Keep variety
+  in timing, size and material without opposing or perpendicular streams.
+- Leaffall concept is much better; water is too loud and occupies too much space.
+  Reduce its visual footprint while keeping readable water, reflections and impact.
+- Orbital rejected; retire it and move on. No further refinement requested.
 
-- **The censer, softened on all accounts**: the fixed cold-black and espresso
-  bases are gone; the face is `paper-raised` in both themes, so it is a
-  sibling of every other card. The cup is drawn in the house crema token, the
-  halo is a 13%-alpha breath (20% in dark), steam is quiet ink-soft with a
-  faint glow only in dark. The cute coffee animation survives untouched.
-- **The hearth, desaturated**: circle chroma cut by more than half (dusty
-  latte tones, `oklch(0.8–0.92 0.03–0.055 68–82)`); the bob and the grain
-  stay. The wash now whispers.
-- **Live word, tamed into the app's link voice**: at rest it is literally the
-  small grey mono uppercase link the app already has; on hover, one amber
-  light passes through the letters once (`background-position` sweep, 0.75s).
-  The always-on display shimmer was retired — it belongs on hover, not on
-  permanent display. The sweep's endpoints were tuned so the band actually
-  crosses the letters mid-transition (the first attempt blew past in 60ms).
-- **Calmer, reinterpreted as Dusk**: the Arc aubergine was goofing as a slab.
-  Its essence — cool, calm, low light — survives as a faint violet bloom
-  (12–16% alpha) breathing on a paper key. The color as an accent wash, not
-  a surface.
+Owner requested Sonnet for every sub-agent in the next round. Latest feedback
+supersedes lead shortlists and reviews. Inspect full motion sequences and quiet
+intervals, not just selected stills. Approval remains with the owner.
 
-## Revision 10 — the instrument keys (current)
+## Current exploration scope
 
-Dusk and the hearth are dead (the owner's call — the ideas never belonged to
-this site). The censer ships on the dashboard as-is. The live word's two bugs
-are fixed: the faint left-edge light at rest was a gradient-stop artifact
-(the amber ramp bled into the rest window), and the sweep never ran on the
-owner's machine because the link wasn't in the reduced-motion carve-out.
+Owner explicitly deferred mobile for this exploration. Design and judge desktop
+first: scale, visual ambition, beautiful execution and meaningful motion. Do not
+shrink or simplify desktop compositions to satisfy phone constraints. Mobile
+composition and validation remain future work, not acceptance gates for this round.
 
-The everyday buttons get the upgrade the owner asked for — **"one big idea
-distilled in many children"**, taken from Zed and Delta: **every button is a
-key on the instrument.**
+## Implementation boundaries
 
-1. **Press**: every key sinks 1px while held (`active:translate-y-px` in the
-   cva base) — uniform tactile physics across all fourteen variants.
-2. **Sheen**: filled keys (`default`, `ink`) answer hover with a single light
-   pass across the face (`.key-sweep`, white at 14%, 0.6s, once per hover).
-3. **Plate**: the ink key wears Delta's faint diagonal texture
-   (`.key-plate`, `currentColor` at 9% so it adapts to both themes).
-4. **Hint**: primary form keys ("Save the shot/bean/equipment") carry Zed's
-   key-cap chip — `.key-hint` with ↵, honest, since the forms submit on
-   Enter.
+- Preserve saved background preferences and coffee-branch default until the owner
+  chooses a replacement. Exploration does not choose for them.
+- Use the Canvas2D Scene/engine, quiet zones and glass integration. Blur belongs
+  under glass; scene-specific haze over open text is not acceptable.
+- Compose for populated pages. A subject hidden by cards on a phone is not a
+  successful mobile composition. Whole-page does not mean drawing over text.
+- Preserve motion-off and reduced-motion behavior. A still must look complete.
+  URL/lab motion overrides are preview behavior, not accessibility precedent.
+- Keep deterministic motion and temporal smoothing. Validate visible flicker and
+  cost; detail does not justify degraded everyday use.
 
-Quiet keys (outline, option, chips, add) keep their border-answer hover and
-gain only the press — restraint where the eye already has work to do. The
-styleguide's Buttons section documents the set; the CTA lab is down to the
-two survivors (censer, live word).
+## Review an exploration
 
-## Revision 11 — the language, not the props (current)
+State the subject, composition and characteristic motion mechanism before building.
+Different subjects sharing the same drift loop are weak variety. These criteria
+are a review framework, not a mandatory aesthetic recipe:
 
-The key-cap props (chips, plate, sheen) missed the point and are gone. The
-owner's actual brief: the design system itself — straight lines, sharp
-corners, hairlines — is the source, and its existing motion idea is **lines
-that draw themselves** (the nav's scaling crema underline). The buttons now
-speak it, one mechanism per family, no blind copies:
+1. **Identity:** the rendered scene communicates its idea without its title.
+2. **Life:** movement relates convincingly to the subject; the resting state is
+   intentional. Watch transitions and cycle boundaries.
+3. **Composition:** target viewports have a legible focal structure and quiet
+   space; assess populated pages in light and dark themes. Desktop only this round.
+4. **Material:** color, edges, anatomy and depth survive actual grain rendering.
+   Source complexity is not evidence of visual richness.
+5. **Daily use:** reward a glance, then let attention return to brewing. Check
+   motion-off, readability, flicker and performance.
 
-| Variant | Mechanism | Reads as |
-| --- | --- | --- |
-| `default` | inner 1px frame draws left→right (`clip-path` reveal) | the key engages |
-| `ink` | a ruler of measure ticks rises along the bottom edge | the measure appears |
-| `destructive` | two half-frames converge from both edges | arming |
-| `outline` | an SVG hairline retraces the full perimeter (`pathLength`-normalized, injected by `Button` itself) | the border redraws |
-| `outline-dashed` | the dashes march while hovered (SVG dashoffset loop) | the slot is alive |
-| `add` | four corner marks settle in | place here |
-| `secondary`, `ghost`, `steps`, `chips`, `option` | the crema underline draws along the bottom | quiet keys join the nav's stroke |
-| `subtle-destructive` | the same underline in destructive red | the danger edge |
-| log-form tabs (roast, grind) | the bottom line draws on hover, stays drawn while true (`opt-key`) | selection is a stroke, not a pop |
-| log-form pills (time, flow) | the crema frame draws around the chip when true (`opt-frame`) | marked true |
+The lead inspects rendered results and records concrete weaknesses before accepting
+submissions. Revise or reject failures; lint is not design approval. Separate
+source checks, rendered stills, observed motion and untested behavior in reports.
+Only the owner can confirm a new favorite/default.
 
-Everything presses 1px while held. All of it is `clip-path`/`transform`/
-`stroke-dashoffset` state changes, so reduced motion degrades to instant
-states (the marching dashes freeze — nothing loops at rest). Engineering
-note: Lightning CSS wraps `color-mix(... var(...))` inside gradients in a
-nested `@supports` fallback that Chromium drops, which silently deleted the
-ruler's ticks — gradients with var-ed color-mix now use explicit oklch +
-`.dark` overrides instead (see `.key-ruler`).
+## Maintaining this document
 
-## Revision 12 — the measure, not the cup (current)
+Record owner preferences; label interpretations. Replace superseded guidance
+instead of appending another current revision. Keep candidate pitches, critiques
+and validation with their delivery record. Agent preferences are not standing rules.
 
-The owner's verdict on the crema-fill cup ("god damn it's ugly") closed the
-last revision-1 literal-coffee survivor, and inspection showed it had been
-broken since revision 2 anyway: the SVG painted `var(--roast)` and
-`var(--crema)`, raw token names the revision-2 sweep removed, so the cup had
-been animating an invisible fill.
+For a specific historical decision only, consult
+[the archived chronology](archive/design-notes-history.md). Its old current labels
+and test results describe their original iterations, not today's state.
 
-- **The save moment is now the censer's steaming cup** (`SteamCup`, the one
-  coffee visual that survived every review since revision 7): it sits at the
-  headline's right, quietly steaming while the entry sits in the ledger. No
-  new animation was invented — an abstract self-drawing "measure" strip was
-  prototyped first and killed by the owner on sight ("random measuring strip
-  in the middle of the page"); the lesson holds: nothing new gets designed
-  for this app while the censer's language already answers.
-- **The post-save actions** became one ink key ("Done", arrow slides, ruler
-  ticks on hover) over hairline ledger rows for the secondary steps ("Add
-  taste notes · after tasting", "Log another shot · same bean"). Hover draws
-  the nav's crema underline; no more three colored buttons in a row.
-- **The taste/strength gauges got their rail back**: two dead references
-  (`var(--crema)` in the AxisSlider inline gradient, and the same name in
-  the Dial's ideal-zone arc), plus a design bug — the crema deviation
-  segment is zero-width at balanced, so the slider showed nothing at rest.
-  The gauge now sits on a permanent 1px line-strong rail with the crema fill
-  measuring deviation on top.
+## Grain, round five — five candidates for the next default
 
+Owner opened the whole canvas and palette, then steered toward autumn and trees.
+Opus led the final art direction: replaced Grove with Willow, rebuilt Stillwater
+and Windfall, strengthened Ginkgo's anatomy/colour, and retained Shore.
 
-## Integration pass — mobile composition and censer
+- `willow` / **Willow**: golden hanging whips. A gust turns the leaves silver,
+  then long and short whips swing at different rates and drift out of step.
+  The first-visit default; saved choices still win.
+- `reflection` / **Stillwater**: birches and a copper fern bank over a pond.
+  Level engraved water lines break into dashes. A leaf and its reflection
+  meet at the surface, sending rings through the mirrored trunks.
+- `windfall` / **Windfall**: large five-lobed maple leaves on one connected bough.
+  Gusts release a leaf from its real attachment; it slips, tumbles and settles
+  into the drift below.
+- `canopy` / **Ginkgo**: overhead boughs, butter-yellow fan-shaped leaves, forked
+  veins and knobby spur shoots. Turning faces open skylights in the crown.
+- `shore` / **Shore**: swash, backwash, drying sand and foam lace along a moving
+  tide line. Foam holes erase opaquely on both papers; inheriting the night
+  glow's partial opacity previously left grey sheets instead of open lace.
 
-After the October 29 investigation, implementation preserves the established
-identity and changes task composition: compact optional Home tasting, named
-Brewer/bean summaries, paired phone dials with full-size steppers, and a quieter
-History opening. The censer is larger with an attached drawn plume; no extra
-motif or off-palette surface. New plume motion stops under OS reduce while the
-previously accepted cup behavior remains. This is an implementation choice for
-owner review, not a newly recorded owner preference.
+`/backgrounds` compares one live scene at a time, with native keyboard-selectable
+radios, pause, dashboard trials and an explicit **Use this background** action.
+Previewing never changes the saved choice. Choosing writes the normal background
+preference and returns to the journal. Coffee branch and Bloom remain selectable.
 
-Review caught and fixed folded tasting drafts being lost, stale Repeat state
-on navigation, and the tablet greeting colliding with the CTA. See
-[delivery and verification](ui-mobile-delivery.md) for scope, captures and limits.
+The existing grain lattice, quiet masks and glass remain responsible for the
+material. Willow and Stillwater share `scenes/raster.ts`, which paints blades,
+polylines and water marks directly into the dither source grid, then lets the
+engine apply its usual masking, hue and tone easing. Caches contain pure
+time-derived drawings: backward seeks and `t=30` stills must reproduce the
+same image. Expensive anatomy uses cached paths or raster profiles; intermediate
+canvases are CPU-backed to avoid transfers into the readback layer.
 
+Motion has three saved states: `null` follows the device, `true` is explicit
+On, and `false` is explicit Off. Existing saved booleans keep that meaning.
+Dashboard On/Off overrides the device setting and survives scene selection,
+reselection and navigation. An unset choice follows live OS reduced motion.
 
-## Plume rejected — motion studies
+Studies and the dashboard share the same saved motion choice. Explicit study
+Play/Pause updates playback immediately, including after returning to the
+journal without choosing a new background. Selecting a scene only previews it;
+**Use this background** saves the background. Dashboard trials can carry
+playback as `?grain=<scene>&motion=on` (or `off`); changing a playback control
+clears that temporary override. Both controls report actual playback. `scripts/verify-grain-motion.mjs` checks the real
+controls and moving/still canvas pixels, including the reduced-motion case. Populated phone cards
+conceal much of every scene; mobile is a close crop and edge colour rather than
+an unobstructed miniature of the desktop scene. Wide-screen engine cost remains
+substantial even with the established Coffee branch; scene-only timings do not
+establish full-frame performance.
 
-The owner rejected the enlarged plume: its static upper traces and separate
-short steam animation read as disconnected squiggles. Removed it; restored the
-accepted original SteamCup without undoing the mobile/functionality fixes.
-
-The existing `/cta-lab` now holds three interactive, in-memory studies:
-Current (a fluid ink field), Type (rolling responsive letterforms), Continuity
-(a persistent brew specimen unfolding into edit and receipt states). Motion
-has an explicit on/off control. These are exploratory surfaces, not journal
-writes or newly accepted owner preferences. The studies are loaded only when
-the lab opens. Current is the implementation team's strongest visual candidate;
-Continuity is the strongest candidate for useful motion across workflows.
+Final validation: build, lint and all 170 tests passed. Desktop/phone light/dark
+chooser checks, six default/persistence cases and sixteen temporal/still cases
+passed, including dark Shore. No hard flips or on-off-on reversals; backward
+seeks and theme roundtrips reproduce the same still. Full engine measurements
+still warn on 2560px canvases and on Ginkgo at 390px with 4x CPU throttling.
+These are local Chromium measurements, not physical-phone performance claims.
 
 
-## Texture direction and approved continuity
+## Cleanup and Nocturne rebuild (Opus, 2026-11-14)
 
-Owner feedback: Current was visually interesting but unpleasant and poorly
-integrated; Type felt janky and did not belong. Continuity's smooth changes of
-state were explicitly approved. Retired Current and Type from the lab rather
-than iterating their styling indefinitely.
+Owner rejected Murmuration outright ("the plague"). Removed rejected scenes from
+code and menus: murmuration, whale, star atlas, horizon, leaffall, windfall,
+ginkgo (canopy), shore, daylight, orbital, penumbra, rain. Saved choices that
+pointed at them fall back to the default.
 
-The new reference is animated, not a static ASCII composition:
-https://x.com/stackedlol/status/2112257760628986188/video/1 . Its useful qualities
-are coherent forms travelling through quiet space, fragmented character texture,
-and soft focus. Treat blur, dithering and ASCII as exploratory materials, not a
-requirement to reproduce its silhouettes or cover the whole app.
+Nocturne rebuilt from scratch, now in the regular menu. Real near-side moon
+(maria layout, crater height fields, Tycho/Copernicus/Kepler rays), waning
+gibbous, lit limb facing the page. Lesson: mid-tone grey dithers into a
+checkerboard; the moon prints at full dot density with luminance carried by
+hue (ivory, slate, indigo). Diffuse Milky Way stipple read as dirt on light
+paper and was cut. One radiant beyond the moon; overlapping families (bursty
+streaks, coloured bright meteors with wind-twisted trains, slow grazers, a rare
+fireball that breaks up). No cirrus haze, no twinkling.
 
-The lab now compares three renderings of one field: ASCII, ordered dither and
-blur. The approved Continuity study remains intact. Real Home tasting uses a
-shared frame and name/date handoff during open/fold, retaining the mounted editor,
-draft, save/error behavior and keyboard focus. Folding a scrolled editor reveals
-the focused trigger above navigation; a long-shelf regression protects this.
-Production follows reduced motion;
-the lab retains an explicit animation switch. No new persistence or sync model.
+Owner then rejected the realistic moon: too realistic, too filled, too big.
+Replaced with a small crescent drawn in the grain (gold limb dissolving through
+a dithered falloff, open disc with a dotted earthshine rim). Trains no longer
+wiggle: they stay where they formed and fade from the oldest end.
 
+Owner disliked the crescent too, and called sparse single-pixel stars "dirt".
+With the new 1px blue-noise engine underway, Nocturne dropped the moon: a soft
+Milky Way band (star clouds, warm core, dust lane) rises up the left side,
+crowded with stars; the open sky keeps a few bright stars with halos.
 
-## The grain field — one page, three depths
+## Cleanup and engine fixes (2026-11-14, owner direction)
 
-Owner feedback on the texture studies: the dither blinked, the shapes were
-"kinda just random", and it needed to be better integrated. Blur was liked as
-it was. The animated reference turned out to be a shark demo for a product
-called haj (Swedish for shark): the shapes are the brand's own creature, and
-blur only appears where a shark passes under the frosted composer. That
-reframed all three complaints.
+Owner rejected Stained glass, Caustic floor, Extraction (all deleted), then
+retired Willow, Stillwater, Betta, Nocturne (too laggy) and Jellyfish. One
+ink moon jelly from Jellyfish now swims in Bloom. Motion lab removed; one
+"Preview backgrounds" page remains. Explorations live in the regular picker
+with an "exp" tag (`exploration: true` in creatures.ts). Default is Coffee
+branch. Engine: frame pacing now follows the display (60 → 30 → 20 under
+load; fixed 24fps read as lag), and dots stop holding old steps for 0.6s
+after a scene/theme switch (fixes ghosts of the previous scene).
 
-- **Blink** was binary dots flipping as a shape moved through them, about 4% of
-  all dots per frame. Dots and glyphs now hold a tone on a fixed lattice, the
-  tone eases, and a slew limit caps how fast it can change. `verify-grain`
-  gates on this: under 0.001% hard flips and no on-off-on cells.
-- **Integration**: ASCII, dither and blur stopped being alternatives. They are
-  one field on the 32px blueprint grid behind Home (four columns and two rows
-  per square), and `.grain-glass` cards frost what passes under them. `.rise`
-  now fills backwards, because a forwards fill stopped the glass seeing past
-  its section.
-- **Shape**: a Home field needs a reason to exist and a name a stranger could
-  say from one frame. The plate is whatever the journal last brewed with, lit
-  by the real hour. Its steam travels from grain to letters to air, and the
-  letters are this journal's own beans and flavors. Below 1100px there is no
-  margin for a plate, so the steam leaves the cup on the Log a brew key.
-
-Kaldi (the origin-myth goat) reads as a goat on desktop but is a smear on
-phones and fails the blink gate, so it stays a lab scene. `/cta-lab` links
-each field on the real Home with `?grain=`, which also forces motion on. The
-old ASCII, dither and blur tabs are retired. Home follows the OS reduced-motion
-setting and draws one still frame.
-
-## Grain, round two — out of the text, and swimmers
-
-Owner feedback: the smoke behind the greeting did not work and the grey haze
-behind the letters looked awful, though the idea and execution were loved. The
-pointer made it jump, and the goat was a wrong turn: "fish are graceful at
-least". Standing rule from this round: **nothing moves behind text**, and haze
-on open paper is out. Blur only exists under `.grain-glass`.
-
-- Steam now climbs the empty right margin and thins out on bare paper. The H1
-  is a full quiet zone, so no scene can draw behind it.
-- The pointer jump was a sign flip as the ribbon crossed it. The shift is now an
-  odd, continuous function of distance, and the engine gives the pointer mass.
-- Kaldi is deleted. `scenes/swim.ts` makes a body follow its head along one
-  curve with a wave travelling tailward, which is where the grace comes from.
-- Koi, whale and jellyfish all use dither, not ASCII: 2px dots hold a silhouette
-  and 8x16 tiles do not, unless the mass is as large as the whale's back.
-- Phones have no margin, so the brewer scenes fall back to koi under the cards.
-  The whale needs open paper; mobile cards conceal most of its silhouette,
-  so it remains a lab study.
-- Tone easing got faster so moving shapes keep crisp edges. `verify-grain` now
-  gates on what blink actually is: reversals and hard flips, not ink turnover.
-
-Validation follow-up: smoothing source tone before the Bayer threshold still
-let that threshold amplify small steps into visible flashes (koi: 0.091% hard
-flips, 10 on-off-on dots). Threshold and density now precede temporal easing,
-so the slew cap controls final dot opacity. Faint tones fade continuously to
-zero. The same focused check reports zero hard flips and reversals. Whale
-verification samples its visible crossing instead of its intentional pause.
-Instant still rendering also bypasses the slew limit entirely: dense ink can
-exceed normalized opacity 1, so capping an instant change at 1 left a ghost of
-the old silhouette when motion stopped.
-
-## Grain, round three — a Haeckel plate in motion
-
-Owner feedback: jellyfish and the brewer plates were loved, but the whale and
-koi were "badly drawn", like "the docker logo" made to move. The jelly works
-because it is structure seen through translucent layers. The whale and koi were
-one flat outline with patches on top, and that is what a logo is. The direction
-is now 19th-century natural-history engraving: real anatomy, tone from line and
-overlap, parts that trail. A big flat area is the failure mode.
-
-- Dots now have a hue. Scenes draw in real colour on the dither layer, black
-  still means ink, and hue eases and survives a dot's fade so nothing flashes.
-  `env.dark` exists because a pastel needs different values on each paper.
-- Koi are three varieties with scale rows, ray fins and barbels. Colour sits in
-  the scales. Lily pads and leaves were cut: discs and starfish, not plants.
-- The whale took two rounds. First pass still read as a shark. The tells were a
-  pointed head, a lost eye, a calf that looked like a fish, and an upright tail.
-  A humpback is said by its flat rostrum and scooped jaw, and by flukes that lie
-  flat, foreshortened in side view.
-- `bloom` is four jelly species at depth. `veil` is a betta whose fins use the
-  jelly's trick, each ray remembering earlier poses. Both are lab scenes.
-- Phones still have no open paper, so koi there is a soft tint under the glass
-  and the whale shows only fin fragments in card gaps. Betta is desktop-only in
-  practice. `scripts/render-grain-frames.mjs` prints stills for judging by eye.
-
-## Grain, round four — autumn, and things that are not fish
-
-Owner asked for more backgrounds that are not animals. Three shipped, built by
-three models against a shared `margins.ts` (`lanesFor`, lifted out of jelly) and
-judged frame by frame by the lead. The coffee branch is the first-visit default
-(`useGrainPrefs` FALLBACK); a saved pick still wins and "Follow my brews" stays.
-
-The lesson is about **mechanic, not subject**. Jelly, koi, whale, a cabinet of
-instruments and falling leaves are all bodies drifting along a loop, and the
-owner rejected the last two for exactly that ("too simple, not different").
-What landed is each a different kind of scene:
-
-- `cherry` (default): rooted at the edge, one connected structure, moved by
-  wind. Coffea arabica, veined opposite leaves, ripening cherries, flowers.
-  Branches cache to a layer at 8Hz; output is still a function of quantised t.
-- `dandelion`: a source that is always there and produces the moving things.
-  Seeds are tilted parachute domes; first pass read as T shapes.
-- `atlas`: an antique star chart turning rigidly about a pole near a page
-  corner, one turn per 13 minutes. Coordinate wheel, a violet ecliptic band with
-  zodiac ticks, stippled Milky Way with rifts, six named constellations, and a
-  fixed edge ruler so the page reads as an instrument plate. First build was
-  speckle, not a chart: too sparse, no visible net. Fixed by compressing the
-  angular scale so several figures show at once and drawing the net as a
-  designed layer. Whole-page, with quiet zones keeping dots off small text.
-
-Cut: orb web and spider (not the vibe), armillary and autumn leaves (drift-loop
-mechanic), then a longcase clock and a frost pane, both judged poorly executed:
-the clock was thin dotted line-art, the frost a busy border. The owner's steer
-afterwards was the rotating celestial atlas. Lesson: judge a first build harder;
-two of the scenes accepted here were rejected on sight. The owner relaxed
-gutters-only for the atlas: it uses the whole page. Phone shows only fragments.
+Lakeside is liked as a concept. Owner wants full-page scene variations that are
+different worlds in the same spirit (cozy, full width/height illustrated
+landscape, small life, chill), not the same lake with swapped props.
