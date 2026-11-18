@@ -19,6 +19,7 @@ export {
 	getLatestUnratedBrew,
 	getLastBrew,
 	getLastBrewForBean,
+	getPourOverSetupBrew,
 	getBrewsForHistoryView,
 	getHistorySidebarStats,
 	getBrewsForBeanId,
@@ -27,7 +28,11 @@ export {
 	getLastUsedMachineId,
 	getBrewFormStart,
 } from "./api/brews";
-export type { BrewFormStart, GrindSettingSummary } from "./api/brews";
+export type {
+	BrewEntry,
+	BrewFormStart,
+	GrindSettingSummary,
+} from "./api/brews";
 export {
 	getAllMachines,
 	getMachineCount,
@@ -62,6 +67,8 @@ export {
 	addMachine,
 	addRecipe,
 	addRecipeFromBrew,
+	restoreBrewSession,
+	saveBrewSession,
 } from "../db/crud/add";
 export {
 	deleteBeanById,

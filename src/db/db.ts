@@ -1,4 +1,5 @@
 import { Dexie, type EntityTable } from "dexie";
+import { snapshotHash, upgradeSnapshot } from "@/lib/api/snapshotSchema";
 import { methodFromMachineType } from "@/lib/brewMethods";
 import { randomId } from "@/lib/randomId";
 import type { Beans } from "@/types/BeanTypes";
@@ -161,6 +162,22 @@ db.version(12)
 					brew.brewWeight = brew.espressoWeight;
 				delete brew.espressoWeight;
 				brew.method = methods.get(brew.machineId) ?? "espresso";
+			});
+	});
+
+// Pour schedules are optional, so flat recipe rows need no rewrite.
+db.version(13)
+	.stores({})
+	.upgrade(async (tx) => {
+		await tx
+			.table<Enrollment>("Enrollment")
+			.toCollection()
+			.modify((enrollment) => {
+				if (!enrollment.baseSnapshot) return;
+				const upgraded = upgradeSnapshot(enrollment.baseSnapshot);
+				enrollment.baseSnapshot = upgraded;
+				if (enrollment.lastSyncedHash)
+					enrollment.lastSyncedHash = snapshotHash(upgraded);
 			});
 	});
 

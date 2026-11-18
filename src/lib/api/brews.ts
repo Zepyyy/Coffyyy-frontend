@@ -1,3 +1,4 @@
+import { BREW_METHODS } from "@/lib/brewMethods";
 import { db } from "@/db/db";
 import type { BeanCardProps } from "@/types/BeanTypes";
 import type { BrewMethod, BrewSuggestions, Brews } from "@/types/BrewTypes";
@@ -134,11 +135,11 @@ export async function getLastUsedMachineId(
 }
 
 export type BrewFormStart = {
+	brewers: Partial<Record<BrewMethod, number>>;
 	machineId: number | null;
-	/** The start Brewer's method. */
-	method: BrewMethod | null;
+	method: BrewMethod;
 	beanId: number | null;
-	/** Recipe to follow; null when missing, unusable for the bean, or no Brewer has its method. */
+	/** Recipe to follow; null when missing or unusable for the bean. */
 	recipe: Recipes | null;
 };
 
@@ -147,34 +148,84 @@ export type BrewFormStart = {
  * `?recipe=`). A recipe picks a Brewer of its method and, when bean-tied,
  * its bean. An explicit bean wins over a recipe tied to another bean.
  */
-export async function getBrewFormStart(
-	beanParam?: number,
-	recipeParam?: number,
-): Promise<BrewFormStart> {
-	const bean = beanParam ? await db.Beans.get(beanParam) : undefined;
-	let recipe = recipeParam
-		? ((await db.Recipes.get(recipeParam)) ?? null)
-		: null;
-	if (recipe && bean && recipe.beanId != null && recipe.beanId !== bean.id) {
-		recipe = null;
+export interface BrewEntry {
+	beanParam?: number;
+	recipeParam?: number;
+	methodParam?: BrewMethod;
+	brewerParam?: number;
+	preferredBrewers?: Partial<Record<BrewMethod, string>>;
+}
+export async function getBrewFormStart({
+	beanParam,
+	recipeParam,
+	methodParam,
+	brewerParam,
+	preferredBrewers,
+}: BrewEntry = {}): Promise<BrewFormStart> {
+	const [bean, requestedRecipe, machines, history] = await Promise.all([
+		beanParam ? db.Beans.get(beanParam) : undefined,
+		recipeParam ? db.Recipes.get(recipeParam) : undefined,
+		db.Machines.toArray(),
+		db.Brews.orderBy("date").reverse().toArray(),
+	]);
+	const recipe =
+		requestedRecipe &&
+		(!bean ||
+			requestedRecipe.beanId == null ||
+			requestedRecipe.beanId === bean.id)
+			? requestedRecipe
+			: null;
+	const machinesById = new Map(
+		machines.map((machine) => [machine.id, machine]),
+	);
+	const brewers: BrewFormStart["brewers"] = {};
+	for (const brew of history) {
+		if (
+			brew.machineId != null &&
+			machinesById.get(brew.machineId)?.method === brew.method
+		) {
+			brewers[brew.method] ??= brew.machineId;
+		}
 	}
-	let machineId = recipe ? await getLastUsedMachineId(recipe.method) : null;
-	if (machineId == null) {
-		recipe = null;
-		machineId = await getLastUsedMachineId();
+	for (const method of BREW_METHODS) {
+		const preferred = machines.find(
+			(m) =>
+				m.method === method &&
+				m.localId &&
+				m.localId === preferredBrewers?.[method],
+		);
+		if (preferred) {
+			brewers[method] = preferred.id;
+		} else if (brewers[method] == null) {
+			const compatible = machines.filter(
+				(machine) => machine.method === method,
+			);
+			if (compatible.length === 1) brewers[method] = compatible[0].id;
+		}
 	}
-	const machine = machineId != null ? await db.Machines.get(machineId) : null;
+	const method =
+		recipe?.method ??
+		methodParam ??
+		history[0]?.method ??
+		machines[0]?.method ??
+		"espresso";
+	const machineId =
+		brewerParam != null && machinesById.get(brewerParam)?.method === method
+			? brewerParam
+			: (brewers[method] ?? null);
+
 	// Without a deep link, the bean last brewed: most mornings it's the same bag,
 	// and the form shows it as a summary row that's one tap to change.
 	let beanId = bean?.id ?? recipe?.beanId ?? null;
 	if (beanId == null && beanParam == null && recipeParam == null) {
-		const last = await getLastBrew();
+		const last = history[0];
 		if (last?.beanId != null && (await db.Beans.get(last.beanId)))
 			beanId = last.beanId;
 	}
 	return {
+		brewers,
 		machineId,
-		method: machine?.method ?? null,
+		method,
 		beanId,
 		recipe,
 	};
@@ -277,10 +328,29 @@ export async function getBrewsForBeanId(
 	return brews.sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
+/** Highest-rated pour-over for this bean, using recency to break ties. */
+export async function getPourOverSetupBrew(
+	beanId: number | undefined,
+): Promise<Brews | null> {
+	const brews = await getBrewsForBeanId(beanId);
+	let best: Brews | null = null;
+	for (const brew of brews) {
+		if (brew.method !== "pour-over") continue;
+		if (
+			!best ||
+			(brew.overallRating ?? -Infinity) > (best.overallRating ?? -Infinity)
+		) {
+			best = brew;
+		}
+	}
+	return best;
+}
+
 export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 	const beans = await db.Beans.toArray().then((b) =>
 		b.map((b) => ({
 			id: b.id,
+			localId: b.localId,
 			name: b.name,
 			origin: b.origin,
 			dominantNote: b.dominantNote,
@@ -292,6 +362,7 @@ export async function getBrewSuggestions(): Promise<BrewSuggestions> {
 	const machines = await db.Machines.toArray().then((b) =>
 		b.map((b) => ({
 			id: b.id,
+			localId: b.localId,
 			name: b.name,
 			method: b.method,
 		})),

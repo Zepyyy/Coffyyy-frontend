@@ -3,10 +3,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db/db";
 import { getMachineBrewCount } from "@/lib/api/machines";
 import { getRecipesForMethod } from "@/lib/api/recipes";
+import { scaledPours, V60_STARTER_POURS } from "@/lib/pourSchedule";
 import type { BrewMethod } from "@/types/BrewTypes";
 import { addBrew, addRecipe, addRecipeFromBrew } from "./add";
 import { deleteBeanById, deleteRecipeById } from "./delete";
-import { linkBrewToRecipe, updateMachineById } from "./update";
+import {
+	linkBrewToRecipe,
+	updateMachineById,
+	updateRecipeById,
+} from "./update";
 
 async function machine(method: BrewMethod) {
 	return db.Machines.add({
@@ -186,6 +191,49 @@ describe("brew and recipe CRUD", () => {
 		expect(await names()).toEqual(["Any"]);
 		expect(await names(kenya)).toEqual(["Any", "Kenya"]);
 		expect(await getRecipesForMethod("moka")).toEqual([]);
+	});
+
+	it("uses one staged recipe for two beans without saving per-brew changes to it", async () => {
+		const v60 = await machine("pour-over");
+		const recipeId = await ok(
+			addRecipe({
+				...dial,
+				name: "Any bean",
+				method: "pour-over",
+				pours: [...V60_STARTER_POURS],
+			}),
+		);
+		for (const [name, beanWeight, brewWeight] of [
+			["Kenya", 18, 300],
+			["Brazil", 12, 200],
+		] as const) {
+			const beanId = await bean(name);
+			const [recipe] = await getRecipesForMethod("pour-over", beanId);
+			expect(recipe.id).toBe(recipeId);
+			expect(scaledPours(recipe.pours ?? [], brewWeight)[1].grams).toBe(
+				brewWeight / 2,
+			);
+			await ok(
+				addBrew({
+					beanId,
+					beanWeight,
+					brewWeight,
+					machineId: v60,
+					grindSize: 23,
+					recipeId,
+					date: new Date(),
+				}),
+			);
+		}
+		expect(await db.Recipes.get(recipeId)).toMatchObject({
+			...dial,
+			pours: V60_STARTER_POURS,
+		});
+		await expect(
+			updateRecipeById({ pours: [{ atSeconds: 0, fraction: 0.5 }] }, recipeId),
+		).rejects.toThrow("last pour");
+		await updateRecipeById({ pours: undefined }, recipeId);
+		expect(await db.Recipes.get(recipeId)).not.toHaveProperty("pours");
 	});
 
 	it("locks a brewer's method once it has brews", async () => {

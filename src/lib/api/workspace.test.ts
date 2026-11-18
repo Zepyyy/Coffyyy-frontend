@@ -1,6 +1,8 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
+import { restoreBrewSession, saveBrewSession } from "@/db/crud/add";
 import { db } from "@/db/db";
+import { V60_STARTER_POURS } from "@/lib/pourSchedule";
 import {
 	readLocalSnapshot,
 	replaceLocalSnapshot,
@@ -12,7 +14,7 @@ import {
 } from "./workspace";
 
 const snapshot: WorkspaceSnapshot = {
-	schemaVersion: 2,
+	schemaVersion: 3,
 	beans: [
 		{
 			localId: "bean-1",
@@ -277,6 +279,35 @@ describe("workspace snapshot seam", () => {
 		);
 	});
 
+	it("round-trips staged recipes and rejects malformed schedules on import", async () => {
+		const starterRecipe = {
+			...withRecipe.recipes[0],
+			pours: [...V60_STARTER_POURS],
+		};
+		const staged = { ...withRecipe, recipes: [starterRecipe] };
+		await replaceLocalSnapshot(staged);
+		expect((await db.Recipes.toArray())[0].pours).toEqual(V60_STARTER_POURS);
+		expect(snapshotHash(await readLocalSnapshot())).toBe(snapshotHash(staged));
+
+		const invalid = {
+			...staged,
+			recipes: [{ ...starterRecipe, pours: V60_STARTER_POURS.slice(0, -1) }],
+		};
+		await expect(replaceLocalSnapshot(invalid)).rejects.toThrow("last pour");
+		expect(snapshotHash(await readLocalSnapshot())).toBe(snapshotHash(staged));
+	});
+
+	it("preserves flat recipes and their links when upgrading v2", async () => {
+		const legacy = { ...withRecipe, schemaVersion: 2 as const };
+		const upgraded = upgradeSnapshot(legacy);
+		expect(upgraded).toEqual(withRecipe);
+		expect(legacy.schemaVersion).toBe(2);
+		await replaceLocalSnapshot(legacy);
+		expect(snapshotHash(await readLocalSnapshot())).toBe(
+			snapshotHash(withRecipe),
+		);
+	});
+
 	it("rejects moka recipes, dangling recipe links and method mismatches", () => {
 		const recipe = withRecipe.recipes[0];
 		expect(() =>
@@ -308,7 +339,7 @@ describe("workspace snapshot seam", () => {
 	it("upgrades v1 snapshots non-destructively", () => {
 		const upgraded = upgradeSnapshot(v1);
 		validateSnapshot(upgraded);
-		expect(upgraded.schemaVersion).toBe(2);
+		expect(upgraded.schemaVersion).toBe(3);
 		expect(upgraded.recipes).toEqual([]);
 		expect(upgraded.machines.map((m) => m.method)).toEqual([
 			"espresso",
@@ -333,6 +364,60 @@ describe("workspace snapshot seam", () => {
 		await replaceLocalSnapshot(v1);
 		const brew = await db.Brews.get({ localId: "b-v60" });
 		expect(brew).toMatchObject({ method: "pour-over", brewWeight: 250 });
-		expect((await readLocalSnapshot()).schemaVersion).toBe(2);
+		expect((await readLocalSnapshot()).schemaVersion).toBe(3);
+	});
+
+	it("saves a running V60 after snapshot remapping and retries the same brew", async () => {
+		await replaceLocalSnapshot(withRecipe);
+		const source = (await db.Brews.get({ localId: "brew-2" }))!;
+		const attempt = {
+			attemptId: "v60-attempt",
+			beanLocalId: "bean-1",
+			machineLocalId: "v60",
+			recipeLocalId: "recipe-1",
+		};
+		const actual = {
+			beanId: source.beanId,
+			machineId: source.machineId!,
+			recipeId: source.recipeId,
+			date: new Date("2026-08-02T00:00:00.000Z"),
+			beanWeight: 15,
+			brewWeight: 248,
+			grindSize: 21,
+			extractionTime: "172",
+		};
+
+		await replaceLocalSnapshot(withRecipe);
+		const remapped = await restoreBrewSession(attempt);
+		expect(remapped.beanId).not.toBe(actual.beanId);
+		expect(remapped.machineId).not.toBe(actual.machineId);
+		expect(remapped.recipeId).not.toBe(actual.recipeId);
+		const firstSave = await saveBrewSession(actual, attempt);
+		expect(firstSave).toMatchObject({
+			...remapped,
+			method: "pour-over",
+			localId: attempt.attemptId,
+			brewWeight: 248,
+		});
+		const pulled = await readLocalSnapshot();
+		expect(
+			pulled.brews.find((brew) => brew.localId === attempt.attemptId),
+		).toMatchObject({
+			beanLocalId: attempt.beanLocalId,
+			machineLocalId: attempt.machineLocalId,
+			recipeLocalId: attempt.recipeLocalId,
+		});
+
+		await replaceLocalSnapshot(pulled);
+		const retried = await Promise.all([
+			saveBrewSession({ ...actual, brewWeight: 249 }, attempt),
+			saveBrewSession(actual, attempt),
+		]);
+		expect(retried[0]).toEqual(retried[1]);
+		expect(retried[0]).toEqual(
+			await db.Brews.get({ localId: attempt.attemptId }),
+		);
+		expect(retried[0]).toMatchObject({ brewWeight: 248 });
+		expect(await db.Brews.count()).toBe(withRecipe.brews.length + 1);
 	});
 });

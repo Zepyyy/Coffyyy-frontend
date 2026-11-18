@@ -14,6 +14,8 @@ export type BrewDials = {
 	grindSize: number;
 	beanWeight: number;
 	brewWeight: number;
+	/** V60 target retained across dose edits so rounded water does not shift it. */
+	targetRatio?: number;
 	/** Seconds as typed; empty = not timed. */
 	extractionTime: string;
 	/** Espresso only; empty = not judged. */
@@ -63,6 +65,7 @@ export function methodDefaults(method: BrewMethod): BrewDials {
 		grindSize: config.grind.default,
 		beanWeight: config.dose.default,
 		brewWeight: config.brewWeight.default,
+		targetRatio: undefined,
 		extractionTime: "",
 		flow: "",
 		waterTemp: config.waterTemp?.default,
@@ -82,6 +85,7 @@ export function dialsFromBrew(brew: Brews, method: BrewMethod): BrewDials {
 		grindSize: brew.grindSize ?? base.grindSize,
 		beanWeight: clampDose(brew.beanWeight ?? base.beanWeight, method),
 		brewWeight: clampBrewWeight(brew.brewWeight ?? base.brewWeight, method),
+		targetRatio: undefined,
 		extractionTime: secondsText(brew.extractionTime),
 		flow: config.flow ? (brew.flow ?? "") : "",
 		waterTemp: clampWaterTemp(brew.waterTemp, method),
@@ -97,6 +101,8 @@ export function dialsFromBrew(brew: Brews, method: BrewMethod): BrewDials {
 export function dialsForRepeat(brew: Brews, method: BrewMethod): BrewDials {
 	return {
 		...dialsFromBrew(brew, method),
+		...(method === "pour-over" &&
+			brew.brewWeight > 0 && { brewWeight: brew.brewWeight }),
 		extractionTime: "",
 		flow: "",
 		notes: "",
@@ -188,7 +194,9 @@ export function brewWeightForRatio(
 	ratio: number,
 	method: BrewMethod,
 ): number {
-	return clampBrewWeight(beanWeight * ratio, method);
+	return method === "pour-over"
+		? Math.max(0.1, round1(beanWeight * ratio))
+		: clampBrewWeight(beanWeight * ratio, method);
 }
 
 /**
