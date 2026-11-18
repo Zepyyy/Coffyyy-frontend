@@ -25,11 +25,16 @@ export default function PageGrain() {
 			: SCENES[prefs.scene]
 				? prefs.scene
 				: DEFAULT_BACKGROUND;
-	return (
+	const field = (
 		<GrainField
 			scene={SCENES[id]}
 			print={printFor(prefs, id)}
 			animated={motion ?? undefined}
 		/>
+	);
+	return id === "starvalley" || id === "coffeefarm" ? (
+		<div className="grain-landscape-foot">{field}</div>
+	) : (
+		field
 	);
 }

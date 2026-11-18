@@ -35,7 +35,7 @@ export const BACKGROUNDS: readonly Background[] = [
 		id: "coffeefarm",
 		name: "Coffee farm",
 		exploration: true,
-		note: "A highland coffee farm at harvest: contour hedges, pickers, a drying patio under the volcanoes.",
+		note: "Pickers on the hillside above a sunlit patio where coffee cherries are raked to dry.",
 	},
 	{
 		id: "beangarden",

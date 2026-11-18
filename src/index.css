@@ -912,3 +912,23 @@
         background: var(--paper-sunken);
     }
 }
+
+/* Leave actual paper after the journal for the two landscape prints.
+   On a long mobile shelf the print scrolls into view above the bottom nav. */
+main:has(> .grain-landscape-foot) {
+    --landscape-height: clamp(144px, 16vw, 216px);
+    --landscape-bottom: 0px;
+    padding-bottom: calc(var(--landscape-height) + var(--landscape-bottom));
+}
+@media (max-width: 639px) {
+    main:has(> .grain-landscape-foot) {
+        --landscape-bottom: calc(5rem + env(safe-area-inset-bottom));
+    }
+}
+.grain-landscape-foot {
+    position: absolute;
+    inset: auto 0 var(--landscape-bottom);
+    height: var(--landscape-height);
+    pointer-events: none;
+}
+.grain-landscape-foot > .grain-field { height: 100%; }
