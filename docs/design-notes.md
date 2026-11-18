@@ -250,3 +250,10 @@ background on screen. A background declares its default (`print` in
 creatures.ts). Owner: keep Coffee branch fine; coarse looks best on Lakeside.
 Fine is the 1px blue-noise engine; coarse is 2px dots on an 8x8 Bayer lattice,
 the original stitched look, rebuilt on the GPU engine. Dev: `?grainDot=2&grainMask=bayer&grainCoverage=0.8`.
+
+Owner principle (2026-11-18): design for the engine, don't fight it. A scene
+that chases detail the grain can't carry (a figure built from small parts,
+many tiny structures) ends up as "rectangles piled up". Use one strong simple
+gesture per subject, soft shading, and suggestive form; cut any detail that
+doesn't survive a zoomed render. The Lakeside thread's simplification was
+right; its grey slab water and lost colour were not.
