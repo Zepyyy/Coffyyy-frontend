@@ -164,7 +164,13 @@ void main() {
 		shown += clamp(target - shown, -uSlew, uSlew);
 		// A dot arriving from paper takes its colour at once; a fading one keeps it.
 		if (prev.r * LEVELS < 0.01) chroma = lab.yz;
-		else if (a > 0.002) chroma += (lab.yz - chroma) * uHueStep;
+		else if (a > 0.002) {
+			// Chroma is stored in 8 bits. At high frame rates an eased step falls
+			// under one quantum and rounds back, leaving the old hue stuck as a
+			// stain; always move at least one quantum.
+			vec2 d = lab.yz - chroma;
+			chroma += sign(d) * min(abs(d), max(abs(d) * uHueStep, vec2(0.8 / 255.0)));
+		}
 	}
 	outState = vec4(shown / LEVELS, chroma / 0.8 + 0.5, target / LEVELS);
 }`;

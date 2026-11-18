@@ -20,7 +20,19 @@ export const BACKGROUNDS: readonly Background[] = [
 		id: "lakeside",
 		name: "Lakeside",
 		exploration: true,
-		note: "A mountain lake at golden hour, with a village and someone fishing off the dock.",
+		note: "A quiet inlet, with a lone angler in the reeds and a folded headland across the water.",
+	},
+	{
+		id: "starvalley",
+		name: "Star valley",
+		exploration: true,
+		note: "A night window over a forest valley: a sleeping cat on the sill, a warm mug, a lit cabin, fireflies.",
+	},
+	{
+		id: "coffeefarm",
+		name: "Coffee farm",
+		exploration: true,
+		note: "A highland coffee farm at harvest: contour hedges, pickers, a drying patio under the volcanoes.",
 	},
 	{
 		id: "passionflower-study",
