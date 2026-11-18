@@ -48,10 +48,13 @@ try {
 	await water.fill("300");
 	await water.press("Enter");
 	await button("Four pours").click();
-	await page.clock.install();
+
 	await button("Start").click();
 	await target(75).waitFor();
-	await page.clock.fastForward(46_000);
+	await page.evaluate(() => {
+		const now = Date.now.bind(Date);
+		Date.now = () => now() + 46000;
+	});
 	await page.evaluate(() =>
 		document.dispatchEvent(new Event("visibilitychange")),
 	);
@@ -75,6 +78,7 @@ try {
 	assert.equal(await pouredWater.inputValue(), "300");
 	assert.ok(Number(await elapsed.inputValue()) >= 46);
 	await cancel.click();
+	await button("Start").waitFor();
 
 	await openSetup();
 	await button("Four pours").click();
@@ -85,6 +89,7 @@ try {
 	await finish.click();
 	assert.equal(await pouredWater.inputValue(), "250");
 	await cancel.click();
+	await button("Start").waitFor();
 
 	await openSetup();
 	await button("Start").click();
@@ -105,6 +110,7 @@ try {
 		return db.Brews.toArray();
 	});
 	assert.equal(rows.length, 1);
+	assert.ok(Number.isFinite(new Date(rows[0].date).getTime()));
 	assert.equal(rows[0].overallRating, 5);
 	assert.equal(rows[0].extractionTime, "182");
 	assert.equal(rows[0].brewWeight, 247);

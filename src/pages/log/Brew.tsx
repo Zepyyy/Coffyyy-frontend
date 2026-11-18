@@ -98,37 +98,6 @@ function idParam(raw: string | null): number | undefined {
 const capitalize = (text: string) =>
 	text.charAt(0).toUpperCase() + text.slice(1);
 
-function StepHeading({
-	index,
-	title,
-	hint,
-	tag,
-}: {
-	index: string;
-	title: string;
-	hint: string;
-	tag?: string;
-}) {
-	return (
-		<div className="flex items-baseline gap-3">
-			<span className="font-data text-[10px] tracking-[0.2em] text-crema-deep">
-				{index}
-			</span>
-			<h2 className="font-display text-2xl italic tracking-tight text-foreground/90">
-				{title}
-			</h2>
-			{tag && (
-				<span className="font-data text-[10px] uppercase tracking-[0.14em] text-crema-deep dark:text-crema">
-					{tag}
-				</span>
-			)}
-			<span className="hidden font-sans text-xs text-muted-foreground sm:inline">
-				{hint}
-			</span>
-		</div>
-	);
-}
-
 function RecipeSegment({
 	label,
 	value,
@@ -1002,11 +971,7 @@ export default function BrewLog() {
 									</button>
 								</h2>
 							) : (
-								<StepHeading
-									index="02"
-									title="The bean"
-									hint="Which bag is open?"
-								/>
+								<h2 className="font-display text-2xl">Bean</h2>
 							)}
 							{(!selectedBean || beanOpen) && (
 								<div id="bean-picker">
