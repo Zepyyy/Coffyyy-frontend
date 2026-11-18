@@ -70,10 +70,12 @@ type Life = {
 
 type Sched = { off: number; rd: number; fd: number };
 
-/** Morning glory: opens 6ish, furls by early afternoon, withers, falls by midnight. */
+/** Morning glory: opens 6ish, furls by early afternoon (late ones mid-afternoon), withers, falls by midnight. */
 function gloryLife(h: number, k: Sched): Life {
 	const r0 = 6.05 + k.off * 1.4;
-	const f0 = 11.9 + k.off * 1.2;
+	// About a third are late: shaded flowers that hold open into the
+	// afternoon, so the vine is never only green after lunch.
+	const f0 = k.off > 0.3 ? 14.6 + (k.off - 0.3) * 4 : 11.9 + k.off * 1.2;
 	const o = smooth(r0, r0 + k.rd, h) * (1 - smooth(f0, f0 + k.fd, h));
 	const w = smooth(f0 + k.fd, f0 + k.fd + 1.6, h);
 	if (h < 12) {
