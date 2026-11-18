@@ -4,37 +4,34 @@ import {
 	beanDesignationValues,
 	beanDominantNoteValues,
 	beanStatusValues,
-	type components,
 } from "@/lib/api/schema.gen";
 import { api } from "@/lib/axios";
 import {
-	isBrewMethod,
-	isRecipeMethod,
-	methodFromMachineType,
-} from "@/lib/brewMethods";
+	snapshotHash,
+	upgradeSnapshot,
+	WORKSPACE_SCHEMA_VERSION,
+	type AnyWorkspaceSnapshot,
+	type WorkspaceResponse,
+	type WorkspaceSnapshot,
+} from "@/lib/api/snapshotSchema";
+import { isBrewMethod, isRecipeMethod } from "@/lib/brewMethods";
+import { pourScheduleError } from "@/lib/pourSchedule";
 import { oneOf } from "@/lib/utils";
 import type { Beans, SnapshotBean } from "@/types/BeanTypes";
-import type { BrewMethod, Brews, SnapshotBrew } from "@/types/BrewTypes";
+import type { Brews, SnapshotBrew } from "@/types/BrewTypes";
 import type { Machines, SnapshotMachine } from "@/types/MachineTypes";
 import type { Recipes, SnapshotRecipe } from "@/types/RecipeTypes";
 
-export type WorkspaceSnapshot = components["schemas"]["Snapshot"];
-export type WorkspaceResponse = components["schemas"]["SnapshotResponse"];
-
-/** Schema 1: machines had free-text `type`, brews had `espressoWeight`, no recipes. */
-export type WorkspaceSnapshotV1 = {
-	schemaVersion: 1;
-	beans: SnapshotBean[];
-	machines: Array<Omit<SnapshotMachine, "method"> & { type?: string }>;
-	brews: Array<
-		Omit<
-			SnapshotBrew,
-			"method" | "brewWeight" | "recipeLocalId" | "waterTemp" | "heat" | "notes"
-		> & { espressoWeight?: number }
-	>;
-};
-/** Any snapshot this client can read: old backups, stored merge bases, cloud. */
-export type AnyWorkspaceSnapshot = WorkspaceSnapshot | WorkspaceSnapshotV1;
+export {
+	canonicalJson,
+	snapshotHash,
+	upgradeSnapshot,
+	type AnyWorkspaceSnapshot,
+	type WorkspaceResponse,
+	type WorkspaceSnapshot,
+	type WorkspaceSnapshotV1,
+	type WorkspaceSnapshotV2,
+} from "@/lib/api/snapshotSchema";
 
 // Exhaustive so that a field added to the backend contract fails to compile
 // here until the local snapshot carries it.
@@ -94,6 +91,7 @@ const RECIPE_FIELDS: Record<
 	extractionTime: true,
 	waterTemp: true,
 	notes: true,
+	pours: true,
 };
 
 function pick<T extends object>(record: object, fields: Record<string, true>) {
@@ -160,7 +158,7 @@ async function readSnapshotRecords(): Promise<WorkspaceSnapshot> {
 	const ref = (map: Map<number, string>, id: number | undefined) =>
 		id === undefined ? undefined : map.get(id);
 	return {
-		schemaVersion: 2,
+		schemaVersion: WORKSPACE_SCHEMA_VERSION,
 		beans: beans.map(toSnapshotBean),
 		machines: machines.map(toSnapshotMachine),
 		brews: brews.map(
@@ -184,39 +182,6 @@ async function readSnapshotRecords(): Promise<WorkspaceSnapshot> {
 	};
 }
 
-const asArray = <T>(value: T[] | undefined): T[] =>
-	Array.isArray(value) ? value : [];
-
-/**
- * Pure, non-destructive v1 -> v2 upgrade (mirrors the backend): machine
- * `type` -> `method`, brew `espressoWeight` -> `brewWeight`, brew method from
- * its machine's method else espresso, no recipes. v2 input is returned as is.
- */
-export function upgradeSnapshot(
-	snapshot: AnyWorkspaceSnapshot,
-): WorkspaceSnapshot {
-	if (!snapshot || snapshot.schemaVersion !== 1)
-		return snapshot as WorkspaceSnapshot;
-	const methods = new Map<string, BrewMethod>();
-	const machines = asArray(snapshot.machines).map(({ type, ...machine }) => {
-		const method = methodFromMachineType(type);
-		methods.set(machine.localId, method);
-		return { ...machine, method };
-	});
-	return {
-		...snapshot,
-		schemaVersion: 2,
-		machines,
-		brews: asArray(snapshot.brews).map(({ espressoWeight, ...brew }) => ({
-			...brew,
-			method:
-				(brew.machineLocalId && methods.get(brew.machineLocalId)) || "espresso",
-			brewWeight: espressoWeight as number,
-		})),
-		recipes: [],
-	};
-}
-
 /** Upgrade then validate any incoming snapshot (cloud, backup, merge input). */
 export function parseSnapshot(snapshot: AnyWorkspaceSnapshot) {
 	const upgraded = upgradeSnapshot(snapshot);
@@ -224,33 +189,10 @@ export function parseSnapshot(snapshot: AnyWorkspaceSnapshot) {
 	return upgraded;
 }
 
-/** Key-order independent JSON, so JSONB round-trips compare equal. */
-export function canonicalJson(value: unknown): string {
-	return JSON.stringify(value, (_key, entry: unknown) =>
-		entry && typeof entry === "object" && !Array.isArray(entry)
-			? Object.fromEntries(
-					Object.entries(entry).sort(([a], [b]) => a.localeCompare(b)),
-				)
-			: entry,
-	);
-}
-
-export function snapshotHash(snapshot: WorkspaceSnapshot) {
-	const sorted = <T extends { localId: string }>(rows: T[]) =>
-		[...rows].sort((a, b) => a.localId.localeCompare(b.localId));
-	return canonicalJson({
-		...snapshot,
-		beans: sorted(snapshot.beans),
-		machines: sorted(snapshot.machines),
-		brews: sorted(snapshot.brews),
-		recipes: sorted(snapshot.recipes),
-	});
-}
-
-/** Asserts a current-schema (v2) snapshot. Upgrade older input first. */
+/** Asserts a current-schema snapshot. Upgrade older input first. */
 export function validateSnapshot(snapshot: WorkspaceSnapshot) {
 	if (
-		snapshot?.schemaVersion !== 2 ||
+		snapshot?.schemaVersion !== WORKSPACE_SCHEMA_VERSION ||
 		!Array.isArray(snapshot.beans) ||
 		!Array.isArray(snapshot.machines) ||
 		!Array.isArray(snapshot.brews) ||
@@ -295,6 +237,8 @@ export function validateSnapshot(snapshot: WorkspaceSnapshot) {
 		snapshot.recipes.map((recipe) => [recipe.localId, recipe.method]),
 	);
 	for (const recipe of snapshot.recipes) {
+		const scheduleError = pourScheduleError(recipe.pours, recipe.method);
+		if (scheduleError) throw new Error(scheduleError);
 		if (recipe.beanLocalId && !beanIds.has(recipe.beanLocalId))
 			throw new Error("Workspace snapshot contains invalid relationships");
 	}
@@ -386,7 +330,7 @@ export async function replaceLocalSnapshot(
 	);
 }
 
-/** GET always yields a validated v2 snapshot, whatever schema the cloud sent. */
+/** GET always yields a validated current snapshot, whatever schema the cloud sent. */
 export async function getWorkspaceSnapshot(): Promise<WorkspaceResponse> {
 	const response = await api.get<WorkspaceResponse>("/workspace/snapshot");
 	return { ...response.data, snapshot: parseSnapshot(response.data.snapshot) };

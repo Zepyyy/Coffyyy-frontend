@@ -1,3 +1,4 @@
+import { pourScheduleError } from "@/lib/pourSchedule";
 import type { Beans } from "@/types/BeanTypes";
 import type { BrewChanges } from "@/types/BrewTypes";
 import type { Machines } from "@/types/MachineTypes";
@@ -45,6 +46,12 @@ async function updateRecipeById(recipe: RecipeChanges, id: number) {
 	return db.transaction("rw", [db.Recipes, db.Beans], async () => {
 		if (recipe.beanId !== undefined && !(await db.Beans.get(recipe.beanId)))
 			throw new Error("Bean not found");
+		if (recipe.pours !== undefined) {
+			const current = await db.Recipes.get(id);
+			if (!current) return 0;
+			const scheduleError = pourScheduleError(recipe.pours, current.method);
+			if (scheduleError) throw new Error(scheduleError);
+		}
 		return db.Recipes.update(id, {
 			...recipe,
 			...(recipe.name !== undefined && { name: recipe.name.trim() }),

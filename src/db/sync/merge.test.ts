@@ -56,7 +56,7 @@ const snapshot = (
 	brews: WorkspaceSnapshot["brews"] = [],
 	recipes: WorkspaceSnapshot["recipes"] = [],
 ): WorkspaceSnapshot => ({
-	schemaVersion: 2,
+	schemaVersion: 3,
 	beans,
 	machines: [],
 	brews,
@@ -145,7 +145,7 @@ describe("mergeSnapshots", () => {
 		);
 
 		expect(conflicts).toEqual([]);
-		expect(merged.schemaVersion).toBe(2);
+		expect(merged.schemaVersion).toBe(3);
 		expect(ids(merged.recipes)).toEqual(["r1", "r2"]);
 		expect(merged.recipes.find((r) => r.localId === "r1")?.beanLocalId).toBe(
 			"a",
@@ -240,7 +240,7 @@ describe("mergeSnapshots", () => {
 			],
 		};
 		const upgraded: WorkspaceSnapshot = {
-			schemaVersion: 2,
+			schemaVersion: 3,
 			beans: [bean("a")],
 			machines: [
 				{

@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { type FormEvent, useMemo, useState } from "react";
 import Dial from "@/components/log/Dial";
 import QuickBeanCard from "@/components/log/QuickBeanCard";
+import PourScheduleEditor from "@/components/recipes/PourScheduleEditor";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import {
@@ -10,6 +11,7 @@ import {
 	formatRatio,
 	methodConfig,
 } from "@/lib/brewMethods";
+import { pourScheduleError } from "@/lib/pourSchedule";
 import {
 	type RecipeFormState,
 	recipeSummaryLine,
@@ -103,6 +105,7 @@ export default function RecipeForm({
 	const doseStep = dialStep(config.dose);
 	const brewWeightStep = dialStep(config.brewWeight);
 	const waterTemp = config.waterTemp;
+	const scheduleError = pourScheduleError(form.pours, form.method);
 
 	// Open bags first; a finished bean stays listed while it is the tie.
 	const beans = useMemo(
@@ -130,7 +133,7 @@ export default function RecipeForm({
 
 	async function handleSubmit(e: FormEvent) {
 		e.preventDefault();
-		if (!form.name.trim() || isSaving) return;
+		if (!form.name.trim() || scheduleError || isSaving) return;
 		setError("");
 		setIsSaving(true);
 		try {
@@ -497,6 +500,15 @@ export default function RecipeForm({
 							</div>
 						</section>
 
+						{form.method === "pour-over" && (
+							<PourScheduleEditor
+								pours={form.pours}
+								water={form.brewWeight}
+								onChange={(pours) => setField("pours", pours)}
+								error={scheduleError}
+							/>
+						)}
+
 						{/* 04 — Notes */}
 						<section className="space-y-4">
 							<StepHeading
@@ -563,7 +575,9 @@ export default function RecipeForm({
 							)}
 							<button
 								type="submit"
-								disabled={!form.name.trim() || isSaving}
+								disabled={
+									!form.name.trim() || Boolean(scheduleError) || isSaving
+								}
 								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-sans text-sm font-semibold uppercase tracking-[0.08em] text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
 							>
 								{isSaving ? "Saving…" : "Save the recipe"}

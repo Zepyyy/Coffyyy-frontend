@@ -49,6 +49,7 @@ describe("methodDefaults", () => {
 			grindSize: methodConfig("pour-over").grind.default,
 			beanWeight: pourOver.dose.default,
 			brewWeight: pourOver.brewWeight.default,
+			targetRatio: undefined,
 			extractionTime: "",
 			flow: "",
 			waterTemp: pourOver.waterTemp?.default,

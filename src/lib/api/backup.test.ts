@@ -112,6 +112,6 @@ describe("local snapshot backup", () => {
 		const [brew] = await db.Brews.toArray();
 		expect(brew).toMatchObject({ method: "moka", brewWeight: 100 });
 		expect(brew).not.toHaveProperty("espressoWeight");
-		expect(JSON.parse(await exportLocalSnapshot()).schemaVersion).toBe(2);
+		expect(JSON.parse(await exportLocalSnapshot()).schemaVersion).toBe(3);
 	});
 });

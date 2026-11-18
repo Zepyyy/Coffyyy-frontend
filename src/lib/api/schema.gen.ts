@@ -336,7 +336,7 @@ export interface components {
         /** @description Complete workspace data */
         Snapshot: {
             /** @enum {number} */
-            schemaVersion: 2;
+            schemaVersion: 3;
             beans: components["schemas"]["Bean"][];
             machines: components["schemas"]["Machine"][];
             brews: components["schemas"]["Brew"][];
@@ -459,6 +459,10 @@ export interface components {
             beanWeight: number;
             /** @description Target yield/water (g) */
             brewWeight: number;
+            pours?: {
+                atSeconds: number;
+                fraction: number;
+            }[];
             grindSize?: number;
             /** @description Seconds */
             extractionTime?: string;
@@ -819,7 +823,7 @@ type ReadonlyArray<T> = [
 ] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
 export const healthStatusStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["HealthStatus"]["status"]> = ["healthy", "unhealthy"];
 export const databaseHealthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["DatabaseHealth"]["status"]> = ["up", "down"];
-export const snapshotSchemaVersionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Snapshot"]["schemaVersion"]> = [2];
+export const snapshotSchemaVersionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Snapshot"]["schemaVersion"]> = [3];
 export const beanStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["status"]> = ["Excellent", "Good", "Mid", "Horrible", "New", ""];
 export const beanDominantNoteValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["dominantNote"]> = ["Fruity", "Nutty", "Floral", "Sweet", "Sour", "Spices", "Roasted", "Green", ""];
 export const beanBotanicValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Bean"]["botanic"]> = ["Arabica", "Robusta", ""];

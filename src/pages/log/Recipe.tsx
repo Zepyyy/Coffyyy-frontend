@@ -18,6 +18,7 @@ import {
 	recipeFormFromRecipe,
 	toNewRecipe,
 	toRecipeChanges,
+	v60StarterRecipeForm,
 } from "@/lib/recipeForm";
 import { formatRelativeDay } from "@/lib/utils";
 
@@ -142,12 +143,12 @@ function PromoteBrew({ brewId }: { brewId: number }) {
 }
 
 /** `/log/recipe`: a new recipe from scratch. */
-function NewRecipe() {
+function NewRecipe({ starter }: { starter: boolean }) {
 	const navigate = useNavigate();
 	return (
 		<RecipeForm
 			mode="new"
-			initial={emptyRecipeForm("espresso")}
+			initial={starter ? v60StarterRecipeForm() : emptyRecipeForm("espresso")}
 			onSave={async (form: RecipeFormState) => {
 				const result = await addRecipe(toNewRecipe(form));
 				if (result instanceof Error) return result.message;
@@ -166,5 +167,6 @@ export default function RecipeLog() {
 
 	if (recipeId) return <EditRecipe key={recipeId} recipeId={recipeId} />;
 	if (brewId) return <PromoteBrew key={brewId} brewId={brewId} />;
-	return <NewRecipe />;
+	const starter = searchParams.get("starter") === "v60";
+	return <NewRecipe key={String(starter)} starter={starter} />;
 }

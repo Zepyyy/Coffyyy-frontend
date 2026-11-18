@@ -14,6 +14,7 @@ export default function QuickMachineCard({
 	return (
 		<button
 			type="button"
+			aria-pressed={Boolean(selected)}
 			data-slot="toggle"
 			className={`hover-line relative cursor-pointer rounded-xl border text-start shadow-card transition-colors ${
 				selected

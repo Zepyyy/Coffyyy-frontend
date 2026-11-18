@@ -19,6 +19,7 @@ export {
 	getLatestUnratedBrew,
 	getLastBrew,
 	getLastBrewForBean,
+	getPourOverSetupBrew,
 	getBrewsForHistoryView,
 	getHistorySidebarStats,
 	getBrewsForBeanId,
@@ -62,6 +63,8 @@ export {
 	addMachine,
 	addRecipe,
 	addRecipeFromBrew,
+	restoreBrewSession,
+	saveBrewSession,
 } from "../db/crud/add";
 export {
 	deleteBeanById,

@@ -81,6 +81,7 @@ function StepButton({
 export default function Dial({
 	value,
 	onChange,
+	onEdit,
 	min,
 	max,
 	helpers = true,
@@ -91,6 +92,7 @@ export default function Dial({
 }: {
 	value: number;
 	onChange: (value: number) => void;
+	onEdit?: () => void;
 	min: number;
 	max: number;
 	helpers?: boolean;
@@ -357,9 +359,11 @@ export default function Dial({
 						value={draft ?? value.toFixed(decimals)}
 						onFocus={() => {
 							cancelEdit.current = false;
-							setDraft(value.toFixed(decimals));
 						}}
-						onChange={(event) => setDraft(event.target.value)}
+						onChange={(event) => {
+							onEdit?.();
+							setDraft(event.target.value);
+						}}
 						onBlur={() => {
 							if (!cancelEdit.current && draft?.trim()) {
 								const parsed = Number(draft);
