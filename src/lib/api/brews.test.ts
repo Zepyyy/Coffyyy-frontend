@@ -347,7 +347,7 @@ describe("getBrewFormStart", () => {
 		]);
 	});
 
-	it("starts on the last-used brewer without params", async () => {
+	it("starts on the last-used brewer and bean without params", async () => {
 		const bean = await seedBean("Test Bean");
 		const linea = await seedMachine("Linea", "espresso");
 		const v60 = await seedMachine("V60", "pour-over");
@@ -364,7 +364,7 @@ describe("getBrewFormStart", () => {
 			brewers: { espresso: linea, "pour-over": v60 },
 			machineId: v60,
 			method: "pour-over",
-			beanId: null,
+			beanId: bean.id,
 			recipe: null,
 		});
 	});

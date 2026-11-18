@@ -41,6 +41,8 @@ function env(W: number, contentWidth: number, H = 800): SceneEnv {
 		dt: 0,
 		pointer: { x: 0, y: 0, a: 0 },
 		dark: false,
+		journal: { beans: [] },
+		now: 0,
 		anchors: {
 			content: { x: (W - contentWidth) / 2, y: 24, w: contentWidth, h: 400 },
 			frame: backgroundFrame(W, {

@@ -16,6 +16,12 @@
 import { BLUE_NOISE_64 } from "./blue-noise";
 
 export type Rgb = [number, number, number];
+/**
+ * Which way a dot rounds. `blue` is void-and-cluster noise: at 1px it vanishes
+ * into continuous tone. `bayer` is the ordered 8x8 lattice: at 2px it reads as
+ * a printed, stitched texture, and a thin line becomes a row of beads.
+ */
+export type Mask = "blue" | "bayer";
 export type Zone = {
 	x: number;
 	y: number;
@@ -111,6 +117,7 @@ uniform bool uInstant;
 uniform float uHold;
 uniform float uSlew;
 uniform float uHueStep;
+uniform float uCoverage;
 out vec4 outState;
 ${LAB}
 const float LEVELS = ${LEVELS}.0;
@@ -138,7 +145,7 @@ void main() {
 	}
 
 	// A colour pulls the dot from ink toward itself; black is pure ink.
-	float a = pow(src.a * quiet, ${COVERAGE}) * uAlpha;
+	float a = pow(src.a * quiet, uCoverage) * uAlpha;
 	float pull = max(src.r, max(src.g, src.b));
 	vec3 hue = uInk + (src.rgb - uInk) * pull;
 	vec3 lab = oklab(mix(uPaper, hue, a));
@@ -205,6 +212,8 @@ export type DitherGL = {
 	}) => void;
 	/** Quiet zones in CSS pixels, `css` CSS pixels per dot, field height `H`. */
 	setZones: (zones: Zone[], css: number, H: number) => void;
+	/** Threshold pattern and coverage response; see Mask. */
+	setMask: (mask: Mask, coverage?: number) => void;
 	/** Reads the scene canvas and advances every dot by `dt` seconds. */
 	/** `hold` 0..1 scales hysteresis; 0 lets every dot follow the new source. */
 	frame: (
@@ -222,6 +231,30 @@ export type DitherGL = {
 	readonly software: boolean;
 	dispose: () => void;
 };
+
+/** 8x8 Bayer ranks tiled to the 64x64 mask size, as rank bytes. */
+function bayerMask(): Uint8Array {
+	const m = (n: number): number[][] => {
+		if (n === 1) return [[0]];
+		const p = m(n / 2);
+		const h = n / 2;
+		const out = Array.from({ length: n }, () => new Array<number>(n).fill(0));
+		for (let y = 0; y < h; y++)
+			for (let x = 0; x < h; x++) {
+				const v = 4 * p[y][x];
+				out[y][x] = v;
+				out[y][x + h] = v + 2;
+				out[y + h][x] = v + 3;
+				out[y + h][x + h] = v + 1;
+			}
+		return out;
+	};
+	const b = m(8);
+	const bytes = new Uint8Array(64 * 64);
+	for (let y = 0; y < 64; y++)
+		for (let x = 0; x < 64; x++) bytes[y * 64 + x] = b[y & 7][x & 7] * 4 + 2;
+	return bytes;
+}
 
 function oklabL([r, g, b]: Rgb) {
 	const lin = (v: number) => {
@@ -297,6 +330,8 @@ export function createDitherGL(
 	let fieldH = 1;
 	let lost = false;
 	let read = 0;
+	let mask: Mask = "blue";
+	let coverage = COVERAGE;
 
 	type Resources = {
 		update: ReturnType<typeof compile>;
@@ -319,9 +354,12 @@ export function createDitherGL(
 		return t;
 	}
 
-	function init() {
-		const noise = texture(gl.NEAREST, gl.REPEAT);
-		const bytes = Uint8Array.from(atob(BLUE_NOISE_64), (c) => c.charCodeAt(0));
+	function uploadMask(noise: WebGLTexture) {
+		const bytes =
+			mask === "bayer"
+				? bayerMask()
+				: Uint8Array.from(atob(BLUE_NOISE_64), (c) => c.charCodeAt(0));
+		gl.bindTexture(gl.TEXTURE_2D, noise);
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(
 			gl.TEXTURE_2D,
@@ -334,6 +372,11 @@ export function createDitherGL(
 			gl.UNSIGNED_BYTE,
 			bytes,
 		);
+	}
+
+	function init() {
+		const noise = texture(gl.NEAREST, gl.REPEAT);
+		uploadMask(noise);
 		r = {
 			update: compile(gl, UPDATE),
 			display: compile(gl, DISPLAY),
@@ -433,6 +476,12 @@ export function createDitherGL(
 		setPalette(p) {
 			palette = p;
 		},
+		setMask(next, cov = COVERAGE) {
+			coverage = cov;
+			if (next === mask) return;
+			mask = next;
+			if (!lost) uploadMask(r.noise);
+		},
 		setZones(next, cssPerDot, H) {
 			zones = next.slice(0, MAX_ZONES);
 			css = cssPerDot;
@@ -488,6 +537,7 @@ export function createDitherGL(
 			// Capped per frame, so a slow frame still cannot snap a dot.
 			gl.uniform1f(u("uSlew"), Math.min(SLEW * dt, 0.5));
 			gl.uniform1f(u("uHueStep"), 1 - Math.exp(-dt / HUE_EASE));
+			gl.uniform1f(u("uCoverage"), coverage);
 			gl.bindVertexArray(r.vao);
 			gl.drawArrays(gl.TRIANGLES, 0, 3);
 			read = write;

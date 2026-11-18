@@ -1482,7 +1482,14 @@ export const passionflowerStudy: Scene = (
 	const k = clamp(Math.min(W / 1440, (H / 836) * 1.04), 0.8, 1.3);
 	const frame = anchors.frame;
 	const right = frame ? frame.x + frame.w : W * 0.833;
-	const hx = Math.min(W - 185 * k, right + 105 * k);
+	// The hero's blades reach about 175k either side of its centre. When the
+	// right gutter holds them, centre the bloom in it; narrower, keep it hugging
+	// the column with a small overlap.
+	const heroR = 175 * k;
+	const gutterFits = !!frame && W - right >= 2 * heroR + 40;
+	const hx = gutterFits
+		? (right + W) / 2
+		: Math.min(W - 185 * k, right + 105 * k);
 	const hy = H * 0.59;
 	const toDesign = (sx: number, sy: number): [number, number] => [
 		(sx * W - hx) / k,
@@ -1490,7 +1497,9 @@ export const passionflowerStudy: Scene = (
 	];
 
 	/* --- where the cards erase the field, and what is left for a visitor --- */
-	const body = anchors.shelf ?? anchors.content;
+	// The whole content column, not only the bean shelf: an opened bean panel
+	// adds glass cards below it.
+	const body = anchors.content ?? anchors.shelf;
 	const lay: Lay = {
 		k,
 		hx,
@@ -1505,8 +1514,9 @@ export const passionflowerStudy: Scene = (
 	};
 	// The side bloom is only a place to land when it clears the cards and the
 	// field's faded floor; on short screens it hides behind glass.
-	const sideY = hy + 112 * k;
-	lay.roomy = !body || (sideY > lay.gy1 + 10 && sideY < H - 70);
+	// The lateral shoot and side bloom exist only then: no clear band, no shoot.
+	lay.roomy = !body || (hy + 80 * k > lay.gy1 + 8 && hy + 200 * k < H - 50);
+	const lat = lay.roomy;
 
 	/* --- the border: a narrow planting in the margin the cards leave free --- */
 	const bedOn = !!frame && frame.x >= 150;
@@ -2222,13 +2232,14 @@ export const passionflowerStudy: Scene = (
 
 	/* --- stems and tendrils --- */
 	strokeStem(c, MAIN, t, dark);
-	strokeStem(c, LAT, t, dark);
+	if (lat) strokeStem(c, LAT, t, dark);
 	for (const td of TENDRILS) {
+		if (td.stem === LAT && !lat) continue;
 		if (stalk && td.stem === LAT) continue;
 		const p = stemAt(td.stem, td.u, t);
 		tendril(c, p, td.heading, td.length, td.coil, t, td.phase, dark);
 	}
-	if (stalk) {
+	if (stalk && lat) {
 		// A free arc from the shoot's tip, then three turns round the stalk. Only
 		// the near side of each turn shows; the far side is behind the stem.
 		const p0 = stemAt(LAT, 1, t);
@@ -2304,6 +2315,7 @@ export const passionflowerStudy: Scene = (
 		c.stroke();
 	};
 	LEAVES.forEach((lf, i) => {
+		if (lf.stem === LAT && !lat) return;
 		const p = leafPose(i, t);
 		tie(p.sx, p.sy, p.bx, p.by, 4, 8);
 		const L = lf.length;
@@ -2323,6 +2335,7 @@ export const passionflowerStudy: Scene = (
 		c.restore();
 	});
 	for (const b of BUDS) {
+		if (b.stem === LAT && !lat) continue;
 		const [sx, sy] = stemAt(b.stem, b.u, t);
 		const sway = 0.05 * gust(t) * Math.sin(t * 0.7 + b.phase);
 		const bx = sx + b.pet[0],
@@ -2379,7 +2392,7 @@ export const passionflowerStudy: Scene = (
 		c.drawImage(st, -70, -95, 110, 125);
 		c.restore();
 	};
-	drawBloom("side");
+	if (lat) drawBloom("side");
 	drawBloom("hero");
 
 	/* --- the visitor --- */

@@ -3,7 +3,11 @@ import GrainField from "@/components/grain/GrainField";
 import { pageMotion } from "@/components/grain/motion";
 import { SCENES } from "@/components/grain/scenes";
 import { BACKGROUNDS } from "@/components/grain/creatures";
-import { setGrainPrefs, useGrainPrefs } from "@/components/grain/useGrainPrefs";
+import {
+	printFor,
+	setGrainPrefs,
+	useGrainPrefs,
+} from "@/components/grain/useGrainPrefs";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import "./Backgrounds.css";
 
@@ -82,6 +86,7 @@ export default function Backgrounds() {
 			>
 				<GrainField
 					scene={SCENES[selected.id]}
+					print={printFor(prefs, selected.id)}
 					animated={requestedMotion ?? undefined}
 				/>
 				<button

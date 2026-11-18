@@ -214,11 +214,19 @@ export async function getBrewFormStart({
 			? brewerParam
 			: (brewers[method] ?? null);
 
+	// Without a deep link, the bean last brewed: most mornings it's the same bag,
+	// and the form shows it as a summary row that's one tap to change.
+	let beanId = bean?.id ?? recipe?.beanId ?? null;
+	if (beanId == null && beanParam == null && recipeParam == null) {
+		const last = history[0];
+		if (last?.beanId != null && (await db.Beans.get(last.beanId)))
+			beanId = last.beanId;
+	}
 	return {
 		brewers,
 		machineId,
 		method,
-		beanId: bean?.id ?? recipe?.beanId ?? null,
+		beanId,
 		recipe,
 	};
 }

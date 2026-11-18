@@ -1,7 +1,7 @@
 .background-studies { color:var(--ink); }
 .background-studies__intro,.background-studies__choices,.background-studies__caption { max-width:976px;margin-inline:auto; }
 .background-studies__intro { padding-block:10px 24px; }
-.background-studies__eyebrow { font-family:var(--font-data);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint); }
+.background-studies__eyebrow { font-family:var(--font-data);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint); }
 .background-studies__intro h1 { font-family:var(--font-display);font-size:clamp(30px,4vw,48px);font-style:italic;letter-spacing:-.03em;line-height:1.15;margin:10px 0; }
 .background-studies__intro>p:last-child { font-size:13px;color:var(--ink-soft); }
 .background-studies__choices { display:flex;flex-wrap:wrap;padding:0;border:0;border-block:1px solid var(--line); }
@@ -13,7 +13,7 @@
 .background-studies__choices input:focus-visible+span { outline:2px solid var(--accent);outline-offset:-4px; }
 .background-studies__stage { height:clamp(460px,66svh,740px);position:relative;overflow:hidden;margin-block:20px;background-color:var(--paper);border-block:1px solid var(--line); }
 .background-studies__stage .grain-field { height:100%; }
-.background-studies__motion { position:absolute;right:12px;bottom:12px;z-index:1;min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--paper-raised);font-family:var(--font-data);font-size:11px;color:var(--ink-soft);cursor:pointer; }
+.background-studies__motion { position:absolute;right:12px;bottom:12px;z-index:1;min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--paper-raised);font-family:var(--font-data);font-size:12px;color:var(--ink-soft);cursor:pointer; }
 .background-studies__caption { display:flex;justify-content:space-between;align-items:center;gap:24px;padding-bottom:16px; }
 .background-studies__caption h2 { font-family:var(--font-display);font-size:26px;font-style:italic;margin:0 0 5px; }
 .background-studies__caption p { max-width:450px;color:var(--ink-soft);font-size:13px;line-height:1.6;margin:0; }
@@ -31,7 +31,7 @@
 	padding: 0 0.35em;
 	border: 1px solid var(--line);
 	font-family: var(--font-data, ui-monospace, monospace);
-	font-size: 9px;
+	font-size: 11px;
 	font-style: normal;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
