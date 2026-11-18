@@ -36,33 +36,38 @@ export const useLatestUnratedBrew = (excludedIds: readonly number[] = []) => {
 };
 
 /**
- * Last brew of a bean for one method, tagged with the `beanId:method` key it
+ * Setup brew for one bean and method, tagged with the `beanId:method` key it
  * answers so callers can ignore a stale result. Undefined while loading.
  */
-export const useLastBrewForBean = (
+export const useBrewSetupHistory = (
 	beanId: number | undefined,
 	method: BrewMethod | undefined,
 ) => {
 	return useLiveQuery(
 		async () => ({
 			key: `${beanId}:${method}`,
-			brew: method
-				? await brewStatsApi.getLastBrewForBean(beanId, method)
-				: null,
+			brew:
+				method === "pour-over"
+					? await brewStatsApi.getPourOverSetupBrew(beanId)
+					: method
+						? await brewStatsApi.getLastBrewForBean(beanId, method)
+						: null,
 		}),
 		[beanId, method],
 	);
 };
 
 /** Where the brew log form starts from its deep-link params. Undefined while loading. */
-export const useBrewFormStart = (beanParam?: number, recipeParam?: number) => {
-	const key = `${beanParam}|${recipeParam}`;
+export const useBrewFormStart = (entry: brewStatsApi.BrewEntry) => {
+	const { beanParam, recipeParam, methodParam, brewerParam, preferredBrewers } =
+		entry;
+	const key = `${beanParam}|${recipeParam}|${methodParam}|${brewerParam}`;
 	const result = useLiveQuery(
 		async () => ({
 			key,
-			start: await brewStatsApi.getBrewFormStart(beanParam, recipeParam),
+			start: await brewStatsApi.getBrewFormStart(entry),
 		}),
-		[beanParam, recipeParam],
+		[beanParam, recipeParam, methodParam, brewerParam, preferredBrewers],
 	);
 	return result?.key === key ? result.start : undefined;
 };

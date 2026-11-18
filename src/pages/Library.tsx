@@ -532,13 +532,16 @@ export default function Library() {
 											<p className="font-display text-2xl text-foreground/60">
 												No recipes
 											</p>
-											<p className="font-sans text-sm text-muted-foreground">
-												Write down a target, or save a good brew as one from
-												History.
-											</p>
-											<Button asChild variant="ink" className="mt-2">
-												<Link to="/log/recipe">Add a recipe</Link>
-											</Button>
+											<div className="flex flex-wrap justify-center gap-2">
+												<Button asChild variant="ink">
+													<Link to="/log/recipe?starter=v60">
+														Use V60 starter
+													</Link>
+												</Button>
+												<Button asChild variant="outline">
+													<Link to="/log/recipe">Add a recipe</Link>
+												</Button>
+											</div>
 										</div>
 									) : (
 										<p className="text-sm text-muted-foreground">

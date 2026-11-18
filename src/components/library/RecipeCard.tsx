@@ -39,6 +39,8 @@ export default function RecipeCard({
 			<article className="flex flex-1 flex-col gap-3 p-5">
 				<p className="font-data text-xs text-foreground/90">
 					{recipeSummaryLine(recipe)}
+					{recipe.pours &&
+						` · ${recipe.pours.length} ${recipe.pours.length === 1 ? "pour" : "pours"}`}
 				</p>
 				{recipe.grindSize != null && (
 					<div className="flex items-baseline gap-2">

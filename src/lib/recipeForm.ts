@@ -3,6 +3,7 @@
  * a brew (promote) or a recipe (edit), save payloads and the one-line summary.
  */
 import { formatRatio, isRecipeMethod, methodConfig } from "@/lib/brewMethods";
+import { type Pour, V60_STARTER_POURS } from "@/lib/pourSchedule";
 import { formatExtractionTime, parseExtractionTime } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
@@ -25,6 +26,7 @@ export type RecipeFormState = {
 	/** °C; only used for methods with a water temperature. */
 	waterTemp: number;
 	notes: string;
+	pours?: Pour[];
 };
 
 /** A fresh form for `method`, every number from the method config. */
@@ -40,6 +42,14 @@ export function emptyRecipeForm(method: RecipeMethod): RecipeFormState {
 		extractionTime: "",
 		waterTemp: config.waterTemp?.default ?? 0,
 		notes: "",
+	};
+}
+
+export function v60StarterRecipeForm(): RecipeFormState {
+	return {
+		...emptyRecipeForm("pour-over"),
+		name: "V60 starter",
+		pours: V60_STARTER_POURS.map((pour) => ({ ...pour })),
 	};
 }
 
@@ -117,6 +127,7 @@ export function recipeFormFromRecipe(recipe: Recipes): RecipeFormState {
 		extractionTime: seconds != null ? String(seconds) : "",
 		waterTemp: recipe.waterTemp ?? base.waterTemp,
 		notes: recipe.notes ?? "",
+		pours: recipe.pours,
 	};
 }
 
@@ -134,6 +145,7 @@ function recipeFields(form: RecipeFormState) {
 		extractionTime: seconds != null ? String(seconds) : undefined,
 		waterTemp: hasTemp ? form.waterTemp : undefined,
 		notes: notes || undefined,
+		pours: form.method === "pour-over" ? form.pours : undefined,
 	};
 }
 

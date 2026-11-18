@@ -2,8 +2,9 @@ import {
 	type AnyWorkspaceSnapshot,
 	canonicalJson,
 	upgradeSnapshot,
+	WORKSPACE_SCHEMA_VERSION,
 	type WorkspaceSnapshot,
-} from "@/lib/api/workspace";
+} from "@/lib/api/snapshotSchema";
 
 type Collection = "beans" | "machines" | "brews" | "recipes";
 type Row = { localId: string };
@@ -139,7 +140,7 @@ export function mergeSnapshots(
 	);
 	return {
 		snapshot: {
-			schemaVersion: 2,
+			schemaVersion: WORKSPACE_SCHEMA_VERSION,
 			beans: keepReferenced(
 				merge("beans", (s) => s.beans),
 				local.beans,

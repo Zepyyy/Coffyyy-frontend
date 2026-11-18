@@ -1,10 +1,11 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
+
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import SegmentedControl from "@/components/ui/SegmentedControl";
-import { BREW_METHODS, methodConfig } from "@/lib/brewMethods";
+import { BREW_METHODS, isBrewMethod, methodConfig } from "@/lib/brewMethods";
 import { addMachine, updateMachineById } from "@/lib/data";
 import {
 	useMachine,
@@ -76,7 +77,19 @@ export default function MachinesLog() {
 }
 
 function MachineLogForm({ editId }: { editId: number | undefined }) {
-	const [form, setForm] = useState<MachineForm>(INITIAL);
+	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
+	const brewMethod = searchParams.get("method");
+	const returnToBrew =
+		editId == null &&
+		searchParams.get("brew") === "1" &&
+		isBrewMethod(brewMethod);
+	const [form, setForm] = useState<MachineForm>(() =>
+		returnToBrew ? { ...INITIAL, method: brewMethod } : INITIAL,
+	);
+	const brewParams = new URLSearchParams(searchParams);
+	brewParams.delete("brew");
+	brewParams.set("resume", "1");
 	const [status, setStatus] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState("");
@@ -143,7 +156,19 @@ function MachineLogForm({ editId }: { editId: number | undefined }) {
 				return;
 			}
 			const result = await addMachine(machine);
-			setError(result instanceof Error ? result.message : String(result));
+			if (result instanceof Error) {
+				setStatus(result.message);
+				return;
+			}
+			if (returnToBrew) {
+				brewParams.set("brewer", String(result));
+				navigate(
+					{ pathname: "/log/brew", search: brewParams.toString() },
+					{ replace: true },
+				);
+				return;
+			}
+			setError(String(result));
 			setForm(INITIAL);
 			setStatus(
 				SAVE_MESSAGES[Math.floor(Math.random() * SAVE_MESSAGES.length)],
@@ -261,7 +286,7 @@ function MachineLogForm({ editId }: { editId: number | undefined }) {
 										value={form.method}
 										onChange={(method) => setField("method", method)}
 										ariaLabel="Brew method"
-										disabled={methodLocked}
+										disabled={methodLocked || returnToBrew}
 									/>
 									{methodLocked && (
 										<p className="font-sans text-xs text-muted-foreground">
@@ -304,6 +329,15 @@ function MachineLogForm({ editId }: { editId: number | undefined }) {
 						<div className="space-y-3 border-t border-line pt-4">
 							{status && (
 								<p className="text-sm text-muted-foreground">{status}</p>
+							)}
+							{returnToBrew && (
+								<Link
+									className="key-line mr-4 inline-flex min-h-11 items-center text-sm"
+									to={{ pathname: "/log/brew", search: brewParams.toString() }}
+									replace
+								>
+									Back to Brew
+								</Link>
 							)}
 							<button
 								type="submit"

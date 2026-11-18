@@ -1,6 +1,6 @@
 # Design brief
 
-Current owner preferences and review criteria. Updated 2026-11-13.
+Current owner preferences and review criteria. Updated 2026-11-18.
 Read for visual work; domain facts live in CONTEXT.md, implementation in code.
 An implemented experiment is not an approved direction. Latest owner feedback wins.
 
@@ -11,6 +11,14 @@ clear, controls precise, and the surrounding world alive without demanding atten
 Established UI: sharp surfaces, hairlines, restrained color, expressive serif
 headings and quiet body/data typography. Background exploration preserves the
 existing tokens and component behavior.
+
+## Interaction clarity
+
+Make the next action apparent through control order, grouping, sensible defaults,
+and visible state. When a flow needs a sentence explaining how to use it,
+redesign the interaction and remove the sentence. Keep labels, units, accessible
+names, and actionable errors precise. Review on a phone: can someone identify
+their current selection and take the next action without scrolling back for context?
 
 ## Owner preferences
 

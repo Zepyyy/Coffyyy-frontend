@@ -43,9 +43,16 @@ export type BrewForm = {
 	date: Date;
 };
 
+export type BrewSessionIdentity = {
+	attemptId: string;
+	beanLocalId: string;
+	machineLocalId: string;
+	recipeLocalId?: string;
+};
+
 export type BrewSuggestions = {
-	bean: Array<BeanCardProps>;
-	machine: Array<MachineCardProps>;
+	bean: Array<BeanCardProps & { localId?: string }>;
+	machine: Array<MachineCardProps & { localId?: string }>;
 };
 
 export type BeanDialInState = {
