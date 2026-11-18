@@ -6,6 +6,8 @@ import { cherry } from "./cherry";
 import { dandelion } from "./dandelion";
 import { koi } from "./koi";
 import { lakeside } from "./lakeside";
+import { beangarden } from "./beangarden";
+import { dayvine } from "./dayvine";
 
 export const SCENES: Record<string, Scene> = {
 	"passionflower-study": passionflowerStudy,
@@ -15,4 +17,6 @@ export const SCENES: Record<string, Scene> = {
 	dandelion,
 	koi,
 	lakeside,
+	beangarden,
+	dayvine,
 };
