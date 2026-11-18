@@ -58,24 +58,14 @@ export const useBrewSetupHistory = (
 };
 
 /** Where the brew log form starts from its deep-link params. Undefined while loading. */
-export const useBrewFormStart = (
-	beanParam?: number,
-	recipeParam?: number,
-	methodParam?: BrewMethod,
-	brewerParam?: number,
-	preferredBrewers?: Partial<Record<BrewMethod, number>>,
-) => {
+export const useBrewFormStart = (entry: brewStatsApi.BrewEntry) => {
+	const { beanParam, recipeParam, methodParam, brewerParam, preferredBrewers } =
+		entry;
 	const key = `${beanParam}|${recipeParam}|${methodParam}|${brewerParam}`;
 	const result = useLiveQuery(
 		async () => ({
 			key,
-			start: await brewStatsApi.getBrewFormStart(
-				beanParam,
-				recipeParam,
-				methodParam,
-				brewerParam,
-				preferredBrewers,
-			),
+			start: await brewStatsApi.getBrewFormStart(entry),
 		}),
 		[beanParam, recipeParam, methodParam, brewerParam, preferredBrewers],
 	);

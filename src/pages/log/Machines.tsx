@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { rememberBrewSelection } from "@/components/log/brewSelection";
+
 import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
@@ -161,7 +161,6 @@ function MachineLogForm({ editId }: { editId: number | undefined }) {
 				return;
 			}
 			if (returnToBrew) {
-				rememberBrewSelection(machine.method, result);
 				brewParams.set("brewer", String(result));
 				navigate(
 					{ pathname: "/log/brew", search: brewParams.toString() },

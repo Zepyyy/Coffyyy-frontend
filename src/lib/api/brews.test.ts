@@ -374,25 +374,20 @@ describe("getBrewFormStart", () => {
 		const second = await seedMachine("Decent", "espresso");
 		const v60 = await seedMachine("V60", "pour-over");
 
-		const start = await getBrewFormStart(undefined, undefined, "espresso");
+		const start = await getBrewFormStart({ methodParam: "espresso" });
 		expect(start.machineId).toBeNull();
 		expect(start.brewers).toEqual({ "pour-over": v60 });
 
-		const override = await getBrewFormStart(
-			undefined,
-			undefined,
-			"espresso",
-			undefined,
-			{ espresso: second },
-		);
+		const override = await getBrewFormStart({
+			methodParam: "espresso",
+			preferredBrewers: { espresso: (await db.Machines.get(second))!.localId },
+		});
 		expect(override.machineId).toBe(second);
 
-		const wrongMethod = await getBrewFormStart(
-			undefined,
-			undefined,
-			"pour-over",
-			first,
-		);
+		const wrongMethod = await getBrewFormStart({
+			methodParam: "pour-over",
+			brewerParam: first,
+		});
 		expect(wrongMethod.machineId).toBe(v60);
 	});
 
@@ -400,8 +395,10 @@ describe("getBrewFormStart", () => {
 		const bean = await seedBean("Test Bean");
 		await seedMachine("Linea", "espresso");
 
-		expect((await getBrewFormStart(bean.id)).beanId).toBe(bean.id);
-		expect((await getBrewFormStart(999)).beanId).toBeNull();
+		expect((await getBrewFormStart({ beanParam: bean.id })).beanId).toBe(
+			bean.id,
+		);
+		expect((await getBrewFormStart({ beanParam: 999 })).beanId).toBeNull();
 	});
 
 	it("a recipe picks a brewer of its method and its bean", async () => {
@@ -410,7 +407,7 @@ describe("getBrewFormStart", () => {
 		const v60 = await seedMachine("V60", "pour-over");
 		const recipeId = await seedRecipe("Bright", "pour-over", bean.id);
 
-		const start = await getBrewFormStart(undefined, recipeId);
+		const start = await getBrewFormStart({ recipeParam: recipeId });
 
 		expect(start.machineId).toBe(v60);
 		expect(start.method).toBe("pour-over");
@@ -425,16 +422,19 @@ describe("getBrewFormStart", () => {
 		const pourOver = await seedRecipe("Bright", "pour-over");
 		const tied = await seedRecipe("Tied", "espresso", other.id);
 
-		const noBrewer = await getBrewFormStart(undefined, pourOver);
+		const noBrewer = await getBrewFormStart({ recipeParam: pourOver });
 		expect(noBrewer.recipe?.id).toBe(pourOver);
 		expect(noBrewer.method).toBe("pour-over");
 		expect(noBrewer.machineId).toBeNull();
 
-		const otherBean = await getBrewFormStart(bean.id, tied);
+		const otherBean = await getBrewFormStart({
+			beanParam: bean.id,
+			recipeParam: tied,
+		});
 		expect(otherBean.recipe).toBeNull();
 		expect(otherBean.beanId).toBe(bean.id);
 
-		expect((await getBrewFormStart(undefined, 999)).recipe).toBeNull();
+		expect((await getBrewFormStart({ recipeParam: 999 })).recipe).toBeNull();
 	});
 });
 

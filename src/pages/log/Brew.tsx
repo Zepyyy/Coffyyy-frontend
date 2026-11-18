@@ -231,17 +231,27 @@ export default function BrewLog() {
 	const brewerParam = idParam(searchParams.get("brewer"));
 	const resuming = searchParams.get("resume") === "1";
 
-	const start = useBrewFormStart(
+	const start = useBrewFormStart({
 		beanParam,
 		recipeParam,
-		requestedMethod,
+		methodParam: requestedMethod,
 		brewerParam,
-		entryPreference.brewers,
-	);
+		preferredBrewers: entryPreference.brewers,
+	});
 	const source = useRepeatSource(fromBrewParam);
 	const sourceLoading = fromBrewParam != null && source === undefined;
 	const startKey = `${beanParam}|${recipeParam}|${rawFromBrew}|${rawMethod}|${brewerParam}|${resuming}`;
 	const [hydratedStart, setHydratedStart] = useState<string | null>(null);
+	const pendingExplicitEntry = Boolean(
+		session && session.entryKey !== startKey && (recipeParam || fromBrewParam),
+	);
+	const machineFromEntry = suggestions.machine.find(
+		(m) => m.id === brewerParam,
+	);
+	useEffect(() => {
+		if (resuming && machineFromEntry?.localId)
+			rememberBrewSelection(machineFromEntry.method, machineFromEntry.localId);
+	}, [resuming, machineFromEntry?.method, machineFromEntry?.localId]);
 	const setupReady = hydratedStart === startKey;
 	useEffect(() => {
 		if (session || sourceLoading || !start || setupReady) return;
@@ -253,10 +263,11 @@ export default function BrewLog() {
 			const rs = repeatStart(source);
 			const returning = resuming && start.method === rs.method;
 			const beanId = returning ? (start.beanId ?? rs.beanId) : rs.beanId;
-			const machineId =
-				(returning ? start.machineId : rs.machineId) ??
-				start.brewers[rs.method];
+			const machineId = returning
+				? (start.machineId ?? undefined)
+				: rs.machineId;
 			const applied = machineId != null;
+			setStarterKey(source.brew.starterPours ? `${beanId}:${rs.method}` : null);
 			setMethod(rs.method);
 			setRepeat({ brew: source.brew, applied });
 			setNotices(
@@ -285,6 +296,7 @@ export default function BrewLog() {
 							: "That brew no longer exists.",
 					],
 		);
+
 		setMethod(start.method);
 		const next: BrewLogForm = {
 			beanId: start.beanId ?? undefined,
@@ -419,11 +431,11 @@ export default function BrewLog() {
 	function selectMethod(next: BrewMethod) {
 		if (next === method) return;
 		const remembered = readBrewSelection().brewers?.[next];
-		const machineId = suggestions.machine.some(
-			(brewer) => brewer.id === remembered && brewer.method === next,
-		)
-			? remembered
-			: start?.brewers[next];
+		const machineId =
+			suggestions.machine.find(
+				(brewer) =>
+					remembered && brewer.localId === remembered && brewer.method === next,
+			)?.id ?? start?.brewers[next];
 		rememberBrewSelection(next);
 		appliedPrefill.current = null;
 		setMethod(next);
@@ -442,7 +454,10 @@ export default function BrewLog() {
 
 	function selectBrewer(machineId: number) {
 		if (!compatibleBrewers.some((brewer) => brewer.id === machineId)) return;
-		rememberBrewSelection(method, machineId);
+		rememberBrewSelection(
+			method,
+			compatibleBrewers.find((b) => b.id === machineId)?.localId,
+		);
 		setForm((f) => ({ ...f, machineId }));
 		if (repeat && !repeat.applied) {
 			setRepeat({ ...repeat, applied: true });
@@ -533,6 +548,7 @@ export default function BrewLog() {
 					recipeLocalId,
 				},
 				useStarter: starterActive,
+				entryKey: startKey,
 				startedAt: Date.now(),
 				form: { ...form, machineId: machine.id, beanId: form.beanId },
 				bean: selectedBean?.name ?? "Bean",
@@ -554,6 +570,7 @@ export default function BrewLog() {
 		setSaveError("");
 		try {
 			const brew = toNewBrew(actual, brewMethod, new Date());
+			if (session?.useStarter) brew.starterPours = true;
 			const result = session
 				? await saveBrewSession(brew, session.identity)
 				: await addBrew(brew, brewMethod);
@@ -572,7 +589,10 @@ export default function BrewLog() {
 					machineId: saved.machineId,
 					recipeId: saved.recipeId,
 				});
-				rememberBrewSelection(saved.method, saved.machineId);
+				rememberBrewSelection(
+					saved.method,
+					session?.identity.machineLocalId ?? machine?.localId,
+				);
 				setSavedBrew(saved);
 				updateSession(null);
 				setFeedbackOpen(false);
@@ -590,6 +610,13 @@ export default function BrewLog() {
 		savingLock.current = true;
 		setIsSaving(true);
 		try {
+			if (pendingExplicitEntry) {
+				setHydratedStart(null);
+				setStarterKey(null);
+				setSaveError("");
+				updateSession(null);
+				return;
+			}
 			const refs = await restoreBrewSession(session.identity);
 			const restoredKey = `${refs.beanId}:pour-over`;
 			appliedPrefill.current = restoredKey;
@@ -630,11 +657,13 @@ export default function BrewLog() {
 		});
 		setField("beanWeight", Number(next.toFixed(1)));
 	};
+	const waterMin = Math.min(config.brewWeight.min, form.brewWeight);
+	const waterMax = Math.max(config.brewWeight.max, form.brewWeight);
 	const setBrewWeight = (value: number) => {
 		const next = clampWeight({
 			value,
-			min: config.brewWeight.min,
-			max: config.brewWeight.max,
+			min: waterMin,
+			max: waterMax,
 		});
 		setField("brewWeight", Number(next.toFixed(1)));
 	};
@@ -698,6 +727,13 @@ export default function BrewLog() {
 				session={session}
 				update={updateSession}
 				cancel={() => void cancelSession()}
+				cancelLabel={
+					pendingExplicitEntry
+						? fromBrewParam
+							? "Cancel and repeat brew"
+							: "Cancel and follow Recipe"
+						: "Cancel brew"
+				}
 				save={(actual) => void saveBrew(actual, "pour-over")}
 				busy={isSaving}
 				error={saveError}
@@ -1243,8 +1279,8 @@ export default function BrewLog() {
 										value={form.brewWeight}
 										onChange={setBrewWeight}
 										onEdit={keepManualSetup}
-										min={config.brewWeight.min}
-										max={config.brewWeight.max}
+										min={waterMin}
+										max={waterMax}
 										step={brewWeightStep}
 										label={`${config.brewWeight.label} dial`}
 									/>

@@ -144,6 +144,7 @@ describe("brewWeightForRatio", () => {
 	it("multiplies the dose and stays on the dial", () => {
 		expect(brewWeightForRatio(18, 2, "espresso")).toBe(36);
 		expect(brewWeightForRatio(15, 16, "pour-over")).toBe(240);
+		expect(brewWeightForRatio(30, 17, "pour-over")).toBe(510);
 		expect(brewWeightForRatio(24, 2.5, "espresso")).toBe(
 			methodConfig("espresso").brewWeight.max,
 		);

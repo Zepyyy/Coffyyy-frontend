@@ -411,6 +411,8 @@ export interface components {
             tasteScore?: number;
             /** @description -5 weak to +5 strong */
             strengthScore?: number;
+            /** @description Brew used the built-in four-pour V60 schedule */
+            starterPours?: boolean;
             /** @description Seconds */
             extractionTime?: string;
             /** @description Espresso only */

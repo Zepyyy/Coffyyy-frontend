@@ -148,13 +148,20 @@ export type BrewFormStart = {
  * `?recipe=`). A recipe picks a Brewer of its method and, when bean-tied,
  * its bean. An explicit bean wins over a recipe tied to another bean.
  */
-export async function getBrewFormStart(
-	beanParam?: number,
-	recipeParam?: number,
-	methodParam?: BrewMethod,
-	brewerParam?: number,
-	preferredBrewers?: Partial<Record<BrewMethod, number>>,
-): Promise<BrewFormStart> {
+export interface BrewEntry {
+	beanParam?: number;
+	recipeParam?: number;
+	methodParam?: BrewMethod;
+	brewerParam?: number;
+	preferredBrewers?: Partial<Record<BrewMethod, string>>;
+}
+export async function getBrewFormStart({
+	beanParam,
+	recipeParam,
+	methodParam,
+	brewerParam,
+	preferredBrewers,
+}: BrewEntry = {}): Promise<BrewFormStart> {
 	const [bean, requestedRecipe, machines, history] = await Promise.all([
 		beanParam ? db.Beans.get(beanParam) : undefined,
 		recipeParam ? db.Recipes.get(recipeParam) : undefined,
@@ -181,9 +188,14 @@ export async function getBrewFormStart(
 		}
 	}
 	for (const method of BREW_METHODS) {
-		const preferred = preferredBrewers?.[method];
-		if (preferred != null && machinesById.get(preferred)?.method === method) {
-			brewers[method] = preferred;
+		const preferred = machines.find(
+			(m) =>
+				m.method === method &&
+				m.localId &&
+				m.localId === preferredBrewers?.[method],
+		);
+		if (preferred) {
+			brewers[method] = preferred.id;
 		} else if (brewers[method] == null) {
 			const compatible = machines.filter(
 				(machine) => machine.method === method,

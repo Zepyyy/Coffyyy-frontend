@@ -1,11 +1,11 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { type Pour, scaledPours, V60_STARTER_POURS } from "@/lib/pourSchedule";
-
-function formatCue(atSeconds: number) {
-	const minutes = Math.floor(atSeconds / 60);
-	return `${minutes}:${String(atSeconds % 60).padStart(2, "0")}`;
-}
+import {
+	type Pour,
+	clockTime,
+	scaledPours,
+	V60_STARTER_POURS,
+} from "@/lib/pourSchedule";
 
 const fieldClass =
 	"min-h-11 w-full border border-line-strong bg-paper-raised px-2 font-data text-sm";
@@ -116,7 +116,7 @@ export default function PourScheduleEditor({
 							target.atSeconds >= 0 &&
 							Number.isFinite(pour.fraction) && (
 								<p className="col-span-3 font-data text-sm">
-									{formatCue(target.atSeconds)} · Pour to {target.grams} g
+									{clockTime(target.atSeconds)} · Pour to {target.grams} g
 								</p>
 							)}
 					</fieldset>

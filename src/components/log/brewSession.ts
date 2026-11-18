@@ -9,6 +9,7 @@ export interface BrewSession {
 	steps: { atSeconds: number; grams: number }[];
 	step: number;
 	useStarter: boolean;
+	entryKey: string;
 	actuals?: { seconds: string; water: string; temperature: string };
 }
 

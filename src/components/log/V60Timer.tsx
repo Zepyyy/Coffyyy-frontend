@@ -3,13 +3,12 @@ import type { BrewLogForm } from "./brewForm";
 import { Button } from "@/components/ui/button";
 
 import type { BrewSession } from "./brewSession";
-function clockTime(seconds: number) {
-	return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
-}
+import { clockTime } from "@/lib/pourSchedule";
 export default function V60Timer({
 	session,
 	update,
 	cancel,
+	cancelLabel,
 	save,
 	busy,
 	error,
@@ -17,6 +16,7 @@ export default function V60Timer({
 	session: BrewSession;
 	update: (next: BrewSession) => void;
 	cancel: () => void;
+	cancelLabel: string;
 	save: (actual: BrewLogForm & { machineId: number }) => void;
 	busy: boolean;
 	error: string;
@@ -106,7 +106,7 @@ export default function V60Timer({
 							/>
 						</label>
 					))}
-					{error && <p role="alert">{error}</p>}
+
 					<Button variant="ink" className="h-12 w-full" disabled={busy}>
 						Save brew
 					</Button>
@@ -178,12 +178,13 @@ export default function V60Timer({
 					</div>
 				</>
 			)}
+			{error && <p role="alert">{error}</p>}
 			<button
 				className="min-h-11 text-sm underline"
 				disabled={busy}
 				onClick={cancel}
 			>
-				Cancel brew
+				{cancelLabel}
 			</button>
 		</section>
 	);

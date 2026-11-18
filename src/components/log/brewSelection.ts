@@ -4,7 +4,7 @@ const KEY = "coffyyy.brew-selection";
 
 type BrewSelection = {
 	method?: BrewMethod;
-	brewers?: Partial<Record<BrewMethod, number>>;
+	brewers?: Partial<Record<BrewMethod, string>>;
 };
 
 export function readBrewSelection(): BrewSelection {
@@ -16,7 +16,7 @@ export function readBrewSelection(): BrewSelection {
 	}
 }
 
-export function rememberBrewSelection(method: BrewMethod, brewerId?: number) {
+export function rememberBrewSelection(method: BrewMethod, brewerId?: string) {
 	const selection = readBrewSelection();
 	try {
 		localStorage.setItem(

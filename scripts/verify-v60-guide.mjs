@@ -88,15 +88,24 @@ try {
 	await target(125).waitFor();
 	await finish.click();
 	assert.equal(await pouredWater.inputValue(), "250");
-	await cancel.click();
-	await button("Start").waitFor();
-
+	await pouredWater.fill("120");
+	await button("Save brew").click();
+	await button("Done").waitFor();
 	await openSetup();
 	await button("Start").click();
 	await timer.waitFor();
 	assert.equal(await next.count(), 0);
+	await page.goto(base + "/log/brew?fromBrew=1");
+	await button("Cancel and repeat brew").click();
+	await page.waitForFunction(
+		() =>
+			document.querySelector('[aria-label="Water dial — type a value"]')
+				?.value === "120.0",
+	);
+	assert.equal(await button("Four pours").getAttribute("aria-pressed"), "true");
+	await button("Start").click();
+	await target(30).waitFor();
 	await finish.click();
-	assert.equal(await pouredWater.inputValue(), "250");
 	await elapsed.fill("182");
 	await pouredWater.fill("247");
 	await button("Save brew").click();
@@ -109,12 +118,13 @@ try {
 		const { db } = await import("/src/db/db.ts");
 		return db.Brews.toArray();
 	});
-	assert.equal(rows.length, 1);
+	assert.equal(rows.length, 2);
+	assert.equal(rows[0].starterPours, true);
 	assert.ok(Number.isFinite(new Date(rows[0].date).getTime()));
-	assert.equal(rows[0].overallRating, 5);
-	assert.equal(rows[0].extractionTime, "182");
-	assert.equal(rows[0].brewWeight, 247);
-	assert.equal(rows[0].waterTemp, undefined);
+	assert.equal(rows[1].overallRating, 5);
+	assert.equal(rows[1].extractionTime, "182");
+	assert.equal(rows[1].brewWeight, 247);
+	assert.equal(rows[1].waterTemp, undefined);
 	console.log("V60 guide passed in 390×667 Chromium.");
 } finally {
 	await browser.close();

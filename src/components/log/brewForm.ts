@@ -101,6 +101,8 @@ export function dialsFromBrew(brew: Brews, method: BrewMethod): BrewDials {
 export function dialsForRepeat(brew: Brews, method: BrewMethod): BrewDials {
 	return {
 		...dialsFromBrew(brew, method),
+		...(method === "pour-over" &&
+			brew.brewWeight > 0 && { brewWeight: brew.brewWeight }),
 		extractionTime: "",
 		flow: "",
 		notes: "",
@@ -192,7 +194,9 @@ export function brewWeightForRatio(
 	ratio: number,
 	method: BrewMethod,
 ): number {
-	return clampBrewWeight(beanWeight * ratio, method);
+	return method === "pour-over"
+		? Math.max(0.1, round1(beanWeight * ratio))
+		: clampBrewWeight(beanWeight * ratio, method);
 }
 
 /**

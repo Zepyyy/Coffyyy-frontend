@@ -28,7 +28,11 @@ export {
 	getLastUsedMachineId,
 	getBrewFormStart,
 } from "./api/brews";
-export type { BrewFormStart, GrindSettingSummary } from "./api/brews";
+export type {
+	BrewEntry,
+	BrewFormStart,
+	GrindSettingSummary,
+} from "./api/brews";
 export {
 	getAllMachines,
 	getMachineCount,

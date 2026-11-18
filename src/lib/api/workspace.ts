@@ -73,6 +73,7 @@ const BREW_FIELDS: Record<
 	overallRating: true,
 	tasteScore: true,
 	strengthScore: true,
+	starterPours: true,
 	extractionTime: true,
 	flow: true,
 	waterTemp: true,
