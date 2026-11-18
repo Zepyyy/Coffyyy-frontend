@@ -7,6 +7,7 @@ import {
 	type Scene,
 } from "./engine";
 import "./GrainField.css";
+import { useJournal } from "./journal";
 
 type Props = {
 	scene: Scene;
@@ -19,6 +20,7 @@ export default function GrainField({ scene, print = "fine", animated }: Props) {
 	const root = useRef<HTMLDivElement>(null);
 	const dither = useRef<HTMLCanvasElement>(null);
 	const engine = useRef<GrainEngine | null>(null);
+	const journal = useJournal();
 	const initial = useRef({ scene, print });
 	const osReduce = useReducedMotion();
 	const motion = animated ?? !osReduce;
@@ -76,6 +78,7 @@ export default function GrainField({ scene, print = "fine", animated }: Props) {
 
 	useEffect(() => engine.current?.setScene(scene), [scene]);
 	useEffect(() => engine.current?.setPrint(print), [print]);
+	useEffect(() => engine.current?.setJournal(journal), [journal]);
 	useEffect(() => engine.current?.setMotion(motion), [motion]);
 
 	return (

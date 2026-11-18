@@ -38,6 +38,18 @@ export const BACKGROUNDS: readonly Background[] = [
 		note: "A highland coffee farm at harvest: contour hedges, pickers, a drying patio under the volcanoes.",
 	},
 	{
+		id: "beangarden",
+		name: "Bean garden",
+		exploration: true,
+		note: "Every bean in your library is a plant in the border. Brews grow it; a finished bag goes to seed.",
+	},
+	{
+		id: "dayvine",
+		name: "Day and night vine",
+		exploration: true,
+		note: "Morning glories open with the morning and close by afternoon; moonflowers open at dusk for the night moths.",
+	},
+	{
 		id: "passionflower-study",
 		name: "Passionflower garden",
 		exploration: true,

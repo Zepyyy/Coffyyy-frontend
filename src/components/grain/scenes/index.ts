@@ -8,6 +8,8 @@ import { koi } from "./koi";
 import { lakeside } from "./lakeside";
 import { starvalley } from "./starvalley";
 import { coffeefarm } from "./coffeefarm";
+import { beangarden } from "./beangarden";
+import { dayvine } from "./dayvine";
 
 export const SCENES: Record<string, Scene> = {
 	"passionflower-study": passionflowerStudy,
@@ -19,4 +21,6 @@ export const SCENES: Record<string, Scene> = {
 	lakeside,
 	starvalley,
 	coffeefarm,
+	beangarden,
+	dayvine,
 };
