@@ -245,6 +245,8 @@ old 2px print (heavy petal contours, coarse leaves). Cause: the plate's strokes
 had 2px minimums tuned for the 2px lattice, so at 1px every line was a solid
 cartoon outline. Cherry now thins strokes toward the lattice (`thin`).
 
-New setting **Grain: fine / coarse** (Settings menu, saved in prefs). Fine is the
-1px blue-noise engine; coarse is 2px dots on an 8x8 Bayer lattice, the original
-stitched look, rebuilt on the GPU engine. Dev: `?grainDot=2&grainMask=bayer&grainCoverage=0.8`.
+Grain is now per background: **Grain: fine / coarse** in Settings switches the
+background on screen. A background declares its default (`print` in
+creatures.ts). Owner: keep Coffee branch fine; coarse looks best on Lakeside.
+Fine is the 1px blue-noise engine; coarse is 2px dots on an 8x8 Bayer lattice,
+the original stitched look, rebuilt on the GPU engine. Dev: `?grainDot=2&grainMask=bayer&grainCoverage=0.8`.

@@ -7,7 +7,8 @@ import type { MotionPreference } from "./motion";
 export type GrainPrefs = {
 	scene: string;
 	motion: MotionPreference;
-	print: Print;
+	/** Grain switched away from a background's own default, by background id. */
+	prints: Record<string, Print>;
 };
 
 const KEY = "coffyyy:grain";
@@ -16,7 +17,7 @@ const listeners = new Set<() => void>();
 const FALLBACK: GrainPrefs = {
 	scene: DEFAULT_BACKGROUND,
 	motion: null,
-	print: "fine",
+	prints: {},
 };
 let cache: GrainPrefs | null = null;
 
@@ -29,8 +30,10 @@ function read(): GrainPrefs {
 				? raw.scene
 				: FALLBACK.scene;
 		const motion = typeof raw?.motion === "boolean" ? raw.motion : null;
-		const print = raw?.print === "coarse" ? "coarse" : "fine";
-		return { scene, motion, print };
+		const prints: Record<string, Print> = {};
+		for (const [id, v] of Object.entries(raw?.prints ?? {}))
+			if (v === "fine" || v === "coarse") prints[id] = v;
+		return { scene, motion, prints };
 	} catch {
 		return FALLBACK;
 	}
@@ -58,4 +61,15 @@ function subscribe(l: () => void) {
 
 export function useGrainPrefs(): GrainPrefs {
 	return useSyncExternalStore(subscribe, snapshot, () => FALLBACK);
+}
+
+/** The grain a background renders with: the owner's switch, else its own default. */
+export function printFor(prefs: GrainPrefs, id: string): Print {
+	return (
+		prefs.prints[id] ?? BACKGROUNDS.find((b) => b.id === id)?.print ?? "fine"
+	);
+}
+
+export function setPrint(id: string, print: Print) {
+	setGrainPrefs({ prints: { ...snapshot().prints, [id]: print } });
 }

@@ -3,7 +3,7 @@ import { DEFAULT_BACKGROUND } from "./creatures";
 import GrainField from "./GrainField";
 import { pageMotion } from "./motion";
 import { SCENES } from "./scenes";
-import { useGrainPrefs } from "./useGrainPrefs";
+import { printFor, useGrainPrefs } from "./useGrainPrefs";
 
 /**
  * The journal's background creature, with the owner's saved pick. Keep it in
@@ -19,9 +19,17 @@ export default function PageGrain() {
 		Boolean(grainParam && SCENES[grainParam]),
 		searchParams.get("motion") ?? searchParams.get("grainMotion"),
 	);
-	const scene =
-		(grainParam && SCENES[grainParam]) ||
-		SCENES[prefs.scene] ||
-		SCENES[DEFAULT_BACKGROUND];
-	return <GrainField scene={scene} animated={motion ?? undefined} />;
+	const id =
+		grainParam && SCENES[grainParam]
+			? grainParam
+			: SCENES[prefs.scene]
+				? prefs.scene
+				: DEFAULT_BACKGROUND;
+	return (
+		<GrainField
+			scene={SCENES[id]}
+			print={printFor(prefs, id)}
+			animated={motion ?? undefined}
+		/>
+	);
 }
