@@ -6,6 +6,8 @@ import { cherry } from "./cherry";
 import { dandelion } from "./dandelion";
 import { koi } from "./koi";
 import { lakeside } from "./lakeside";
+import { starvalley } from "./starvalley";
+import { coffeefarm } from "./coffeefarm";
 import { beangarden } from "./beangarden";
 import { dayvine } from "./dayvine";
 
@@ -17,6 +19,8 @@ export const SCENES: Record<string, Scene> = {
 	dandelion,
 	koi,
 	lakeside,
+	starvalley,
+	coffeefarm,
 	beangarden,
 	dayvine,
 };
