@@ -4,7 +4,12 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BACKGROUNDS } from "@/components/grain/creatures";
 import { pageMotion } from "@/components/grain/motion";
-import { setGrainPrefs, useGrainPrefs } from "@/components/grain/useGrainPrefs";
+import {
+	printFor,
+	setGrainPrefs,
+	setPrint,
+	useGrainPrefs,
+} from "@/components/grain/useGrainPrefs";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +30,10 @@ export default function ToolsMenu() {
 	const preview = BACKGROUNDS.some(({ id }) => id === params.get("grain"));
 	const motion =
 		pageMotion(prefs.motion, preview, params.get("motion")) ?? !reducedMotion;
+	// Grain belongs to the background on screen: each scene keeps its own.
+	const shown = preview ? (params.get("grain") ?? prefs.scene) : prefs.scene;
+	const print = printFor(prefs, shown);
+	const otherPrint = print === "fine" ? "coarse" : "fine";
 
 	// A lingering ?grain= from the lab would otherwise outrank this choice.
 	function pick(scene: string) {
@@ -115,6 +124,15 @@ export default function ToolsMenu() {
 					>
 						Motion
 						<span>{motion ? "on" : "off"}</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setPrint(shown, otherPrint)}
+						aria-label={`Grain: ${print}. Switch to ${otherPrint}.`}
+						className={row}
+					>
+						Grain
+						<span>{print}</span>
 					</button>
 					<nav className="mt-1 flex flex-col border-t border-line pt-1">
 						{TOOLS.map(({ to, label }) => (

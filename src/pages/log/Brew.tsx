@@ -59,7 +59,7 @@ const chipClass = (active: boolean) =>
 	);
 
 const inputClass =
-	"rounded-lg border border-line-strong bg-paper-raised px-3 py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60";
+	"rounded-lg border border-line-strong bg-paper-raised px-3 py-2.5 sm:py-1.5 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60";
 
 /** A positive integer search param, else undefined. */
 function idParam(raw: string | null): number | undefined {
@@ -913,7 +913,7 @@ export default function BrewLog() {
 												)
 											}
 											className={cn(
-												"opt-key min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
+												"opt-key min-h-11 min-w-10 flex-1 py-2.5 font-data text-xs font-semibold transition-colors",
 												form.grindSize === lvl
 													? "text-primary-800 dark:text-primary-200 bg-primary/10"
 													: "text-muted-foreground hover:text-foreground",
@@ -927,7 +927,7 @@ export default function BrewLog() {
 									<input
 										type="number"
 										step="0.01"
-										className="h-10 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+										className="h-11 w-24 shrink-0 rounded-lg border border-line-strong bg-paper-raised px-3 font-sans text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 										placeholder="Other"
 										value={
 											config.grind.presets.includes(form.grindSize)
@@ -1195,7 +1195,7 @@ export default function BrewLog() {
 								<button
 									type="button"
 									onClick={() => setNotesOpen(true)}
-									className="inline-flex items-center gap-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+									className="tap tap-key gap-1.5 font-sans text-xs text-ink-soft transition-colors hover:text-foreground sm:min-h-0 sm:min-w-0 sm:border-0 sm:bg-transparent sm:p-0"
 								>
 									<Plus className="size-3" />
 									Add notes
@@ -1222,7 +1222,7 @@ export default function BrewLog() {
 							<button
 								type="submit"
 								disabled={!form.beanId || !form.machineId || isSaving}
-								className="key-frame key-frame-light hover-line h-12 flex-1 rounded-xl bg-ink px-8 font-display text-lg italic text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 sm:flex-none"
+								className="key-frame key-frame-light hover-line h-12 rounded-xl bg-ink px-8 font-display text-lg italic text-paper shadow-card transition-colors hover:bg-ink/85 disabled:opacity-40 flex-none"
 							>
 								{isSaving ? "Saving…" : `Save the ${noun}`}
 							</button>

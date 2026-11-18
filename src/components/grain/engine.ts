@@ -8,7 +8,12 @@
  * real colour and shading; the dither supplies the texture.
  */
 
-import { createDitherGL, type DitherGL, type Zone } from "./dither-gl";
+import {
+	createDitherGL,
+	type DitherGL,
+	type Mask,
+	type Zone,
+} from "./dither-gl";
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -43,6 +48,24 @@ export type Layers = {
 export type Scene = (layers: Layers, env: SceneEnv) => void;
 
 /**
+ * The owner's print. Fine (1px dots, blue noise) dissolves into continuous
+ * tone, like an engraving. Coarse (2px dots, an ordered Bayer lattice) is the
+ * original stitched look: line work turns to beads and pale fills to lace.
+ */
+export type Print = "fine" | "coarse";
+type Material = {
+	/** CSS pixels per dot, before rounding to whole device pixels. */
+	dot: number;
+	mask: Mask;
+	/** Coverage response; below 1 lifts faint fills toward strong lines. */
+	coverage?: number;
+};
+const MATERIALS: Record<Print, Material> = {
+	fine: { dot: 1, mask: "blue" },
+	coarse: { dot: 2, mask: "bayer", coverage: 0.8 },
+};
+
+/**
  * Frame pacing: the display's rate while frames are cheap, stepping down only
  * when the main thread is genuinely loaded. A fixed 24fps reads as lag.
  * Each entry: [ms between frames, average cost (ms) that moves down a tier].
@@ -57,8 +80,6 @@ const FRAME_MS = 1000 / 60;
 const RECOVER_BELOW = 4;
 /** After a scene or theme change, dots stop holding old steps for this long. */
 const RELEASE_S = 0.6;
-/** CSS pixels per dot, before rounding to whole device pixels. */
-const DOT = 1;
 const STILL_T = 30;
 type Rgb = [number, number, number];
 type Palette = { ink: Rgb; paper: Rgb; accent: Rgb; gain: number };
@@ -84,10 +105,12 @@ export type GrainOptions = {
 	root: HTMLElement;
 	dither: HTMLCanvasElement;
 	scene: Scene;
+	print?: Print;
 };
 
 export type GrainEngine = {
 	setScene: (scene: Scene) => void;
+	setPrint: (print: Print) => void;
 	setMotion: (on: boolean) => void;
 	layout: () => void;
 	refreshPalette: () => void;
@@ -109,9 +132,24 @@ export function createGrain(options: GrainOptions): GrainEngine {
 	const ctx: CanvasRenderingContext2D = maybeCtx;
 	const readColor = colorReader();
 	// Dev only: `?grainDots=fine` keeps 1px dots on software WebGL, for stills.
-	const fine =
-		import.meta.env.DEV &&
-		new URLSearchParams(location.search).get("grainDots") === "fine";
+	const devParams = import.meta.env.DEV
+		? new URLSearchParams(location.search)
+		: new URLSearchParams();
+	const fine = devParams.get("grainDots") === "fine";
+	// Dev only: `?grainDot=2&grainMask=bayer&grainCoverage=0.8` overrides the
+	// print, to compare materials side by side.
+	const materialOf = (p: Print): Material => {
+		const base = MATERIALS[p];
+		const dot = Number(devParams.get("grainDot")) || base.dot;
+		const m = devParams.get("grainMask");
+		const cov = Number(devParams.get("grainCoverage")) || base.coverage;
+		return {
+			dot,
+			mask: m === "bayer" || m === "blue" ? m : base.mask,
+			coverage: cov,
+		};
+	};
+	let material = materialOf(options.print ?? "fine");
 
 	let W = 0;
 	let H = 0;
@@ -210,7 +248,9 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		// Whole device pixels per dot, so fractional DPRs cannot moire. Software
 		// WebGL gets dots twice as wide: a quarter of the pixels to move.
 		const dot =
-			Math.max(1, Math.round(DOT * dpr)) * (gl.software && !fine ? 2 : 1);
+			Math.max(1, Math.round(material.dot * dpr)) *
+			(gl.software && !fine && material.dot < 2 ? 2 : 1);
+		gl.setMask(material.mask, material.coverage);
 		const dw = Math.ceil((W * dpr) / dot);
 		const dh = Math.ceil((H * dpr) / dot);
 		ditherScale = dw / W;
@@ -322,6 +362,19 @@ export function createGrain(options: GrainOptions): GrainEngine {
 			scene = next;
 			releaseUntil = clock + RELEASE_S;
 			if (!motion) renderStill();
+		},
+		setPrint(next) {
+			const m = materialOf(next);
+			if (
+				m.dot === material.dot &&
+				m.mask === material.mask &&
+				m.coverage === material.coverage
+			)
+				return;
+			material = m;
+			// A new lattice: re-dither from the source rather than re-map old dots.
+			layout();
+			if (motion) render(clock, 0, true);
 		},
 		setMotion(on) {
 			motion = on;

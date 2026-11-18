@@ -1,19 +1,25 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { createGrain, type GrainEngine, type Scene } from "./engine";
+import {
+	createGrain,
+	type GrainEngine,
+	type Print,
+	type Scene,
+} from "./engine";
 import "./GrainField.css";
 
 type Props = {
 	scene: Scene;
+	print?: Print;
 	/** undefined follows the device; booleans are explicit playback choices. */
 	animated?: boolean;
 };
 
-export default function GrainField({ scene, animated }: Props) {
+export default function GrainField({ scene, print = "fine", animated }: Props) {
 	const root = useRef<HTMLDivElement>(null);
 	const dither = useRef<HTMLCanvasElement>(null);
 	const engine = useRef<GrainEngine | null>(null);
-	const initial = useRef({ scene });
+	const initial = useRef({ scene, print });
 	const osReduce = useReducedMotion();
 	const motion = animated ?? !osReduce;
 
@@ -69,6 +75,7 @@ export default function GrainField({ scene, animated }: Props) {
 	}, []);
 
 	useEffect(() => engine.current?.setScene(scene), [scene]);
+	useEffect(() => engine.current?.setPrint(print), [print]);
 	useEffect(() => engine.current?.setMotion(motion), [motion]);
 
 	return (

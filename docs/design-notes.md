@@ -245,3 +245,16 @@ after a scene/theme switch (fixes ghosts of the previous scene).
 Lakeside is liked as a concept. Owner wants full-page scene variations that are
 different worlds in the same spirit (cozy, full width/height illustrated
 landscape, small life, chill), not the same lake with swapped props.
+
+## Grain print and coffee branch fix (2026-11-18)
+
+Owner: on a large screen the 1px engine made Coffee branch look worse than the
+old 2px print (heavy petal contours, coarse leaves). Cause: the plate's strokes
+had 2px minimums tuned for the 2px lattice, so at 1px every line was a solid
+cartoon outline. Cherry now thins strokes toward the lattice (`thin`).
+
+Grain is now per background: **Grain: fine / coarse** in Settings switches the
+background on screen. A background declares its default (`print` in
+creatures.ts). Owner: keep Coffee branch fine; coarse looks best on Lakeside.
+Fine is the 1px blue-noise engine; coarse is 2px dots on an 8x8 Bayer lattice,
+the original stitched look, rebuilt on the GPU engine. Dev: `?grainDot=2&grainMask=bayer&grainCoverage=0.8`.

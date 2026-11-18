@@ -53,7 +53,7 @@ export function BeanChapter({
 					{detailTo ? (
 						<Link
 							to={detailTo}
-							className="truncate font-display text-xl italic tracking-tight text-foreground hover:underline"
+							className="tap truncate font-display text-xl italic tracking-tight text-foreground hover:underline sm:min-h-0"
 						>
 							{beanName}
 						</Link>
@@ -95,7 +95,7 @@ export function BeanChapter({
 						</span>
 						<Link
 							to={`/log/brew?fromBrew=${best.id}`}
-							className="inline-flex items-center gap-1 font-data text-[10px] font-semibold uppercase tracking-[0.12em] text-crema-deep hover:underline dark:text-crema"
+							className="tap tap-key gap-1 font-data text-[10px] font-semibold uppercase tracking-[0.12em] text-crema-deep hover:underline dark:text-crema sm:min-h-0 sm:min-w-0 sm:border-0 sm:bg-transparent sm:p-0"
 						>
 							Repeat
 							<ArrowRight className="size-3" aria-hidden />

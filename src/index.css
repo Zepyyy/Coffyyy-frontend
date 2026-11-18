@@ -871,3 +871,44 @@
 .measure-relation { animation: measure-relation 180ms ease-out; transform-origin: left; }
 @keyframes measure-relation { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .measure-relation { animation: none; } }
+
+/* Phone legibility floor. Unlayered so it beats Tailwind utilities.
+   Micro-labels (9-11px mono caps) read as 12px, small text as 13/15px.
+   Desktop (>=640px) keeps the original, denser sizes. */
+@media (max-width: 639px) {
+    [class*="text-[9px]"],
+    [class*="text-[10px]"],
+    [class*="text-[11px]"],
+    [class*="text-[0.6rem]"] {
+        font-size: 12px;
+        line-height: 1.35;
+    }
+    .eyebrow {
+        font-size: 12px;
+    }
+    .text-xs {
+        font-size: 13px;
+        line-height: 1.45;
+    }
+    .text-sm {
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    /* Tappable text/arrow controls: 44px hit area, optional hairline key. */
+    .tap {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        min-width: 44px;
+    }
+    .tap-key {
+        justify-content: center;
+        padding-inline: 0.875rem;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+        color: var(--ink);
+    }
+    .tap-key:active {
+        background: var(--paper-sunken);
+    }
+}

@@ -6,6 +6,8 @@
 export type Background = {
 	id: string;
 	name: string;
+	/** The grain the scene is drawn for; the owner can switch it per background. */
+	print?: "fine" | "coarse";
 	exploration?: boolean;
 	note?: string;
 };
@@ -19,6 +21,7 @@ export const BACKGROUNDS: readonly Background[] = [
 	{
 		id: "lakeside",
 		name: "Lakeside",
+		print: "coarse",
 		exploration: true,
 		note: "A quiet inlet, with a lone angler in the reeds and a folded headland across the water.",
 	},

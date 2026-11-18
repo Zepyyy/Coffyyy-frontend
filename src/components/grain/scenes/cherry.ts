@@ -825,7 +825,7 @@ function drawLeaf(c: Ctx, b: Branch, f: Leaf, ink: Ink, t: number) {
 	for (let k = 1; k <= FIRST + 2; k++) c.lineTo(mx[k], my[k]);
 	c.globalAlpha = 0.95;
 	c.strokeStyle = ink.barkLine;
-	c.lineWidth = Math.max(2.4, 3.6 * s);
+	c.lineWidth = Math.max(2.4, 3.6 * s) * thin;
 	c.stroke();
 
 	// The half facing the light is paler, as on any folded leaf.
@@ -857,7 +857,7 @@ function drawLeaf(c: Ctx, b: Branch, f: Leaf, ink: Ink, t: number) {
 			if (k === 7) c.moveTo(x, y);
 			else c.lineTo(x, y);
 		}
-		c.lineWidth = Math.max(2, f.wid * 0.2);
+		c.lineWidth = Math.max(2, f.wid * 0.2) * thin;
 		if (ink.cut) {
 			c.globalCompositeOperation = "destination-out";
 			c.globalAlpha = sheen;
@@ -873,14 +873,14 @@ function drawLeaf(c: Ctx, b: Branch, f: Leaf, ink: Ink, t: number) {
 	// Sunk on the glossy upper face...
 	c.strokeStyle = ink.vein;
 	c.globalAlpha = 0.86;
-	c.lineWidth = Math.max(2.1, 2.5 * s);
+	c.lineWidth = Math.max(2.1, 2.5 * s) * thin;
 	c.beginPath();
 	traceVeins(c, eL, fL, f, 0, true);
 	traceVeins(c, eR, fR, f, 1, true);
 	c.stroke();
 	// ...raised and fine on the pale underside.
 	c.globalAlpha = 0.66;
-	c.lineWidth = Math.max(1.9, 2.2 * s);
+	c.lineWidth = Math.max(1.9, 2.2 * s) * thin;
 	c.beginPath();
 	traceVeins(c, eL, fL, f, 0, false);
 	traceVeins(c, eR, fR, f, 1, false);
@@ -898,7 +898,7 @@ function drawLeaf(c: Ctx, b: Branch, f: Leaf, ink: Ink, t: number) {
 		c.lineTo(mx[k] + nx[k] * eR[k], my[k] + ny[k] * eR[k]);
 	c.globalAlpha = 0.86;
 	c.strokeStyle = ink.edge;
-	c.lineWidth = Math.max(2, 2.2 * s);
+	c.lineWidth = Math.max(2, 2.2 * s) * thin;
 	c.stroke();
 
 	// Midrib: a cord that thins to the tip.
@@ -911,7 +911,7 @@ function drawLeaf(c: Ctx, b: Branch, f: Leaf, ink: Ink, t: number) {
 		c.beginPath();
 		c.moveTo(mx[FIRST - 1], my[FIRST - 1]);
 		for (let k = FIRST; k <= to; k++) c.lineTo(mx[k], my[k]);
-		c.lineWidth = Math.max(2, w * s);
+		c.lineWidth = Math.max(2, w * s) * thin;
 		c.stroke();
 	}
 }
@@ -943,7 +943,7 @@ function drawStem(c: Ctx, b: Branch, ink: Ink) {
 	c.fillStyle = ink.shoot;
 	c.fill();
 	c.strokeStyle = ink.barkLine;
-	c.lineWidth = 1.5;
+	c.lineWidth = 1.5 * thin;
 
 	// Bark: short ticks across the shadow side, thinning out up the shoot.
 	c.beginPath();
@@ -956,7 +956,7 @@ function drawStem(c: Ctx, b: Branch, ink: Ink) {
 		);
 	}
 	c.globalAlpha = 0.9;
-	c.lineWidth = 2;
+	c.lineWidth = 2 * thin;
 	c.stroke();
 
 	// Interpetiolar stipules: the small triangle across a coffee node.
@@ -1000,7 +1000,7 @@ function drawFruit(c: Ctx, b: Branch, f: Fruit, ink: Ink, t: number) {
 	c.lineTo(x, y);
 	c.globalAlpha = 0.8;
 	c.strokeStyle = ink.barkLine;
-	c.lineWidth = 2;
+	c.lineWidth = 2 * thin;
 	c.stroke();
 
 	c.beginPath();
@@ -1022,7 +1022,7 @@ function drawFruit(c: Ctx, b: Branch, f: Fruit, ink: Ink, t: number) {
 		c.ellipse(x, y, f.rx * m, f.ry * m, rot, away - 1.2, away + 1.2);
 		c.globalAlpha = 0.62 - k * 0.2;
 		c.strokeStyle = ink.shade[stage];
-		c.lineWidth = Math.max(2, 2.8 * b.scale);
+		c.lineWidth = Math.max(2, 2.8 * b.scale) * thin;
 		c.stroke();
 	}
 	// Gloss.
@@ -1051,7 +1051,7 @@ function drawFruit(c: Ctx, b: Branch, f: Fruit, ink: Ink, t: number) {
 	c.ellipse(x, y, f.rx, f.ry, rot, 0, TAU);
 	c.globalAlpha = 0.85;
 	c.strokeStyle = ink.shade[stage];
-	c.lineWidth = 1.9;
+	c.lineWidth = 1.9 * thin;
 	c.stroke();
 
 	// The crown: the calyx scar at the far end, turned a little toward us.
@@ -1080,7 +1080,7 @@ function drawBloom(c: Ctx, b: Branch, f: Bloom, ink: Ink, t: number) {
 	c.lineTo(x, y);
 	c.globalAlpha = 0.85;
 	c.strokeStyle = ink.barkLine;
-	c.lineWidth = 2;
+	c.lineWidth = 2 * thin;
 	c.stroke();
 
 	const paper = (tone: number) => {
@@ -1104,7 +1104,7 @@ function drawBloom(c: Ctx, b: Branch, f: Bloom, ink: Ink, t: number) {
 			c.globalAlpha = 1;
 			c.strokeStyle = "#000";
 		}
-		c.lineWidth = 2;
+		c.lineWidth = 2 * thin;
 		c.stroke();
 		c.globalCompositeOperation = "source-over";
 	};
@@ -1186,7 +1186,7 @@ function drawBloom(c: Ctx, b: Branch, f: Bloom, ink: Ink, t: number) {
 	}
 	c.globalAlpha = 1;
 	c.strokeStyle = ink.anther;
-	c.lineWidth = 2.2;
+	c.lineWidth = 2.2 * thin;
 	c.stroke();
 }
 
@@ -1204,6 +1204,13 @@ function paint(g: Ctx, b: Branch, ink: Ink, t: number) {
 	g.globalCompositeOperation = "source-over";
 }
 
+/**
+ * Line weight against the lattice. The plate was engraved for 2px dots, where a
+ * thinner line breaks into blinking beads; on a finer lattice the same 2px
+ * strokes read as a heavy cartoon outline, so they thin toward the dot.
+ */
+let thin = 1;
+
 /** Maximum paints per second; small desktop plates interpolate slower steps. */
 const RATE = 8;
 
@@ -1218,6 +1225,7 @@ export const cherry: Scene = ({ dither: c }, { t, W, H, anchors, dark }) => {
 	const theme = dark ? "dark" : "light";
 	const ink = INKS[theme];
 	const scale = c.getTransform().a;
+	thin = clamp(1 / scale / 2, 0.5, 1);
 	const branches = branchesFor(W, H, gl, gr, phone);
 	c.imageSmoothingEnabled = false;
 	branches.forEach((b, index) => {
