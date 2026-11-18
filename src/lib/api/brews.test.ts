@@ -293,7 +293,7 @@ describe("getBrewFormStart", () => {
 		]);
 	});
 
-	it("starts on the last-used brewer without params", async () => {
+	it("starts on the last-used brewer and bean without params", async () => {
 		const bean = await seedBean("Test Bean");
 		await seedMachine("Linea", "espresso");
 		const v60 = await seedMachine("V60", "pour-over");
@@ -309,7 +309,7 @@ describe("getBrewFormStart", () => {
 		expect(await getBrewFormStart()).toEqual({
 			machineId: v60,
 			method: "pour-over",
-			beanId: null,
+			beanId: bean.id,
 			recipe: null,
 		});
 	});

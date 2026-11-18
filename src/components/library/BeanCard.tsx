@@ -122,14 +122,14 @@ export default function BeanCard({
 						<button
 							type="button"
 							onClick={() => setConfirmDelete(false)}
-							className="rounded-lg bg-paper-sunken px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:text-foreground"
+							className="tap rounded-lg bg-paper-sunken px-3 py-1 text-xs font-medium text-ink-soft transition-colors hover:text-foreground"
 						>
 							Cancel
 						</button>
 						<button
 							type="button"
 							onClick={() => deleteBeanById(bean.id)}
-							className="rounded-lg bg-destructive px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
+							className="tap rounded-lg bg-destructive px-3 py-1 text-xs font-medium text-white transition-opacity hover:opacity-90"
 						>
 							Delete
 						</button>
@@ -138,7 +138,7 @@ export default function BeanCard({
 					<button
 						type="button"
 						onClick={() => setConfirmDelete(true)}
-						className="rounded-lg px-3 py-1 text-xs text-ink-faint transition-colors hover:text-destructive"
+						className="tap rounded-lg px-3 py-1 text-xs text-ink-soft transition-colors hover:text-destructive"
 					>
 						Delete
 					</button>

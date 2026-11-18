@@ -116,6 +116,19 @@ export default function ToolsMenu() {
 						Motion
 						<span>{motion ? "on" : "off"}</span>
 					</button>
+					<button
+						type="button"
+						onClick={() =>
+							setGrainPrefs({
+								print: prefs.print === "fine" ? "coarse" : "fine",
+							})
+						}
+						aria-label={`Grain: ${prefs.print}. Switch to ${prefs.print === "fine" ? "coarse" : "fine"}.`}
+						className={row}
+					>
+						Grain
+						<span>{prefs.print}</span>
+					</button>
 					<nav className="mt-1 flex flex-col border-t border-line pt-1">
 						{TOOLS.map(({ to, label }) => (
 							<Link

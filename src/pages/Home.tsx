@@ -112,7 +112,7 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 				</h2>
 				<Link
 					to="/library"
-					className="group inline-flex items-center gap-2 font-data text-[10px] uppercase tracking-[0.16em] text-ink-faint transition-colors hover:text-foreground word-link"
+					className="tap tap-key group -my-2 gap-2 font-data text-[12px] uppercase tracking-[0.12em] text-ink-soft transition-colors hover:text-foreground sm:text-[10px] sm:tracking-[0.16em] sm:text-ink-faint max-sm:justify-center sm:inline-flex sm:items-center sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 word-link"
 				>
 					<span className="word-link">Manage →</span>
 				</Link>
@@ -157,6 +157,9 @@ function BeanSection({ allBeans }: { allBeans: Beans[] }) {
 }
 
 export default function Home() {
+	const [searchParams] = useSearchParams();
+	// The bean open below is the one about to be brewed.
+	const beanParam = Number(searchParams.get("bean")) || null;
 	const recentBrews = useRecentBrews(20);
 	const allBeans = useAllBeans();
 	const beanMap = new Map(allBeans.map((b) => [b.id, b]));
@@ -204,7 +207,7 @@ export default function Home() {
 				{/* The censer, softened: the page's own paper, the house accent as
 				    the one warm light, with the original cup's own steam. */}
 				<Link
-					to="/log/brew"
+					to={beanParam ? `/log/brew?bean=${beanParam}` : "/log/brew"}
 					className="censer-key key-line grain-glass group relative flex w-full shrink-0 items-center gap-4 overflow-hidden border border-line-strong px-5 py-4 active:translate-y-px xl:w-[22rem] sm:px-7"
 				>
 					<span aria-hidden className="censer-halo" />

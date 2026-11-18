@@ -265,7 +265,7 @@ export function BrewLedgerRow({
 								<button
 									type="button"
 									onClick={() => setConfirmDelete(false)}
-									className="inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 font-sans text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+									className="tap inline-flex items-center gap-1.5 bg-muted px-3 py-1.5 font-sans text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 								>
 									<X className="size-3" />
 									Cancel
@@ -275,7 +275,7 @@ export function BrewLedgerRow({
 							<div className="flex items-center gap-1">
 								<Link
 									to={`/log/brew?fromBrew=${brew.id}`}
-									className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+									className="tap inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 								>
 									<Repeat className="size-3" />
 									Repeat
@@ -283,7 +283,7 @@ export function BrewLedgerRow({
 								{config.hasRecipes && (
 									<Link
 										to={`/log/recipe?fromBrew=${brew.id}`}
-										className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
+										className="tap inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 									>
 										<BookmarkPlus className="size-3" />
 										Save as recipe
@@ -292,7 +292,7 @@ export function BrewLedgerRow({
 								<button
 									type="button"
 									onClick={() => setConfirmDelete(true)}
-									className="inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-destructive"
+									className="tap inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-destructive"
 								>
 									<Trash2 className="size-3" />
 									Delete

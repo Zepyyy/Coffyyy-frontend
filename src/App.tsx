@@ -29,7 +29,7 @@ export default function App() {
 				<div className="flex h-full w-full gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] items-center relative sm:gap-0">
 					<Link
 						to="/home"
-						className="flex select-none min-w-0 shrink-0 font-display text-xl italic tracking-tight text-foreground sm:flex-1 sm:text-2xl"
+						className="flex min-h-11 select-none items-center min-w-0 shrink-0 font-display text-xl italic tracking-tight text-foreground sm:flex-1 sm:text-2xl"
 						aria-label="Coffyyy — dashboard"
 					>
 						Coffyyy

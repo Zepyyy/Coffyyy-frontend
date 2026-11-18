@@ -370,7 +370,7 @@ export default function Library() {
 						/>
 						<label className="relative block min-w-0 flex-1">
 							<input
-								className="h-9 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
+								className="h-11 w-full rounded-lg border border-line-strong bg-paper-raised px-3 text-sm sm:h-9 placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-crema/60"
 								placeholder={`Search ${SEARCH_LABEL[tab]}...`}
 								aria-label={`Search ${SEARCH_LABEL[tab]}`}
 								value={search}
@@ -399,7 +399,7 @@ export default function Library() {
 							aria-expanded={filtersOpen}
 							aria-controls="library-mobile-filters"
 							className={cn(
-								"inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors",
+								"inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-1.5 font-sans text-sm transition-colors sm:min-h-0",
 								filtersOpen
 									? "border-crema bg-crema-tint text-foreground"
 									: "border-line-strong bg-paper-raised text-ink-soft hover:text-foreground",

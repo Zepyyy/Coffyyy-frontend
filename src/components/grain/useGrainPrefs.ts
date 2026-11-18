@@ -1,14 +1,23 @@
 import { useSyncExternalStore } from "react";
 import { BACKGROUNDS, DEFAULT_BACKGROUND } from "./creatures";
+import type { Print } from "./engine";
 import type { MotionPreference } from "./motion";
 
 /** Which background the owner picked. */
-export type GrainPrefs = { scene: string; motion: MotionPreference };
+export type GrainPrefs = {
+	scene: string;
+	motion: MotionPreference;
+	print: Print;
+};
 
 const KEY = "coffyyy:grain";
 const listeners = new Set<() => void>();
 /** First visit. Any pick the owner makes is saved and wins. */
-const FALLBACK: GrainPrefs = { scene: DEFAULT_BACKGROUND, motion: null };
+const FALLBACK: GrainPrefs = {
+	scene: DEFAULT_BACKGROUND,
+	motion: null,
+	print: "fine",
+};
 let cache: GrainPrefs | null = null;
 
 function read(): GrainPrefs {
@@ -20,7 +29,8 @@ function read(): GrainPrefs {
 				? raw.scene
 				: FALLBACK.scene;
 		const motion = typeof raw?.motion === "boolean" ? raw.motion : null;
-		return { scene, motion };
+		const print = raw?.print === "coarse" ? "coarse" : "fine";
+		return { scene, motion, print };
 	} catch {
 		return FALLBACK;
 	}
