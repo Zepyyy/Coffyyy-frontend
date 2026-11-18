@@ -38,77 +38,99 @@ for (let i = 0; i < 26; i++) {
 	reeds.closePath();
 }
 
-export const lakeside: Scene = ({ dither: c }, { W, H, t, dark }) => {
-	const stone = dark ? "#93a8ad" : "#526b6c";
-	const distance = dark ? "#a3a3b6" : "#9c999f";
-	const silt = dark ? "#c8bda0" : "#5f6251";
-	const water = dark ? "#839fab" : "#98b3b3";
-	const horizon = H * 0.61;
+export const lakeside: Scene = ({ dither: c }, { W, H, t, dark, anchors }) => {
+	const shelf = anchors.shelf;
+	const heading = anchors["shelf-heading"];
+	// When the mobile shelf occupies the foot, fit a sunset into the
+	// right end of the space between the brew action and the Beans heading.
+	const compact = W < 640 && shelf && heading && shelf.y + shelf.h > H * 0.8;
+	const horizon = compact ? heading.y - 12 : H * 0.855;
+	const height = compact ? 22 : Math.min(H * 0.19, W * 0.22, 170);
+	const width = Math.min(W * (compact ? 0.41 : 0.58), 730);
+	const left = W - width;
+	const ochre = dark ? "#fca35d" : "#de873d";
+	const plum = dark ? "#b77f9c" : "#80516d";
+	const silt = dark ? "#d2a274" : "#805c48";
 	c.save();
-	c.scale(W / 100, H / 100);
-	// Fade the foot of the bluff into mist, keeping the shoulder in relief.
-	const wash = c.createLinearGradient(0, 35, 0, 61);
-	wash.addColorStop(0, stone);
-	wash.addColorStop(1, stone + "28");
-	c.fillStyle = distance;
-	c.globalAlpha = 0.28;
+	const sunX = W - Math.min(W * 0.075, 103);
+	const sunY = horizon - height * 0.91;
+	const radius = height * 0.2;
+	c.fillStyle = dark ? "#e9a164" : "#f0a144";
+	c.globalAlpha = 0.65;
+	c.beginPath();
+	c.arc(sunX, sunY, radius, 0, Math.PI * 2);
+	c.fill();
+
+	c.save();
+	c.translate(left, horizon - (61 * height) / 30);
+	c.scale(width / 100, height / 30);
+	c.fillStyle = dark ? "#aa707e" : "#d39991";
+	c.globalAlpha = 0.46;
 	c.fill(farBank);
-	c.globalAlpha = 0.78;
+	const wash = c.createLinearGradient(75, 34, 80, 61);
+	wash.addColorStop(0, plum);
+	wash.addColorStop(0.65, dark ? "#b17878" : "#bd8576");
+	wash.addColorStop(1, ochre + "55");
+	c.globalAlpha = 0.8;
 	c.fillStyle = wash;
 	c.fill(bluff);
-	c.fillStyle = dark ? "#d0c4b1" : "#baa996";
-	c.globalAlpha = 0.67;
+	c.fillStyle = ochre;
+	c.globalAlpha = 0.6;
 	c.fill(folds);
 	c.restore();
 
-	c.save();
-	const surface = c.createLinearGradient(0, horizon, 0, H);
-	surface.addColorStop(0, water + "00");
-	surface.addColorStop(0.55, water + "33");
-	surface.addColorStop(1, water + "14");
-	c.fillStyle = surface;
-	c.fillRect(0, horizon, W, H - horizon);
-	// Broken ribbons of the reflected headland widen toward the viewer.
-	for (let i = 0; i < 29; i++) {
-		const depth = (i + 0.5) / 29;
-		const swell = Math.sin(t * 0.42 - depth * 17);
-		const y = horizon + H * depth * depth * 0.25;
-		const x = W * (0.54 + 0.37 * depth + 0.045 * Math.sin(i * 2.8));
-		const thickness = 0.7 + H * depth * 0.003;
-		c.fillStyle = stone;
-		c.globalAlpha = (1 - depth) * (0.25 + 0.09 * swell);
+	// The bluff's reflection narrows to a few marks below the sun.
+	// Paper shows through between strokes, even at the far waterline.
+	for (let i = 0; i < 15; i++) {
+		const depth = i / 15;
+		const swell = Math.sin(t * 0.5 - i * 0.8);
+		const y = horizon + 2 + height * depth ** 1.55 * 0.52;
+		const x = sunX + width * (0.04 * Math.sin(i * 2.5) + 0.009 * swell);
+		const span = width * (0.012 + 0.24 * (1 - depth) ** 3);
+		c.fillStyle = i % 3 === 0 ? plum : ochre;
+		c.globalAlpha = (0.6 - depth * 0.28) * (0.91 + swell * 0.09);
 		c.beginPath();
-		c.moveTo(x + 4 * swell, y);
-		c.quadraticCurveTo(W * 0.87, y - thickness, W, y);
-		c.lineTo(W, y + thickness);
-		c.closePath();
+		c.moveTo(x - span, y);
+		c.quadraticCurveTo(x, y - 1 - depth, x + span, y);
+		c.quadraticCurveTo(x, y + 2 + 2 * depth, x - span, y);
 		c.fill();
 	}
 
-	c.globalAlpha = 0.78;
-	c.fillStyle = silt;
+	if (compact) {
+		c.restore();
+		return;
+	}
+
+	// Bank and figure share the same local coordinates at every size.
+	const bankWidth = Math.min(W * 0.28, 310);
+	const bankHeight = Math.min(H * 0.1, 70);
+	const seat = H * 0.94;
 	c.save();
-	c.scale(W / 100, H / 100);
+	c.translate(0, seat - 81 * bankHeight / 17);
+	c.scale(bankWidth / 24, bankHeight / 17);
+	c.fillStyle = silt;
+	c.globalAlpha = 0.5;
 	c.fill(shore);
 	c.restore();
 
-	const unit = Math.min(1.65, W / 660, H / 440);
-	c.translate(W * 0.15, H * 0.81);
+	const unit = Math.min(1.05, W / 650, H / 600);
+	c.translate(bankWidth * 0.625, seat);
 	c.scale(unit, unit);
+	c.fillStyle = silt;
+	c.globalAlpha = 0.48;
 	c.fill(reeds);
-	c.globalAlpha = 0.9;
+	c.globalAlpha = 0.63;
 	c.fill(angler);
 	const lift = Math.sin(t * 0.52);
-	c.lineWidth = 1.35;
+	c.lineWidth = 1.65;
 	c.strokeStyle = silt;
 	c.beginPath();
 	c.moveTo(17, -14);
 	c.quadraticCurveTo(47, -37, 78, -43 + lift);
 	c.stroke();
 
-	// A slack line ends in one slow pulse on the open water.
-	c.lineWidth = 0.8;
-	c.globalAlpha = 0.36;
+	c.lineWidth = 1;
+	c.globalAlpha = 0.34;
 	c.beginPath();
 	c.moveTo(78, -43 + lift);
 	c.quadraticCurveTo(89, -27, 98, 16 + lift);
