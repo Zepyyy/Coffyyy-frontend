@@ -1,7 +1,10 @@
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router";
 import BeanVerdictPicker from "@/components/feedback/BeanVerdictPicker";
-import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
+import {
+	BrewLedgerRow,
+	LedgerHeader,
+} from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import BestBrewPanel from "@/components/home/BestBrewPanel";
 import RoastDots from "@/components/home/RoastDots";
@@ -334,24 +337,27 @@ export default function Bean() {
 				)}
 
 				{brews && brews.length > 0 && (
-					<div className="rounded-xl border border-line bg-paper-raised shadow-card">
-						{brews.map((brew) => (
-							<BrewLedgerRow
-								key={brew.id}
-								brew={brew}
-								machineName={
-									brew.machineId
-										? machineNameById.get(brew.machineId)
-										: undefined
-								}
-								bean={bean}
-								recipe={
-									brew.recipeId != null
-										? recipeById.get(brew.recipeId)
-										: undefined
-								}
-							/>
-						))}
+					<div>
+						<LedgerHeader />
+						<div className="rounded-xl border border-line bg-paper-raised shadow-card">
+							{brews.map((brew) => (
+								<BrewLedgerRow
+									key={brew.id}
+									brew={brew}
+									machineName={
+										brew.machineId
+											? machineNameById.get(brew.machineId)
+											: undefined
+									}
+									bean={bean}
+									recipe={
+										brew.recipeId != null
+											? recipeById.get(brew.recipeId)
+											: undefined
+									}
+								/>
+							))}
+						</div>
 					</div>
 				)}
 			</div>

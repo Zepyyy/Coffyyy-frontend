@@ -1,16 +1,13 @@
-import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
-import { BrewLedgerRow, RatingStars } from "./BrewLedgerRow";
-import { recipeLine } from "@/lib/brewFormat";
-import { methodConfig } from "@/lib/brewMethods";
-import { getColorSwatch, formatRelativeDay } from "@/lib/utils";
+import { BrewLedgerRow } from "./BrewLedgerRow";
+import { getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
 import type { Brews } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
 
 /**
- * One bean's story in the history ledger: the recipe worth repeating,
- * then every brew of that bean beneath it.
+ * One bean's brews in the history ledger. Its best brew is tinted and
+ * keeps its repeat shortcut in view.
  */
 export function BeanChapter({
 	bean,
@@ -27,82 +24,36 @@ export function BeanChapter({
 	showMethod?: boolean;
 }) {
 	const swatch = getColorSwatch(bean?.dominantNote);
-	const rated = brews.filter((b) => b.overallRating != null);
-	const avg =
-		rated.length > 0
-			? rated.reduce((s, b) => s + (Number(b.overallRating) || 0), 0) /
-				rated.length
-			: null;
-	const best = rated.length
-		? rated.reduce((a, b) =>
-				(Number(b.overallRating) || 0) > (Number(a.overallRating) || 0) ? b : a,
-			)
-		: null;
-	const lastBrew = brews[0];
+	// The highest-rated brew (most recent on ties), once it earns 4★.
+	const best = brews.reduce<Brews | null>(
+		(top, b) =>
+			(Number(b.overallRating) || 0) > (Number(top?.overallRating) || 0)
+				? b
+				: top,
+		null,
+	);
+	const bestId =
+		best && (Number(best.overallRating) || 0) >= 4 ? best.id : undefined;
 	const beanName = bean?.name ?? "Unknown bean";
 	const detailTo = bean?.id != null ? `/beans/${bean.id}` : undefined;
 
 	return (
 		<section className="rounded-xl border border-line bg-paper-raised shadow-card">
-			<header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line/60 bg-paper-sunken/40 px-4 py-3">
-				<div className="flex items-baseline gap-3 min-w-0">
-					<span
-						className={`h-3 w-3 self-center shrink-0 ${swatch.stripe}`}
-						aria-hidden
-					/>
-					{detailTo ? (
-						<Link
-							to={detailTo}
-							className="tap truncate font-display text-xl italic tracking-tight text-foreground hover:underline sm:min-h-0"
-						>
-							{beanName}
-						</Link>
-					) : (
-						<span className="truncate font-display text-xl italic tracking-tight text-foreground">
-							{beanName}
-						</span>
-					)}
-					<span className="font-data text-[10px] uppercase tracking-[0.12em] text-ink-soft/80">
-						{brews.length} brew{brews.length === 1 ? "" : "s"}
-						{avg != null ? ` · avg ${avg.toFixed(1)}★` : ""}
-					</span>
-				</div>
-				{lastBrew && (
-					<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-						last {formatRelativeDay(lastBrew.date).toLowerCase()}
+			<header className="flex items-center gap-3 border-b border-line/60 px-3 py-2.5 sm:px-4">
+				<span className={`size-3 shrink-0 ${swatch.stripe}`} aria-hidden />
+				{detailTo ? (
+					<Link
+						to={detailTo}
+						className="tap truncate font-display text-xl italic tracking-tight text-foreground hover:underline sm:min-h-0"
+					>
+						{beanName}
+					</Link>
+				) : (
+					<span className="truncate font-display text-xl italic tracking-tight text-foreground">
+						{beanName}
 					</span>
 				)}
 			</header>
-
-			{best && (Number(best.overallRating) || 0) >= 4 && (
-				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-b border-line/60 bg-crema-tint/60 px-4 py-2.5">
-					<div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-						<span className="font-data text-[9px] font-semibold uppercase tracking-[0.16em] text-crema-deep dark:text-crema">
-							Repeat this
-						</span>
-						<span className="font-data text-xs font-semibold text-foreground/90">
-							{showMethod ? `${methodConfig(best.method).label} · ` : ""}
-							{recipeLine(best)}
-						</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<RatingStars value={best.overallRating} />
-						<span className="font-data text-[9px] uppercase tracking-[0.12em] text-ink-faint">
-							{new Date(best.date).toLocaleDateString(undefined, {
-								month: "short",
-								day: "numeric",
-							})}
-						</span>
-						<Link
-							to={`/log/brew?fromBrew=${best.id}`}
-							className="tap tap-key gap-1 font-data text-[10px] font-semibold uppercase tracking-[0.12em] text-crema-deep hover:underline dark:text-crema sm:min-h-0 sm:min-w-0 sm:border-0 sm:bg-transparent sm:p-0"
-						>
-							Repeat
-							<ArrowRight className="size-3" aria-hidden />
-						</Link>
-					</div>
-				</div>
-			)}
 
 			<div>
 				{brews.map((brew) => (
@@ -119,6 +70,7 @@ export function BeanChapter({
 							brew.recipeId != null ? recipes?.get(brew.recipeId) : undefined
 						}
 						showMethod={showMethod}
+						highlight={brew.id === bestId}
 					/>
 				))}
 			</div>

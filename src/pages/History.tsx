@@ -3,7 +3,10 @@ import { useEffect, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import JournalPage from "@/components/layout/JournalPage";
 import { BeanChapter } from "@/components/history/BeanChapter";
-import { BrewLedgerRow } from "@/components/history/BrewLedgerRow";
+import {
+	BrewLedgerRow,
+	LedgerHeader,
+} from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { isBrewMethod, methodConfig } from "@/lib/brewMethods";
@@ -101,12 +104,7 @@ function StoryStrip({ brews }: { brews: Brews[] | undefined }) {
 		>
 			<span>{brews.length} brews</span>
 			<span>{beans} beans</span>
-			{average != null && (
-				<span>
-					Avg {average.toFixed(1)}★{" "}
-					<span className="text-ink-faint">· {rated.length} rated</span>
-				</span>
-			)}
+			{average != null && <span>{average.toFixed(1)}★ avg</span>}
 		</p>
 	);
 }
@@ -221,8 +219,6 @@ export default function History() {
 		}
 		return [...groups.entries()];
 	}, [brews]);
-
-	const shownCount = brews?.length ?? 0;
 
 	function clearFilters() {
 		setParams(
@@ -358,68 +354,63 @@ export default function History() {
 				)}
 
 				{brews !== undefined && brews.length > 0 && (
-					<div className="space-y-4">
-						<p className="font-data text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-							{hasActiveFilters ? "Matching: " : ""}
-							{shownCount} brew{shownCount === 1 ? "" : "s"}
-							{view === "bean"
-								? ` in ${chapters.length} bean chapter${chapters.length === 1 ? "" : "s"}`
-								: ""}
-						</p>
+					<div>
+						<LedgerHeader
+							showMethod={multiMethod}
+							showBean={view === "timeline"}
+						/>
+						<div className="space-y-4">
+							{view === "bean" &&
+								chapters.map(([beanId, beanBrews]) => (
+									<BeanChapter
+										key={beanId ?? "unknown"}
+										bean={beanMap.get(beanId)}
+										brews={beanBrews}
+										machineNames={machineNameMap}
+										recipes={recipeMap}
+										showMethod={multiMethod}
+									/>
+								))}
 
-						{view === "bean" &&
-							chapters.map(([beanId, beanBrews]) => (
-								<BeanChapter
-									key={beanId ?? "unknown"}
-									bean={beanMap.get(beanId)}
-									brews={beanBrews}
-									machineNames={machineNameMap}
-									recipes={recipeMap}
-									showMethod={multiMethod}
-								/>
-							))}
-
-						{view === "timeline" &&
-							timeline.map(([day, dayBrews]) => (
-								<section
-									key={day}
-									className="rounded-xl border border-line bg-paper-raised shadow-card"
-								>
-									<header className="flex items-baseline justify-between border-b border-line/60 bg-paper-sunken/40 px-4 py-2.5">
-										<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
-											{day}
-										</h2>
-										<span className="font-data text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-											{dayBrews.length} brew{dayBrews.length === 1 ? "" : "s"}
-										</span>
-									</header>
-									<div>
-										{dayBrews.map((brew) => (
-											<BrewLedgerRow
-												key={brew.id}
-												brew={brew}
-												machineName={
-													brew.machineId != null
-														? machineNameMap.get(brew.machineId)
-														: undefined
-												}
-												bean={
-													brew.beanId != null
-														? (beanMap.get(brew.beanId) ?? null)
-														: null
-												}
-												recipe={
-													brew.recipeId != null
-														? recipeMap.get(brew.recipeId)
-														: undefined
-												}
-												showMethod={multiMethod}
-												showBean
-											/>
-										))}
-									</div>
-								</section>
-							))}
+							{view === "timeline" &&
+								timeline.map(([day, dayBrews]) => (
+									<section
+										key={day}
+										className="rounded-xl border border-line bg-paper-raised shadow-card"
+									>
+										<header className="border-b border-line/60 px-3 py-2.5 sm:px-4">
+											<h2 className="font-display text-xl italic tracking-tight text-foreground/90">
+												{day}
+											</h2>
+										</header>
+										<div>
+											{dayBrews.map((brew) => (
+												<BrewLedgerRow
+													key={brew.id}
+													brew={brew}
+													machineName={
+														brew.machineId != null
+															? machineNameMap.get(brew.machineId)
+															: undefined
+													}
+													bean={
+														brew.beanId != null
+															? (beanMap.get(brew.beanId) ?? null)
+															: null
+													}
+													recipe={
+														brew.recipeId != null
+															? recipeMap.get(brew.recipeId)
+															: undefined
+													}
+													showMethod={multiMethod}
+													showBean
+												/>
+											))}
+										</div>
+									</section>
+								))}
+						</div>
 					</div>
 				)}
 			</div>
