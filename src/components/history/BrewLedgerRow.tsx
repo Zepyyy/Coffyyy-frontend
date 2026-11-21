@@ -10,9 +10,11 @@ import {
 	tasteLabel,
 } from "@/lib/brewFormat";
 import { formatRatio, methodConfig } from "@/lib/brewMethods";
+import { MethodIcon } from "@/components/method/MethodMarks";
+import { methodInkClass } from "@/lib/methodIdentity";
 import { cn, formatExtractionTime, getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
-import type { BrewMethod, Brews } from "@/types/BrewTypes";
+import type { Brews } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
 
 function formatDate(date: Date | string | undefined): string {
@@ -111,37 +113,6 @@ export function LedgerHeader(layout: LedgerLayout) {
 			<span className="hidden sm:block">Temp</span>
 			<span className="text-right sm:col-span-2">Taste</span>
 		</div>
-	);
-}
-
-const METHOD_GLYPHS: Record<BrewMethod, string> = {
-	// Demitasse on a saucer
-	espresso:
-		"M3 6h8v2.5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z M11 7h.5a1.5 1.5 0 0 1 0 3H10.5 M1.5 13.5h12",
-	// Dripper cone on its plate
-	"pour-over": "M2 3.5h12L9.5 10h-3z M4.5 12.5h7",
-	// Stovetop pot: lid knob, upper chamber to the waist, boiler, handle
-	moka: "M8 1.5v1 M4.5 2.5h7l-1.5 5h-4z M6 7.5h4l1.5 6.5h-7z M11.25 3.5h2.25l-.75 3.5",
-};
-
-/** The brew method as a small line drawing. */
-function MethodGlyph({ method }: { method: BrewMethod | undefined }) {
-	const config = methodConfig(method);
-	return (
-		<svg
-			viewBox="0 0 16 16"
-			className="size-4 text-ink-soft"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.25}
-			strokeLinejoin="round"
-			strokeLinecap="round"
-			role="img"
-			aria-label={config.label}
-		>
-			<title>{config.label}</title>
-			<path d={METHOD_GLYPHS[config.method]} />
-		</svg>
 	);
 }
 
@@ -278,9 +249,16 @@ export function BrewLedgerRow({
 						{formatDate(brew.date)}
 					</span>
 				)}
-				{showMethod && <MethodGlyph method={brew.method} />}
+				{showMethod && <MethodIcon method={brew.method} />}
 				<span className="text-right">{brew.grindSize ?? "—"}</span>
-				<span className="whitespace-nowrap">{ratio ?? "—"}</span>
+				<span
+					className={cn(
+						methodInkClass(brew.method),
+						"method-ink whitespace-nowrap font-semibold",
+					)}
+				>
+					{ratio ?? "—"}
+				</span>
 				<span className="hidden sm:block">{time ?? ""}</span>
 				<span className="hidden sm:block">{temp ?? heat ?? ""}</span>
 				<span aria-hidden className="hidden sm:block" />

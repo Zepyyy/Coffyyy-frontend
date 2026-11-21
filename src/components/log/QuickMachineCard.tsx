@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { methodConfig } from "@/lib/brewMethods";
+import { MethodTag } from "@/components/method/MethodMarks";
 import type { MachineCardProps } from "@/types/MachineTypes";
 
 export default function QuickMachineCard({
@@ -27,9 +27,7 @@ export default function QuickMachineCard({
 				<p className="line-clamp-1 font-display text-base font-semibold leading-snug tracking-tight text-foreground">
 					{machine.name}
 				</p>
-				<p className="mt-0.5 font-data text-[10px] uppercase tracking-[0.14em] text-ink-faint">
-					{methodConfig(machine.method).label}
-				</p>
+				<MethodTag method={machine.method} className="mt-1" />
 			</div>
 			{selected && (
 				<div className="absolute right-1.5 top-2.5 flex size-4 items-center justify-center bg-ink">

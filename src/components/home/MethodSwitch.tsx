@@ -1,5 +1,5 @@
 import SegmentedControl from "@/components/ui/SegmentedControl";
-import { methodConfig } from "@/lib/brewMethods";
+import { methodOption } from "@/components/method/methodOption";
 import type { BrewMethod } from "@/types/BrewTypes";
 
 /**
@@ -22,10 +22,7 @@ export default function MethodSwitch({
 		<SegmentedControl
 			ariaLabel="Brew method"
 			className={className}
-			options={methods.map((method) => ({
-				value: method,
-				label: methodConfig(method).label,
-			}))}
+			options={methods.map((method) => methodOption(method))}
 			value={value}
 			onChange={onChange}
 		/>

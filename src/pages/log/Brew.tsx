@@ -21,6 +21,8 @@ import PourOverRatioInput from "@/components/log/PourOverRatioInput";
 import GrindHistoryStrip from "@/components/log/GrindHistoryStrip";
 import QuickMachineCard from "@/components/log/QuickMachineCard";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import { methodOption } from "@/components/method/methodOption";
+import { MethodStamp } from "@/components/method/MethodMarks";
 import {
 	readBrewSelection,
 	rememberBrewSelection,
@@ -67,10 +69,9 @@ import {
 import type { Brews } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
 
-const METHOD_OPTIONS = BREW_METHODS.map((value) => ({
-	value,
-	label: value === "pour-over" ? "Pour-over (V60)" : methodConfig(value).label,
-}));
+const METHOD_OPTIONS = BREW_METHODS.map((value) =>
+	methodOption(value, value === "pour-over" ? "Pour-over (V60)" : undefined),
+);
 const INITIAL: BrewLogForm = {
 	beanId: undefined,
 	machineId: undefined,
@@ -818,7 +819,13 @@ export default function BrewLog() {
 					</div>
 
 					{/* Live recipe line — fills in as the brew is dialed */}
-					<div className="rounded-xl border border-line bg-paper-raised p-4 space-y-2 shadow-card">
+					<div className="relative rounded-xl border border-line bg-paper-raised p-4 pr-14 space-y-2 shadow-card">
+						<MethodStamp
+							method={method}
+							size="sm"
+							tilt
+							className="absolute -top-2 right-3"
+						/>
 						<p className="font-data text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
 							{linkedRecipe ? `Following ${linkedRecipe.name}` : "The recipe"}
 						</p>

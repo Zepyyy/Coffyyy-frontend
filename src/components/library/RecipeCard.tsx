@@ -1,7 +1,7 @@
 import { ArrowRight, Pencil } from "lucide-react";
 import { Link } from "react-router";
+import { MethodStamp } from "@/components/method/MethodMarks";
 import type { RecipeBrewStats } from "@/lib/api/recipeStats";
-import { methodConfig } from "@/lib/brewMethods";
 import { recipeSummaryLine } from "@/lib/recipeForm";
 import type { Recipes } from "@/types/RecipeTypes";
 
@@ -26,13 +26,18 @@ export default function RecipeCard({
 }) {
 	return (
 		<div className="hover-line relative flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
-			<article className="relative border-b border-line/60 p-5">
+			<MethodStamp
+				method={recipe.method}
+				size="sm"
+				tilt
+				className="absolute -top-2 right-4"
+			/>
+			<article className="relative border-b border-line/60 p-5 pr-16">
 				<div className="font-display text-xl font-semibold leading-tight tracking-tight text-foreground">
 					{recipe.name}
 				</div>
 				<div className="mt-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
-					{methodConfig(recipe.method).label}
-					{` · ${beanName ?? "Any bean"}`}
+					{beanName ?? "Any bean"}
 				</div>
 			</article>
 

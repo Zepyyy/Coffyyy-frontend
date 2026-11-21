@@ -9,6 +9,8 @@ import {
 } from "@/components/history/BrewLedgerRow";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import { MethodIcon } from "@/components/method/MethodMarks";
+import { methodInkClass } from "@/lib/methodIdentity";
 import { isBrewMethod, methodConfig } from "@/lib/brewMethods";
 import { useBrewSuggestions, useHistoryBrews } from "@/hooks/api/useBrews";
 import { useRecipes } from "@/hooks/api/useRecipes";
@@ -37,6 +39,8 @@ function MethodChips({
 			label: methodConfig(method).label,
 		})),
 	];
+	const ink = (value: MethodFilter) =>
+		value === "all" ? undefined : methodInkClass(value);
 	return (
 		<div
 			role="group"
@@ -52,12 +56,16 @@ function MethodChips({
 						onClick={() => onChange(option.value)}
 						aria-pressed={active}
 						className={cn(
-							"border px-3 py-[13px] font-data text-[10px] sm:px-2.5 sm:py-1 uppercase tracking-[0.14em] transition-colors",
+							ink(option.value),
+							"inline-flex items-center gap-1.5 border px-3 py-[13px] font-data text-[10px] sm:px-2.5 sm:py-1 uppercase tracking-[0.14em] transition-colors",
 							active
-								? "border-crema bg-crema-tint text-foreground"
+								? "border-[var(--method,var(--accent))] bg-crema-tint text-[var(--method,var(--ink))]"
 								: "border-line bg-paper-raised text-ink-faint hover:border-line-strong hover:text-foreground",
 						)}
 					>
+						{option.value !== "all" && (
+							<MethodIcon method={option.value} label={false} />
+						)}
 						{option.label}
 					</button>
 				);

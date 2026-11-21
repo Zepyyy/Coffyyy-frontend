@@ -95,6 +95,22 @@ Owner requested Sonnet for every sub-agent in the next round. Latest feedback
 supersedes lead shortlists and reviews. Inspect full motion sequences and quiet
 intervals, not just selected stills. Approval remains with the owner.
 
+## Brew method identity (approved 2026-11-21)
+
+A method is told apart by its instrument and its ink, everywhere it appears.
+
+- Mark: an engraved drawing of the instrument (portafilter, V60, moka pot),
+  `MethodEngraving`. At text size use `MethodIcon`; for selectors, headers and
+  cards use `MethodStamp` (the engraving inside an ink frame).
+- Ink: oxblood espresso, indigo pour-over, verdigris moka (`--method-*`,
+  `.method-<method>` sets `--method`). Ink colours lines, glyphs and key
+  numbers (a brew's ratio), never fills or strips, so it can't read as a
+  bean's note colour (fills, top stripes).
+- A stamp over a card's top-right corner gets a slight tilt. Owner loved the
+  tilt; keep it for objects that belong to a method (recipes, brewers).
+- Rejected: pastel tints (salmon/sky), solid-vs-hairline, edge strips of any
+  texture, monogram letters ("Es"/"Po"), captions like "9 bar" on the mark.
+
 ## Current exploration scope
 
 Owner explicitly deferred mobile for this exploration. Design and judge desktop

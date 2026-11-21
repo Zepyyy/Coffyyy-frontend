@@ -4,6 +4,7 @@ import Dial from "@/components/log/Dial";
 import QuickBeanCard from "@/components/log/QuickBeanCard";
 import PourScheduleEditor from "@/components/recipes/PourScheduleEditor";
 import SegmentedControl from "@/components/ui/SegmentedControl";
+import { methodOption } from "@/components/method/methodOption";
 import { useAllBeans } from "@/hooks/api/useBeans";
 import {
 	type NumberRange,
@@ -247,10 +248,9 @@ export default function RecipeForm({
 								) : (
 									<SegmentedControl
 										ariaLabel="Recipe method"
-										options={RECIPE_METHODS.map((method) => ({
-											value: method,
-											label: methodConfig(method).label,
-										}))}
+										options={RECIPE_METHODS.map((method) =>
+											methodOption(method),
+										)}
 										value={form.method}
 										onChange={(method: RecipeMethod) =>
 											setForm((f) => switchRecipeMethod(f, method))

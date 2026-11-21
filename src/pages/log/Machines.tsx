@@ -5,7 +5,8 @@ import FieldLabel from "@/components/log/FieldLabel";
 import SectionTitle from "@/components/log/SectionTitle";
 import SingleChoiceChips from "@/components/log/SingleChoiceChips";
 import SegmentedControl from "@/components/ui/SegmentedControl";
-import { BREW_METHODS, isBrewMethod, methodConfig } from "@/lib/brewMethods";
+import { methodOption } from "@/components/method/methodOption";
+import { BREW_METHODS, isBrewMethod } from "@/lib/brewMethods";
 import { addMachine, updateMachineById } from "@/lib/data";
 import {
 	useMachine,
@@ -38,10 +39,7 @@ const REQUIRED_FIELDS: Partial<Record<keyof MachineForm, string>> = {
 	brand: "Enter a brand for this brewer.",
 };
 
-const METHOD_OPTIONS = BREW_METHODS.map((method) => ({
-	value: method,
-	label: methodConfig(method).label,
-}));
+const METHOD_OPTIONS = BREW_METHODS.map((method) => methodOption(method));
 
 function normalizeOptional(value: string) {
 	const trimmed = value.trim();
