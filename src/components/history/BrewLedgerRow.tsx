@@ -1,21 +1,18 @@
 import { BookmarkPlus, ChevronDown, Repeat, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { Link } from "react-router";
 import BrewFeedback from "@/components/feedback/BrewFeedback";
 import { deleteBrewById } from "@/lib/data";
 import {
 	brewVsRecipe,
-	flowClass,
 	formatRecipeDelta,
-	recipeLine,
-	scoreClass,
 	strengthLabel,
 	tasteLabel,
 } from "@/lib/brewFormat";
 import { formatRatio, methodConfig } from "@/lib/brewMethods";
-import { cn, formatExtractionTime } from "@/lib/utils";
+import { cn, formatExtractionTime, getColorSwatch } from "@/lib/utils";
 import type { Beans } from "@/types/BeanTypes";
-import type { Brews } from "@/types/BrewTypes";
+import type { BrewMethod, Brews } from "@/types/BrewTypes";
 import type { Recipes } from "@/types/RecipeTypes";
 
 function formatDate(date: Date | string | undefined): string {
@@ -34,7 +31,7 @@ export function RatingStars({ value }: { value: number | null | undefined }) {
 	const n = Math.min(5, Math.max(0, Math.round(Number(value) || 0)));
 	return (
 		<span
-			className="flex shrink-0 gap-0.5"
+			className="flex shrink-0 gap-px sm:gap-0.5"
 			role="img"
 			aria-label={value == null ? "Unrated" : `Rating ${n} out of 5`}
 		>
@@ -42,7 +39,10 @@ export function RatingStars({ value }: { value: number | null | undefined }) {
 				<svg
 					key={i}
 					viewBox="0 0 20 20"
-					className={cn("size-3", i <= n ? "fill-crema" : "fill-line-strong")}
+					className={cn(
+						"size-2.5 sm:size-3",
+						i <= n ? "fill-crema" : "fill-line-strong",
+					)}
 					aria-hidden
 				>
 					<path d="M10 1.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L10 14.9l-5.3 2.7 1-5.8L1.5 7.7l5.9-.9L10 1.5z" />
@@ -52,16 +52,149 @@ export function RatingStars({ value }: { value: number | null | undefined }) {
 	);
 }
 
-function RowTag({ label, className }: { label: string; className?: string }) {
+type LedgerLayout = { showMethod?: boolean; showBean?: boolean };
+
+/**
+ * Column tracks shared by the header and every row, so values line up
+ * across chapters. Phones drop time, temp and the repeat shortcut (all
+ * in the details), and give the bean its own line.
+ */
+function ledgerColumns({ showMethod, showBean }: LedgerLayout) {
+	const lead = showBean ? [] : ["3rem"];
+	const method = showMethod ? ["1rem"] : [];
+	// … grind · ratio · [time · temp] · spacer · taste · rating · chevron [· repeat]
+	const tail = ["1.25rem", "auto", "0.875rem"];
+	return {
+		// Phones let the ratio column take the slack instead of a spacer.
+		"--ledger-cols": [
+			...lead,
+			...method,
+			"1.5rem",
+			"minmax(max-content,1fr)",
+			...tail,
+		].join(" "),
+		"--ledger-cols-sm": [
+			showBean ? "minmax(0,13rem)" : "3.5rem",
+			...method,
+			"1.75rem",
+			"3.75rem",
+			"2.75rem",
+			"3.5rem",
+			"minmax(0,1fr)",
+			...tail,
+			"1rem",
+		].join(" "),
+	} as CSSProperties;
+}
+
+const LEDGER_GRID =
+	"grid grid-cols-(--ledger-cols) items-center gap-x-1.5 px-3 sm:grid-cols-(--ledger-cols-sm) sm:gap-x-3 sm:px-4";
+
+/** One quiet label row above a ledger; the only place the columns are named. */
+export function LedgerHeader(layout: LedgerLayout) {
 	return (
-		<span
+		<div
+			aria-hidden
+			style={ledgerColumns(layout)}
 			className={cn(
-				"border border-current/20 px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em]",
-				className,
+				LEDGER_GRID,
+				"border-x border-transparent pb-1.5 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint",
 			)}
 		>
-			{label}
-		</span>
+			<span className={cn(layout.showBean && "hidden sm:block")}>
+				{layout.showBean ? "Bean" : ""}
+			</span>
+			{layout.showMethod && <span />}
+			<span className="flex justify-end">Grind</span>
+			<span>Ratio</span>
+			<span className="hidden sm:block">Time</span>
+			<span className="hidden sm:block">Temp</span>
+			<span className="text-right sm:col-span-2">Taste</span>
+		</div>
+	);
+}
+
+const METHOD_GLYPHS: Record<BrewMethod, string> = {
+	// Demitasse on a saucer
+	espresso:
+		"M3 6h8v2.5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z M11 7h.5a1.5 1.5 0 0 1 0 3H10.5 M1.5 13.5h12",
+	// Dripper cone on its plate
+	"pour-over": "M2 3.5h12L9.5 10h-3z M4.5 12.5h7",
+	// Stovetop pot: lid knob, upper chamber to the waist, boiler, handle
+	moka: "M8 1.5v1 M4.5 2.5h7l-1.5 5h-4z M6 7.5h4l1.5 6.5h-7z M11.25 3.5h2.25l-.75 3.5",
+};
+
+/** The brew method as a small line drawing. */
+function MethodGlyph({ method }: { method: BrewMethod | undefined }) {
+	const config = methodConfig(method);
+	return (
+		<svg
+			viewBox="0 0 16 16"
+			className="size-4 text-ink-soft"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={1.25}
+			strokeLinejoin="round"
+			strokeLinecap="round"
+			role="img"
+			aria-label={config.label}
+		>
+			<title>{config.label}</title>
+			<path d={METHOD_GLYPHS[config.method]} />
+		</svg>
+	);
+}
+
+/**
+ * Taste and strength as one dot on a tiny brewing compass: left sour,
+ * right bitter, up strong, down weak, centre balanced. An axis left
+ * unrated draws as a line, so nothing reads as "balanced" by default.
+ */
+export function TasteMark({
+	taste,
+	strength,
+}: {
+	taste: number | null | undefined;
+	strength: number | null | undefined;
+}) {
+	if (taste == null && strength == null) return <span />;
+	const label = [tasteLabel(taste), strengthLabel(strength)]
+		.filter(Boolean)
+		.join(" · ");
+	const at = (v: number) => 10 + Math.max(-5, Math.min(5, v)) * 1.7;
+	const x = taste != null ? at(taste) : null;
+	const y = strength != null ? at(-strength) : null;
+	return (
+		<svg viewBox="0 0 20 20" className="size-5" role="img" aria-label={label}>
+			<title>{label}</title>
+			<path
+				d="M10 1v18M1 10h18"
+				className="stroke-line-strong"
+				strokeWidth={1}
+			/>
+			{x != null && y != null ? (
+				<circle
+					cx={x}
+					cy={y}
+					r={2.5}
+					className="fill-crema-deep dark:fill-crema"
+				/>
+			) : x != null ? (
+				<path
+					d={`M${x} 4v12`}
+					className="stroke-crema-deep dark:stroke-crema"
+					strokeWidth={2}
+					strokeLinecap="round"
+				/>
+			) : (
+				<path
+					d={`M4 ${y}h12`}
+					className="stroke-crema-deep dark:stroke-crema"
+					strokeWidth={2}
+					strokeLinecap="round"
+				/>
+			)}
+		</svg>
 	);
 }
 
@@ -72,30 +205,36 @@ export function BrewLedgerRow({
 	recipe,
 	showMethod = false,
 	showBean = false,
+	highlight = false,
 }: {
 	brew: Brews;
 	machineName: string | undefined;
-	bean?: { id: number; name?: string; status?: Beans["status"] } | null;
+	bean?: {
+		id: number;
+		name?: string;
+		status?: Beans["status"];
+		dominantNote?: Beans["dominantNote"];
+	} | null;
 	/** The recipe this brew followed, when linked. */
 	recipe?: Recipes | null;
-	/** Show the method label (when the journal has more than one method). */
+	/** Show the method glyph (when the journal has more than one method). */
 	showMethod?: boolean;
+	/** Lead with the bean instead of the date (timeline view). */
 	showBean?: boolean;
+	/** The brew worth repeating: tinted, with its repeat shortcut always shown. */
+	highlight?: boolean;
 }) {
 	const [expanded, setExpanded] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const taste = tasteLabel(brew.tasteScore);
-	const strength = strengthLabel(brew.strengthScore);
 	const time = formatExtractionTime(brew.extractionTime);
 	const ratio = formatRatio(brew.beanWeight, brew.brewWeight);
 	const config = methodConfig(brew.method);
-	const needsNotes = brew.overallRating == null;
 	const deltas = recipe ? brewVsRecipe(brew, recipe) : [];
 	const temp =
 		config.waterTemp && brew.waterTemp != null ? `${brew.waterTemp}°C` : null;
-	const heat = config.heat && brew.heat ? `${brew.heat} heat` : null;
+	const heat = config.heat && brew.heat ? brew.heat : null;
 
 	async function handleDelete() {
 		if (typeof brew.id !== "number") return;
@@ -109,80 +248,68 @@ export function BrewLedgerRow({
 	}
 
 	return (
-		<article className="border-b border-border/60 last:border-b-0">
+		<article
+			style={ledgerColumns({ showMethod, showBean })}
+			className={cn(
+				LEDGER_GRID,
+				"group border-b border-border/60 font-data text-xs text-foreground/80 transition-colors last:border-b-0 has-[>button:hover]:bg-paper-sunken/60",
+				highlight && "bg-crema-tint/50",
+			)}
+		>
 			<button
 				type="button"
 				onClick={() => setExpanded((e) => !e)}
 				aria-expanded={expanded}
-				className="flex w-full flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-left transition-colors hover:bg-paper-sunken/60"
+				className="col-span-full grid grid-cols-subgrid items-center gap-y-1.5 py-2.5 text-left sm:col-[1/-2]"
 			>
-				<span className="w-11 shrink-0 font-data text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-					{formatDate(brew.date)}
-				</span>
-				<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-1">
-					{showMethod && (
-						<span className="w-16 shrink-0 font-data text-[9px] uppercase tracking-[0.14em] text-ink-soft">
-							{config.label}
-						</span>
-					)}
-					{showBean && (
-						<span className="w-full break-words font-display text-lg italic text-foreground">
-							{bean?.name ?? "Unknown bean"}
-						</span>
-					)}
-					{/* The dial decision, front and center */}
-					<span className="inline-flex items-baseline gap-1.5">
-						<span className="font-data text-[9px] uppercase tracking-[0.14em] text-muted-foreground">
-							grind
-						</span>
-						<span className="font-data text-lg font-bold leading-none text-foreground">
-							{brew.grindSize ?? "—"}
-						</span>
-					</span>
-					<span className="font-data text-xs text-foreground/80">
-						{[ratio, time, temp, heat].filter(Boolean).join(" · ") ||
-							recipeLine(brew)}
-					</span>
-					{recipe && (
-						<span className="max-w-40 truncate font-data text-[9px] uppercase tracking-[0.1em] text-crema-deep dark:text-crema">
-							↳ {recipe.name}
-						</span>
-					)}
-					{config.flow && brew.flow ? (
-						<RowTag
-							label={brew.flow.toLowerCase()}
-							className={flowClass(brew.flow)}
+				{showBean ? (
+					<span className="col-span-full flex min-w-0 items-center gap-2 font-sans text-sm text-foreground sm:col-span-1">
+						<span
+							className={cn(
+								"size-2.5 shrink-0",
+								getColorSwatch(bean?.dominantNote).stripe,
+							)}
+							aria-hidden
 						/>
-					) : null}
-					{taste ? (
-						<RowTag label={taste} className={scoreClass(brew.tasteScore)} />
-					) : null}
-					{strength ? (
-						<RowTag
-							label={strength}
-							className={scoreClass(brew.strengthScore)}
-						/>
-					) : null}
-					{needsNotes && (
-						<span className="border border-dashed border-line-strong px-1.5 py-0.5 font-data text-[9px] uppercase tracking-[0.1em] text-ink-faint">
-							needs notes
-						</span>
+						<span className="truncate">{bean?.name ?? "Unknown bean"}</span>
+					</span>
+				) : (
+					<span className="whitespace-nowrap text-ink-soft">
+						{formatDate(brew.date)}
+					</span>
+				)}
+				{showMethod && <MethodGlyph method={brew.method} />}
+				<span className="text-right">{brew.grindSize ?? "—"}</span>
+				<span className="whitespace-nowrap">{ratio ?? "—"}</span>
+				<span className="hidden sm:block">{time ?? ""}</span>
+				<span className="hidden sm:block">{temp ?? heat ?? ""}</span>
+				<span aria-hidden className="hidden sm:block" />
+				<TasteMark taste={brew.tasteScore} strength={brew.strengthScore} />
+				<RatingStars value={brew.overallRating} />
+				<ChevronDown
+					className={cn(
+						"size-3.5 text-muted-foreground transition-transform",
+						expanded && "rotate-180",
 					)}
-				</span>
-				<span className="ml-auto flex items-center justify-end gap-2">
-					<RatingStars value={brew.overallRating} />
-					<ChevronDown
-						className={cn(
-							"size-3.5 shrink-0 text-muted-foreground transition-transform",
-							expanded && "rotate-180",
-						)}
-						aria-hidden
-					/>
-				</span>
+					aria-hidden
+				/>
 			</button>
+			<Link
+				to={`/log/brew?fromBrew=${brew.id}`}
+				aria-label="Repeat this brew"
+				title="Repeat this brew"
+				className={cn(
+					"hidden h-full items-center justify-end transition-opacity focus-visible:opacity-100 sm:flex",
+					highlight
+						? "text-crema-deep dark:text-crema"
+						: "text-muted-foreground opacity-0 group-hover:opacity-100",
+				)}
+			>
+				<Repeat className="size-3.5" aria-hidden />
+			</Link>
 
 			{expanded && (
-				<div className="rise space-y-4 border-t border-line/40 bg-paper-sunken/40 px-4 py-4">
+				<div className="rise col-span-full -mx-3 space-y-4 border-t border-line/40 bg-paper-sunken/40 px-3 py-4 font-sans text-sm text-foreground sm:-mx-4 sm:px-4">
 					<BrewFeedback brew={brew} bean={bean ?? null} bare />
 
 					{recipe && (
