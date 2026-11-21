@@ -1,8 +1,13 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type SegmentedOption<T extends string> = {
 	value: T;
 	label: string;
+	/** Drawn before the label (e.g. a method icon). */
+	icon?: ReactNode;
+	/** Extra classes on the option; a `method-*` class inks it. */
+	className?: string;
 };
 
 /**
@@ -42,18 +47,20 @@ export default function SegmentedControl<T extends string>({
 						aria-pressed={active}
 						disabled={disabled}
 						className={cn(
-							"group relative min-h-11 py-2 font-data text-[11px] uppercase tracking-[0.16em] transition-colors active:translate-y-px disabled:cursor-not-allowed",
+							"group relative inline-flex min-h-11 items-center gap-1.5 py-2 font-data text-[11px] uppercase tracking-[0.16em] transition-colors active:translate-y-px disabled:cursor-not-allowed",
+							option.className,
 							active
-								? "text-foreground"
+								? "text-[var(--method,var(--ink))]"
 								: "text-ink-faint hover:text-foreground disabled:hover:text-ink-faint",
 							disabled && !active && "opacity-50",
 						)}
 					>
+						{option.icon}
 						{option.label}
 						<span
 							aria-hidden
 							className={cn(
-								"seg-underline absolute inset-x-0 bottom-0 h-px origin-left bg-crema transition-transform duration-300 ease-soft",
+								"seg-underline absolute inset-x-0 bottom-0 h-px origin-left bg-[var(--method,var(--accent))] transition-transform duration-300 ease-soft",
 								active
 									? "scale-x-100"
 									: "scale-x-0 group-enabled:group-hover:scale-x-50 group-enabled:group-focus-visible:scale-x-50",

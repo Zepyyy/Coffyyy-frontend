@@ -932,3 +932,42 @@ main:has(> .grain-landscape-foot) {
     pointer-events: none;
 }
 .grain-landscape-foot > .grain-field { height: 100%; }
+
+/* ── Brew method identity ────────────────────────────────────────────────
+ * Each method writes in its own ink: oxblood espresso, indigo pour-over,
+ * verdigris moka. `.method-<method>` sets `--method` for everything inside;
+ * ink only ever colours lines, glyphs and key numbers, never fills, so it
+ * can't be mistaken for a bean's note colour (fills and top stripes). */
+:root {
+    --method-espresso: oklch(0.45 0.13 22);
+    --method-pour-over: oklch(0.47 0.13 272);
+    --method-moka: oklch(0.5 0.085 172);
+}
+.dark {
+    --method-espresso: oklch(0.69 0.115 32);
+    --method-pour-over: oklch(0.75 0.1 280);
+    --method-moka: oklch(0.75 0.08 172);
+}
+.method-espresso { --method: var(--method-espresso); }
+.method-pour-over { --method: var(--method-pour-over); }
+.method-moka { --method: var(--method-moka); }
+.method-ink { color: var(--method, var(--ink)); }
+
+/* A method stamp: ink frame, inner hairline, a paper margin. Tilted ones
+ * sit over a card's corner like a stamp stuck on a journal entry. */
+.method-stamp {
+    display: inline-flex;
+    flex-shrink: 0;
+    padding: 2px;
+    border: 1.5px solid var(--method, var(--ink));
+    background: var(--paper-raised);
+    color: var(--method, var(--ink));
+}
+.method-stamp > span {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in oklab, var(--method, var(--ink)) 45%, transparent);
+}
+.method-stamp[data-tilt="true"] { transform: rotate(4deg); }

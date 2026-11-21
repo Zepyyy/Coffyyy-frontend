@@ -1,7 +1,7 @@
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
-import { methodConfig } from "@/lib/brewMethods";
+import { MethodStamp } from "@/components/method/MethodMarks";
 import { deleteMachineById } from "@/lib/data";
 import type { Machines } from "@/types/MachineTypes";
 
@@ -17,14 +17,19 @@ export default function MachineCard({ machine }: { machine: Machines }) {
 
 	return (
 		<div className="hover-line relative flex h-full w-full flex-col rounded-xl border border-line bg-paper-raised shadow-card">
-			<article className="relative border-b border-line/60 p-5">
+			<MethodStamp
+				method={machine.method}
+				size="sm"
+				tilt
+				className="absolute -top-2 right-4"
+			/>
+			<article className="relative border-b border-line/60 p-5 pr-16">
 				<div className="font-display text-xl font-semibold tracking-tight text-foreground">
 					{machine.name || "Unnamed brewer"}
 				</div>
 				<div className="mt-1 font-data text-[10px] uppercase tracking-[0.12em] text-ink-faint">
 					{machine.brand}
 					{machine.model ? ` · ${machine.model}` : ""}
-					{` · ${methodConfig(machine.method).label}`}
 				</div>
 			</article>
 
