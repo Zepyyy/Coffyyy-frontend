@@ -76,7 +76,7 @@ export default function RecipeCard({
 
 			<div className="mt-auto flex items-center justify-between gap-2 px-5 pb-3">
 				<Link
-					to={`/log/recipe?id=${recipe.id}`}
+					to={`/recipes/${recipe.id}`}
 					className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs text-ink-faint transition-colors hover:text-foreground"
 				>
 					<Pencil className="size-3" aria-hidden />

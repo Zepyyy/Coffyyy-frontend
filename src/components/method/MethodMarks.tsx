@@ -47,18 +47,22 @@ export function MethodStamp({
 	method,
 	size = "lg",
 	tilt = false,
+	label = true,
 	className,
 }: {
 	method: BrewMethod;
 	size?: keyof typeof STAMP_SIZE;
 	tilt?: boolean;
+	/** Announce the method to screen readers (off when text says it). */
+	label?: boolean;
 	className?: string;
 }) {
 	const s = STAMP_SIZE[size];
 	return (
 		<span
-			role="img"
-			aria-label={methodConfig(method).label}
+			role={label ? "img" : undefined}
+			aria-label={label ? methodConfig(method).label : undefined}
+			aria-hidden={label ? undefined : true}
 			data-tilt={tilt}
 			className={cn(methodInkClass(method), "method-stamp", s.box, className)}
 		>
