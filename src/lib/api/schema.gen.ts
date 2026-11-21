@@ -461,8 +461,10 @@ export interface components {
             beanWeight: number;
             /** @description Target yield/water (g) */
             brewWeight: number;
+            /** @description Timed pour-over schedule: first at 0s, strictly increasing, last fraction 1 */
             pours?: {
                 atSeconds: number;
+                /** @description Cumulative fraction of the planned water */
                 fraction: number;
             }[];
             grindSize?: number;
