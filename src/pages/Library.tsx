@@ -5,37 +5,41 @@ import {
 	useState,
 	type ReactNode,
 } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { SlidersHorizontal } from "lucide-react";
 import JournalPage from "@/components/layout/JournalPage";
 import AddCard from "@/components/library/AddCard";
 import BeanCard from "@/components/library/BeanCard";
 import FilterCard from "@/components/library/FilterCard";
 import MachineCard from "@/components/library/MachineCard";
-import RecipeCard from "@/components/library/RecipeCard";
 import { Button } from "@/components/ui/button";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useAllBeans, useBeanCount } from "@/hooks/api/useBeans";
 import { useAllMachines, useMachineCount } from "@/hooks/api/useMachines";
-import { useRecipeBrewStats } from "@/hooks/api/useRecipeStats";
-import { useRecipes } from "@/hooks/api/useRecipes";
 import { useBeanDialInStates } from "@/hooks/api/useStats";
 import { methodConfig } from "@/lib/brewMethods";
 import { cn } from "@/lib/utils";
 import { verdictRank } from "@/lib/verdict";
 
-type Tab = "beans" | "machines" | "recipes";
+type Tab = "beans" | "machines";
 type BeanSort = "order" | "verdict";
 
-const TABS: readonly Tab[] = ["beans", "machines", "recipes"];
+const TABS: readonly Tab[] = ["beans", "machines"];
 const SEARCH_LABEL: Record<Tab, string> = {
 	beans: "beans",
 	machines: "brewers",
-	recipes: "recipes",
 };
 
+/** Recipes moved to their own page; old `?tab=recipes` links land there. */
 export default function Library() {
-	// `?tab=recipes` deep-links a section (the recipe form returns here).
+	const [searchParams] = useSearchParams();
+	if (searchParams.get("tab") === "recipes")
+		return <Navigate to="/recipes" replace />;
+	return <LibraryPage />;
+}
+
+function LibraryPage() {
+	// `?tab=machines` deep-links a section.
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab") as Tab | null;
 	const tab: Tab = tabParam && TABS.includes(tabParam) ? tabParam : "beans";
@@ -48,22 +52,12 @@ export default function Library() {
 	const [selectedBrand, setSelectedBrand] = useState<string[]>([]);
 	const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 	const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-	const [selectedRecipeMethods, setSelectedRecipeMethods] = useState<string[]>(
-		[],
-	);
 
 	const beansCount = useBeanCount();
 	const machinesCount = useMachineCount();
 	const allBeans = useAllBeans();
 	const allMachines = useAllMachines();
 	const activeMachines = allMachines;
-	const allRecipes = useRecipes();
-	const recipeBrewStats = useRecipeBrewStats();
-	const beanNames = useMemo(
-		() => new Map(allBeans.map((b) => [b.id, b.name])),
-		[allBeans],
-	);
-
 	const beanIds = useMemo(
 		() =>
 			allBeans
@@ -181,33 +175,6 @@ export default function Library() {
 		});
 	}, [search, selectedBrands, selectedTypes, activeMachines]);
 
-	const recipeMethodCounts = useMemo(() => {
-		const counts = new Map<string, number>();
-		for (const recipe of allRecipes) {
-			const label = methodConfig(recipe.method).label;
-			counts.set(label, (counts.get(label) ?? 0) + 1);
-		}
-		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
-	}, [allRecipes]);
-
-	const filteredRecipes = useMemo(() => {
-		const q = search.trim().toLowerCase();
-		return allRecipes.filter((r) => {
-			const methodLabel = methodConfig(r.method).label;
-			const matchesSearch =
-				!q ||
-				[r.name, methodLabel, r.beanId ? beanNames.get(r.beanId) : ""]
-					.filter(Boolean)
-					.join(" ")
-					.toLowerCase()
-					.includes(q);
-			const matchesMethod =
-				selectedRecipeMethods.length === 0 ||
-				selectedRecipeMethods.includes(methodLabel);
-			return matchesSearch && matchesMethod;
-		});
-	}, [search, selectedRecipeMethods, allRecipes, beanNames]);
-
 	const beanCountryOptions = useMemo(
 		() =>
 			originCounts.map(([label, count]) => ({
@@ -248,16 +215,6 @@ export default function Library() {
 		[brandsCounts, selectedBrands],
 	);
 
-	const recipeMethodOptions = useMemo(
-		() =>
-			recipeMethodCounts.map(([label, count]) => ({
-				label,
-				count,
-				active: selectedRecipeMethods.includes(label),
-			})),
-		[recipeMethodCounts, selectedRecipeMethods],
-	);
-
 	const beanFilters = (
 		<>
 			<FilterCard
@@ -288,49 +245,25 @@ export default function Library() {
 		</>
 	);
 
-	const recipeFilters = (
-		<FilterCard
-			title="Method"
-			options={recipeMethodOptions}
-			onToggle={(value) => toggleSelection(value, setSelectedRecipeMethods)}
-		/>
-	);
-
-	const filtersNode: ReactNode =
-		tab === "beans"
-			? beanFilters
-			: tab === "machines"
-				? machineFilters
-				: recipeFilters;
+	const filtersNode: ReactNode = tab === "beans" ? beanFilters : machineFilters;
 	const activeFilterCount =
 		tab === "beans"
 			? selectedCountries.length + selectedBrand.length
-			: tab === "machines"
-				? selectedTypes.length + selectedBrands.length
-				: selectedRecipeMethods.length;
+			: selectedTypes.length + selectedBrands.length;
 
 	const hasRestrictions = search.trim().length > 0 || activeFilterCount > 0;
 	const resultCount =
-		tab === "beans"
-			? sortedBeans.length
-			: tab === "machines"
-				? filteredMachines.length
-				: filteredRecipes.length;
-	const totalCount =
-		tab === "beans"
-			? allBeans.length
-			: tab === "machines"
-				? activeMachines.length
-				: allRecipes.length;
+		tab === "beans" ? sortedBeans.length : filteredMachines.length;
+	const totalCount = tab === "beans" ? allBeans.length : activeMachines.length;
 	function clearCurrentFilters() {
 		setSearch("");
 		if (tab === "beans") {
 			setSelectedCountries([]);
 			setSelectedBrand([]);
-		} else if (tab === "machines") {
+		} else {
 			setSelectedTypes([]);
 			setSelectedBrands([]);
-		} else setSelectedRecipeMethods([]);
+		}
 	}
 
 	return (
@@ -343,7 +276,7 @@ export default function Library() {
 							Library
 						</h1>
 						<p className="mt-1 font-sans text-xs uppercase tracking-[0.2em] text-muted-foreground">
-							Your beans, brewers and recipes
+							Your beans and brewers
 						</p>
 					</div>
 
@@ -359,10 +292,6 @@ export default function Library() {
 								{
 									value: "machines",
 									label: `Brewers${machinesCount > 0 ? ` (${machinesCount})` : ""}`,
-								},
-								{
-									value: "recipes",
-									label: `Recipes${allRecipes.length > 0 ? ` (${allRecipes.length})` : ""}`,
 								},
 							]}
 							value={tab}
@@ -517,54 +446,6 @@ export default function Library() {
 										<AddCard
 											to="/log/machine"
 											label="Add brewer"
-											className="h-32 self-start"
-										/>
-									</div>
-								)}
-							</div>
-						)}
-
-						{tab === "recipes" && (
-							<div>
-								{filteredRecipes.length === 0 ? (
-									allRecipes.length === 0 ? (
-										<div className="space-y-3 rounded-xl border border-dashed border-line-strong bg-paper-raised/50 p-12 text-center">
-											<p className="font-display text-2xl text-foreground/60">
-												No recipes
-											</p>
-											<div className="flex flex-wrap justify-center gap-2">
-												<Button asChild variant="ink">
-													<Link to="/log/recipe?starter=v60">
-														Use V60 starter
-													</Link>
-												</Button>
-												<Button asChild variant="outline">
-													<Link to="/log/recipe">Add a recipe</Link>
-												</Button>
-											</div>
-										</div>
-									) : (
-										<p className="text-sm text-muted-foreground">
-											No recipes match your search.
-										</p>
-									)
-								) : (
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,16rem),1fr))] gap-4">
-										{filteredRecipes.map((recipe) => (
-											<RecipeCard
-												key={recipe.id}
-												recipe={recipe}
-												beanName={
-													recipe.beanId
-														? beanNames.get(recipe.beanId)
-														: undefined
-												}
-												stats={recipeBrewStats[recipe.id]}
-											/>
-										))}
-										<AddCard
-											to="/log/recipe"
-											label="Add recipe"
 											className="h-32 self-start"
 										/>
 									</div>

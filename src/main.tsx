@@ -14,7 +14,9 @@ import Library from "./pages/Library.tsx";
 import BeansLog from "./pages/log/Beans.tsx";
 import BrewLog from "./pages/log/Brew.tsx";
 import MachinesLog from "./pages/log/Machines.tsx";
-import RecipeLog from "./pages/log/Recipe.tsx";
+import LegacyRecipeRedirect from "./pages/log/Recipe.tsx";
+import Recipes from "./pages/Recipes.tsx";
+import RecipeEditorPage from "./pages/recipes/RecipeEditorPage.tsx";
 import Providers from "./providers/Providers.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -27,13 +29,18 @@ createRoot(document.getElementById("root")!).render(
 						<Route path="home" element={<Home />} />
 						<Route path="backgrounds" element={<Backgrounds />} />
 						<Route path="history" element={<History />} />
+						<Route path="recipes">
+							<Route index element={<Recipes />} />
+							<Route path="new" element={<RecipeEditorPage />} />
+							<Route path=":recipeId" element={<RecipeEditorPage />} />
+						</Route>
 						<Route path="library" element={<Library />} />
 						<Route path="log">
 							<Route index element={<BeansLog />} />
 							<Route path="brew" element={<BrewLog />} />
 							<Route path="bean" element={<BeansLog />} />
 							<Route path="machine" element={<MachinesLog />} />
-							<Route path="recipe" element={<RecipeLog />} />
+							<Route path="recipe" element={<LegacyRecipeRedirect />} />
 						</Route>
 						{/* Legacy redirects */}
 						<Route path="brew" element={<Navigate to="/log/brew" replace />} />

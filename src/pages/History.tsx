@@ -263,7 +263,7 @@ export default function History() {
 							</strong>
 						</span>
 						<Link
-							to="/library?tab=recipes"
+							to="/recipes"
 							className="word-link font-data text-[10px] uppercase tracking-[0.12em]"
 						>
 							Recipes →

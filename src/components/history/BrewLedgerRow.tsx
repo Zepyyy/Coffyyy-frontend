@@ -387,7 +387,7 @@ export function BrewLedgerRow({
 								</Link>
 								{config.hasRecipes && (
 									<Link
-										to={`/log/recipe?fromBrew=${brew.id}`}
+										to={`/recipes/new?fromBrew=${brew.id}`}
 										className="tap inline-flex items-center gap-1.5 px-3 py-1.5 font-sans text-xs text-muted-foreground transition-colors hover:text-foreground"
 									>
 										<BookmarkPlus className="size-3" />

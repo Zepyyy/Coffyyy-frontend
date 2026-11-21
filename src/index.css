@@ -971,3 +971,7 @@ main:has(> .grain-landscape-foot) {
     border: 1px solid color-mix(in oklab, var(--method, var(--ink)) 45%, transparent);
 }
 .method-stamp[data-tilt="true"] { transform: rotate(4deg); }
+/* Quiet method-coloured surfaces: a selected state, a chart's water. */
+.method-wash { background: color-mix(in oklab, var(--method, var(--ink)) 8%, transparent); }
+.method-line { border-color: var(--method, var(--ink)); }
+.method-fill { background: var(--method, var(--ink)); }
