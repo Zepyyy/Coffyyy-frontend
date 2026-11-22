@@ -10,6 +10,12 @@ export type AuthStatus =
 	| "disconnected"
 	| "conflict";
 
+/**
+ * A sync link opened in this browser: connecting on its own, or waiting for a
+ * yes because it would replace something.
+ */
+export type LinkState = "connecting" | "confirm";
+
 export type AuthContextValue = {
 	status: AuthStatus;
 	session: authApi.SessionState | null;
@@ -19,6 +25,9 @@ export type AuthContextValue = {
 	lastSyncedAt: number | null;
 	lastError: string | null;
 	conflictSnapshot: WorkspaceSnapshot | null;
+	linkState: LinkState | null;
+	connectLink: () => Promise<void>;
+	dismissLink: () => void;
 	enableSync: () => Promise<void>;
 	pairSyncCode: (code: string) => Promise<void>;
 	reconnect: () => Promise<void>;
