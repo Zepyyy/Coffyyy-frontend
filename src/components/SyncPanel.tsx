@@ -4,6 +4,7 @@ import {
 	CloudOff,
 	CloudUpload,
 	CopyIcon,
+	QrCode,
 	RefreshCcw,
 	ShieldAlert,
 	ShieldCheck,
@@ -14,11 +15,13 @@ import {
 	X,
 } from "lucide-react";
 import { Popover } from "radix-ui";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import SyncQr from "@/components/SyncQr";
 import { Button } from "@/components/ui/button";
 import type { AuthStatus } from "@/contexts/auth-context";
 import { useAuth } from "@/hooks/useAuth";
 import { exportLocalSnapshot, importLocalSnapshot } from "@/lib/api/backup";
+import { clearSyncHash, readSyncCodeFromHash } from "@/lib/syncLink";
 
 function statusLabel(status: AuthStatus) {
 	return status === "active"
@@ -100,7 +103,10 @@ export default function SyncPanel() {
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [codeVisible, setCodeVisible] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
-	const [pairCode, setPairCode] = useState("");
+	const [pairCode, setPairCode] = useState(() => readSyncCodeFromHash() ?? "");
+	const [qrVisible, setQrVisible] = useState(false);
+
+	useEffect(() => clearSyncHash(), []);
 
 	async function downloadExport() {
 		const blob = new Blob([await exportLocalSnapshot()], {
@@ -342,6 +348,15 @@ export default function SyncPanel() {
 									<Button
 										variant="ghost"
 										size="icon-sm"
+										aria-label={qrVisible ? "Hide QR code" : "Show QR code"}
+										aria-pressed={qrVisible}
+										onClick={() => setQrVisible((visible) => !visible)}
+									>
+										<QrCode />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon-sm"
 										aria-label="Copy sync code"
 										onClick={() =>
 											void navigator.clipboard.writeText(
@@ -370,6 +385,11 @@ export default function SyncPanel() {
 									)}
 								</div>
 							</div>
+							{qrVisible && (
+								<div className="mt-3">
+									<SyncQr code={auth.enrollment.syncCode} />
+								</div>
+							)}
 						</div>
 						<div className="flex items-center justify-between gap-3">
 							<Button
