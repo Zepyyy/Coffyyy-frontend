@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/sessionRecovery";
 import { mergeSnapshots } from "@/db/sync/merge";
 import { createSyncScheduler, SYNC_COOLDOWN_MS } from "@/db/sync/scheduler";
+import { takeSyncCodeFromUrl } from "@/lib/syncLink";
 import {
 	getWorkspaceSnapshot,
 	putWorkspaceSnapshot,
@@ -29,7 +30,11 @@ import {
 	AuthContext,
 	type AuthContextValue,
 	type AuthStatus,
+	type LinkState,
 } from "./auth-context";
+
+// Read at load, before the router's first redirect drops the hash.
+const linkedCode = takeSyncCodeFromUrl();
 
 function errorMessage(error: unknown) {
 	return error instanceof Error ? error.message : "Sync request failed";
@@ -47,6 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const [lastError, setLastError] = useState<string | null>(null);
 	const [hasPendingChanges, setHasPendingChanges] = useState(false);
 	const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+	const [linkState, setLinkState] = useState<LinkState | null>(
+		linkedCode ? "connecting" : null,
+	);
+	const linkChecked = useRef(false);
 	const busy = useRef(false);
 	const currentStatus = useRef<AuthStatus>("loading");
 	const scheduler = useRef<ReturnType<typeof createSyncScheduler> | null>(null);
@@ -207,29 +216,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		async (code: string) => {
 			setBusy(true);
 			setLastError(null);
+			const previousStatus = currentStatus.current;
+			let sameWorkspace = false;
 			try {
-				const result = await authApi.pairSync(code.trim());
-				await saveEnrollment({
-					workspaceId: result.workspaceId,
-					syncCode: code.trim(),
-					paused: false,
-					cloudVersion: 0,
-					lastSyncedHash: "",
-				});
+				const existing = await getEnrollment();
+				const result = await authApi.pairSync(code);
+				sameWorkspace = existing?.workspaceId === result.workspaceId;
+				if (sameWorkspace) {
+					// Same workspace, new code: keep local edits, sync them normally.
+					await updateEnrollment({ syncCode: code, paused: false });
+				} else
+					await saveEnrollment({
+						workspaceId: result.workspaceId,
+						syncCode: code,
+						paused: false,
+						cloudVersion: 0,
+						lastSyncedHash: "",
+					});
 				setEnrollment(await getEnrollment());
 				setSession(await authApi.getSession());
-				await syncRemote(await getWorkspaceSnapshot());
-				setStatus("active");
+				if (!sameWorkspace) {
+					await syncRemote(await getWorkspaceSnapshot());
+					setStatus("active");
+				}
 			} catch (error) {
-				setStatus("disconnected");
+				// A rejected code changes nothing: stay local, paused, etc.
+				const current = await getEnrollment();
+				setStatus(
+					!current
+						? "local"
+						: current.syncCode === code
+							? "disconnected"
+							: previousStatus,
+				);
 				setLastError(errorMessage(error));
 				throw error;
 			} finally {
 				setBusy(false);
 			}
+			if (sameWorkspace) await reconnect();
 		},
-		[syncRemote, setBusy, setStatus],
+		[reconnect, syncRemote, setBusy, setStatus],
 	);
+
+	const connectLink = useCallback(async () => {
+		if (!linkedCode) return;
+		setLinkState("connecting");
+		try {
+			await pairSyncCode(linkedCode);
+			setLinkState(null);
+		} catch {
+			setLinkState("confirm");
+		}
+	}, [pairSyncCode]);
+
+	const dismissLink = useCallback(() => setLinkState(null), []);
 
 	const pauseSync = useCallback(async () => {
 		await updateEnrollment({ paused: true });
@@ -480,6 +521,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	}, [setStatus]);
 
 	useEffect(() => {
+		if (!linkedCode || linkChecked.current) return;
+		linkChecked.current = true;
+		void (async () => {
+			const [current, local] = await Promise.all([
+				getEnrollment(),
+				readLocalSnapshot(),
+			]);
+			if (current?.syncCode === linkedCode) setLinkState(null);
+			else if (
+				current ||
+				local.beans.length ||
+				local.machines.length ||
+				local.brews.length ||
+				local.recipes.length
+			)
+				setLinkState("confirm");
+			else await connectLink();
+		})();
+	}, [connectLink]);
+
+	useEffect(() => {
 		const onUnauthorized = () => {
 			if (enrollment && status === "active" && !busy.current) {
 				setStatus("disconnected");
@@ -504,6 +566,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			lastSyncedAt,
 			lastError,
 			conflictSnapshot,
+			linkState,
+			connectLink,
+			dismissLink,
 			enableSync,
 			pairSyncCode,
 			reconnect,
@@ -524,6 +589,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			lastSyncedAt,
 			lastError,
 			conflictSnapshot,
+			linkState,
+			connectLink,
+			dismissLink,
 			enableSync,
 			pairSyncCode,
 			reconnect,

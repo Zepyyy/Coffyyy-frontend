@@ -1,4 +1,5 @@
 import {
+	Check,
 	CloudDownload,
 	CloudLightning,
 	CloudOff,
@@ -15,13 +16,14 @@ import {
 	X,
 } from "lucide-react";
 import { Popover } from "radix-ui";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import SyncQr from "@/components/SyncQr";
 import { Button } from "@/components/ui/button";
 import type { AuthStatus } from "@/contexts/auth-context";
 import { useAuth } from "@/hooks/useAuth";
 import { exportLocalSnapshot, importLocalSnapshot } from "@/lib/api/backup";
-import { clearSyncHash, readSyncCodeFromHash } from "@/lib/syncLink";
+import { parseSyncCode } from "@/lib/syncLink";
+import { cn } from "@/lib/utils";
 
 function statusLabel(status: AuthStatus) {
 	return status === "active"
@@ -103,10 +105,20 @@ export default function SyncPanel() {
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [codeVisible, setCodeVisible] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
-	const [pairCode, setPairCode] = useState(() => readSyncCodeFromHash() ?? "");
+	const [pairCode, setPairCode] = useState("");
 	const [qrVisible, setQrVisible] = useState(false);
+	const [copied, setCopied] = useState(false);
 
-	useEffect(() => clearSyncHash(), []);
+	async function copyCode(code: string) {
+		try {
+			await navigator.clipboard.writeText(code);
+			setCopied(true);
+			window.setTimeout(() => setCopied(false), 1_800);
+		} catch {
+			setCodeVisible(true);
+			setMessage("Could not copy. Select the code and copy it yourself.");
+		}
+	}
 
 	async function downloadExport() {
 		const blob = new Blob([await exportLocalSnapshot()], {
@@ -178,6 +190,7 @@ export default function SyncPanel() {
 		}
 	}
 
+	const pastedCode = parseSyncCode(pairCode);
 	const isLocal = auth.status === "local";
 	const isConflict = auth.status === "conflict";
 
@@ -186,15 +199,25 @@ export default function SyncPanel() {
 			<div className="space-y-5">
 				<header className="flex items-start justify-between gap-4">
 					<div className="flex min-w-0 items-start gap-2.5">
-						<div className="mt-0.5">{statusIcon(auth.status)}</div>
+						<div className="mt-0.5">
+							{statusIcon(
+								auth.linkState === "connecting" ? "loading" : auth.status,
+							)}
+						</div>
 						<div className="min-w-0">
 							<h2 className="font-display text-xl leading-none">
-								{statusLabel(auth.status)}
+								{auth.linkState === "connecting"
+									? "Bringing your journal over"
+									: auth.linkState === "confirm"
+										? "Connect this browser?"
+										: statusLabel(auth.status)}
 							</h2>
 							<p className="mt-1 text-xs text-muted-foreground">
-								{auth.enrollment
-									? "Your coffee journal, across your devices."
-									: "Your data stays on this browser"}
+								{auth.linkState === "connecting"
+									? "This only takes a moment."
+									: auth.enrollment || auth.linkState
+										? "Your coffee journal, across your devices."
+										: "Your data stays on this browser"}
 							</p>
 						</div>
 					</div>
@@ -209,7 +232,32 @@ export default function SyncPanel() {
 					</Popover.Close>
 				</header>
 
-				{isLocal && (
+				{auth.linkState === "confirm" && (
+					<div className="space-y-3">
+						<p className="text-sm">
+							{auth.enrollment
+								? "This browser already syncs. Connecting to a different workspace replaces what's saved here."
+								: "The workspace you scanned will replace what's saved here."}
+						</p>
+						<div className="grid grid-cols-2 gap-2">
+							<Button
+								variant="outline"
+								disabled={auth.isBusy}
+								onClick={auth.dismissLink}
+							>
+								Keep this one
+							</Button>
+							<Button
+								disabled={auth.isBusy}
+								onClick={() => void auth.connectLink()}
+							>
+								Connect
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{!auth.linkState && isLocal && (
 					<div className="space-y-3">
 						<div>
 							<p className="text-sm font-medium">
@@ -235,9 +283,9 @@ export default function SyncPanel() {
 											"Replace this browser's local workspace with the connected cloud snapshot?",
 										)
 									)
-										void auth.pairSyncCode(pairCode).catch(() => undefined);
+										void auth.pairSyncCode(pastedCode).catch(() => undefined);
 								}}
-								disabled={!pairCode.trim() || auth.isBusy}
+								disabled={!pastedCode || auth.isBusy}
 							>
 								Connect
 							</Button>
@@ -255,7 +303,7 @@ export default function SyncPanel() {
 					</div>
 				)}
 
-				{!isLocal && (
+				{!auth.linkState && !isLocal && (
 					<div className="space-y-3">
 						{isConflict ? (
 							<>
@@ -325,14 +373,19 @@ export default function SyncPanel() {
 					</div>
 				)}
 
-				{auth.enrollment && (
+				{!auth.linkState && auth.enrollment && (
 					<div className="space-y-3 border-t border-border pt-4">
 						<div className="min-w-0">
 							<p className="font-data text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
 								Connect another device
 							</p>
 							<div className="flex items-center justify-between gap-3">
-								<p className="mt-1 truncate font-data text-xs tracking-widest bg-primary/10 px-1 py-0.5 rounded">
+								<p
+									className={cn(
+										"mt-1 rounded bg-primary/10 px-1 py-0.5 font-data text-xs tracking-widest",
+										codeVisible ? "select-all break-all" : "truncate",
+									)}
+								>
 									{codeVisible
 										? auth.enrollment.syncCode
 										: "••••••••••••••••••••••••••••"}
@@ -357,14 +410,10 @@ export default function SyncPanel() {
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										aria-label="Copy sync code"
-										onClick={() =>
-											void navigator.clipboard.writeText(
-												auth.enrollment!.syncCode,
-											)
-										}
+										aria-label={copied ? "Sync code copied" : "Copy sync code"}
+										onClick={() => void copyCode(auth.enrollment!.syncCode)}
 									>
-										<CopyIcon />
+										{copied ? <Check /> : <CopyIcon />}
 									</Button>
 									{auth.status !== "paused" && (
 										<Button

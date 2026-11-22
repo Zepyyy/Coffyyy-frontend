@@ -1,20 +1,30 @@
 const KEY = "sync";
 
-/** Link that opens the app with the sync code prefilled (hash never hits servers). */
+/** Link that connects whichever browser opens it (hash never hits servers). */
 export function buildSyncLink(code: string, origin = window.location.origin) {
 	return `${origin}/#${KEY}=${encodeURIComponent(code)}`;
 }
 
-export function readSyncCodeFromHash(hash = window.location.hash) {
-	const value = new URLSearchParams(hash.replace(/^#/, "")).get(KEY);
-	return value?.trim() || null;
+/** Accepts a bare sync code or a whole sync link, e.g. pasted from a scanner app. */
+export function parseSyncCode(input: string) {
+	const value = input.trim();
+	const hash = value.indexOf("#");
+	if (hash === -1) return value;
+	return new URLSearchParams(value.slice(hash + 1)).get(KEY)?.trim() ?? "";
 }
 
-export function clearSyncHash() {
-	if (readSyncCodeFromHash())
-		window.history.replaceState(
-			null,
-			"",
-			window.location.pathname + window.location.search,
-		);
+/**
+ * Reads the sync code out of the address bar and removes it. Must run before
+ * the router: the "/" redirect drops the hash.
+ */
+export function takeSyncCodeFromUrl() {
+	if (!window.location.hash) return null;
+	const code = parseSyncCode(window.location.hash);
+	if (!code) return null;
+	window.history.replaceState(
+		window.history.state,
+		"",
+		window.location.pathname + window.location.search,
+	);
+	return code;
 }

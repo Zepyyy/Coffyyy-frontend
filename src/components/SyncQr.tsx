@@ -31,8 +31,8 @@ export default function SyncQr({ code }: { code: string }) {
 				dangerouslySetInnerHTML={{ __html: svg }}
 			/>
 			<p className="text-center text-xs text-muted-foreground">
-				Scan with your phone's camera. Anyone who scans it can access your cloud
-				workspace.
+				Scan with your phone's camera: Coffyyy opens there, already synced.
+				Anyone who scans it can access your workspace.
 			</p>
 		</div>
 	);

@@ -11,7 +11,6 @@ import { Popover } from "radix-ui";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
-import { readSyncCodeFromHash } from "@/lib/syncLink";
 import { cn } from "@/lib/utils";
 import SyncPanel from "./SyncPanel";
 
@@ -22,7 +21,7 @@ export default function SyncControl() {
 
 function SyncPopover() {
 	const auth = useAuth();
-	const [open, setOpen] = useState(() => readSyncCodeFromHash() !== null);
+	const [open, setOpen] = useState(auth.linkState !== null);
 	const [openedAt, setOpenedAt] = useState(0);
 	const needsAttention =
 		auth.status === "conflict" || auth.status === "disconnected";
@@ -85,9 +84,8 @@ function SyncPopover() {
 			open={open}
 			onOpenChange={(next) => {
 				setOpen(next);
-				if (next) {
-					setOpenedAt(Date.now());
-				}
+				if (next) setOpenedAt(Date.now());
+				else if (auth.linkState === "confirm") auth.dismissLink();
 			}}
 		>
 			<Popover.Trigger asChild>
