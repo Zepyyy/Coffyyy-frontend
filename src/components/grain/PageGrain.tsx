@@ -14,27 +14,21 @@ export default function PageGrain() {
 	const [searchParams] = useSearchParams();
 	const prefs = useGrainPrefs();
 	const grainParam = searchParams.get("grain");
+	const preview = grainParam !== null && Object.hasOwn(SCENES, grainParam);
 	const motion = pageMotion(
 		prefs.motion,
-		Boolean(grainParam && SCENES[grainParam]),
+		preview,
 		searchParams.get("motion") ?? searchParams.get("grainMotion"),
 	);
-	const id =
-		grainParam && SCENES[grainParam]
-			? grainParam
-			: SCENES[prefs.scene]
-				? prefs.scene
-				: DEFAULT_BACKGROUND;
-	const field = (
+	const savedId = Object.hasOwn(SCENES, prefs.scene)
+		? prefs.scene
+		: DEFAULT_BACKGROUND;
+	const id = preview ? grainParam : savedId;
+	return (
 		<GrainField
 			scene={SCENES[id]}
 			print={printFor(prefs, id)}
 			animated={motion ?? undefined}
 		/>
-	);
-	return id === "starvalley" || id === "coffeefarm" ? (
-		<div className="grain-landscape-foot">{field}</div>
-	) : (
-		field
 	);
 }

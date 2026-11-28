@@ -14,7 +14,6 @@ import {
 	type Mask,
 	type Zone,
 } from "./dither-gl";
-import { EMPTY_JOURNAL, type Journal } from "./journal";
 
 export type Box = { x: number; y: number; w: number; h: number };
 
@@ -39,10 +38,6 @@ export type SceneEnv = {
 	anchors: Record<string, Box>;
 	/** Dark paper: dots read lighter, so colours usually need their own values. */
 	dark: boolean;
-	/** The owner's beans and brews, for scenes that grow from the journal. */
-	journal: Journal;
-	/** Wall clock, epoch ms. Dev: `?grainHour=19.5` pins the hour of day. */
-	now: number;
 };
 
 export type Layers = {
@@ -116,7 +111,6 @@ export type GrainOptions = {
 export type GrainEngine = {
 	setScene: (scene: Scene) => void;
 	setPrint: (print: Print) => void;
-	setJournal: (journal: Journal) => void;
 	setMotion: (on: boolean) => void;
 	layout: () => void;
 	refreshPalette: () => void;
@@ -156,14 +150,6 @@ export function createGrain(options: GrainOptions): GrainEngine {
 		};
 	};
 	let material = materialOf(options.print ?? "fine");
-	let journal: Journal = EMPTY_JOURNAL;
-	const pinnedHour = Number.parseFloat(devParams.get("grainHour") ?? "");
-	const wallClock = () => {
-		if (Number.isNaN(pinnedHour)) return Date.now();
-		const d = new Date();
-		d.setHours(0, 0, 0, 0);
-		return d.getTime() + pinnedHour * 3_600_000;
-	};
 
 	let W = 0;
 	let H = 0;
@@ -305,8 +291,6 @@ export function createGrain(options: GrainOptions): GrainEngine {
 				pointer,
 				anchors,
 				dark: isDark(),
-				journal,
-				now: wallClock(),
 			},
 		);
 		gl.frame(source, dt, instant, clock < releaseUntil ? 0 : 1);
@@ -389,10 +373,6 @@ export function createGrain(options: GrainOptions): GrainEngine {
 			scene = next;
 			releaseUntil = clock + RELEASE_S;
 			if (!motion) renderStill();
-		},
-		setJournal(next) {
-			journal = next;
-			if (!motion && settled) renderStill();
 		},
 		setPrint(next) {
 			const m = materialOf(next);

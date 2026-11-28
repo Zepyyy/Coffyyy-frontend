@@ -1,5 +1,5 @@
 // Vite DEV required. Run: BASE_URL=http://localhost:5173 node scripts/verify-grain-motion.mjs
-// Uses isolated browser storage. Checks real controls and changing canvas pixels.
+// Uses isolated browser storage. Checks real controls and visible dither steps.
 export async function verifyGrainMotion({
 	simulateReducedMotion = false,
 } = {}) {
@@ -30,11 +30,13 @@ export async function verifyGrainMotion({
 	const reports = [];
 	const assertMotion = async (moving, label) => {
 		await wait(180);
-		const canvas = document.querySelector(".grain-field__dither");
-		if (!canvas) throw new Error(`${label}: no grain canvas`);
-		const before = canvas.toDataURL();
+		const grain = window.__grain;
+		if (!grain) throw new Error(`${label}: no grain engine`);
+		// The browser can discard the WebGL display buffer after compositing.
+		const before = grain.steps().data;
 		await wait(700);
-		const changed = before !== canvas.toDataURL();
+		const after = grain.steps().data;
+		const changed = before.some((step, index) => step !== after[index]);
 		if (changed !== moving)
 			throw new Error(
 				`${label}: expected ${moving ? "moving" : "still"} pixels, got ${changed ? "moving" : "still"}`,
@@ -72,7 +74,7 @@ export async function verifyGrainMotion({
 	};
 
 	await go("/home");
-	await select("Willow");
+	await select("Coffee branch");
 	await openSettings();
 	if (
 		dialog().querySelector('[role="switch"]').getAttribute("aria-checked") ===
@@ -82,10 +84,10 @@ export async function verifyGrainMotion({
 	await assertMotion(false, "dashboard Off");
 	await toggle();
 	await assertMotion(true, "dashboard explicit On overrides reduced motion");
-	await select("Windfall");
+	await select("Bloom");
 	await assertMotion(true, "switch background while On");
-	await select("Willow");
-	await select("Willow");
+	await select("Coffee branch");
+	await select("Coffee branch");
 	await assertMotion(true, "reselect background while On");
 	settings().click();
 	await go("/library");
@@ -93,9 +95,9 @@ export async function verifyGrainMotion({
 	await go("/home");
 	await assertMotion(true, "return to dashboard keeps On");
 	await toggle();
-	await select("Windfall");
+	await select("Bloom");
 	await assertMotion(false, "switch background while Off");
-	await select("Willow");
+	await select("Coffee branch");
 	await go("/backgrounds");
 	await until(
 		() => document.querySelector(".background-studies__motion"),
@@ -121,7 +123,7 @@ export async function verifyGrainMotion({
 	await assertMotion(true, "temporary dashboard trial");
 	await toggle();
 	await assertMotion(false, "dashboard Off exits temporary trial");
-	await select("Willow");
+	await select("Coffee branch");
 	await go("/backgrounds");
 	await until(
 		() => document.querySelector(".background-studies__motion"),
@@ -179,10 +181,9 @@ if (
 		await page.waitForTimeout(1000);
 		assert.ok(
 			await page.evaluate(async () => {
-				const canvas = document.querySelector(".grain-field__dither");
-				const before = canvas.toDataURL();
+				const before = window.__grain.stats().frames;
 				await new Promise((r) => setTimeout(r, 700));
-				return before === canvas.toDataURL();
+				return before === window.__grain.stats().frames;
 			}),
 			"unset motion must follow the reduced-motion device setting",
 		);
@@ -192,10 +193,9 @@ if (
 		await page.waitForTimeout(1000);
 		assert.ok(
 			await page.evaluate(async () => {
-				const canvas = document.querySelector(".grain-field__dither");
-				const before = canvas.toDataURL();
+				const before = window.__grain.stats().frames;
 				await new Promise((r) => setTimeout(r, 700));
-				return before !== canvas.toDataURL();
+				return before < window.__grain.stats().frames;
 			}),
 			"saved explicit On must animate after reload under reduced motion",
 		);

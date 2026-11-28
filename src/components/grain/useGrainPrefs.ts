@@ -31,8 +31,10 @@ function read(): GrainPrefs {
 				: FALLBACK.scene;
 		const motion = typeof raw?.motion === "boolean" ? raw.motion : null;
 		const prints: Record<string, Print> = {};
-		for (const [id, v] of Object.entries(raw?.prints ?? {}))
-			if (v === "fine" || v === "coarse") prints[id] = v;
+		for (const { id } of BACKGROUNDS) {
+			const print = raw?.prints?.[id];
+			if (print === "fine" || print === "coarse") prints[id] = print;
+		}
 		return { scene, motion, prints };
 	} catch {
 		return FALLBACK;
