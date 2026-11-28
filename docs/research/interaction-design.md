@@ -6,7 +6,7 @@ Date: 2026-10-29. Scope: current working tree, including earlier uncommitted UX 
 
 Make the app feel more intentional by connecting actions, preserving context, and giving changes a clear visual answer. The existing buttons already have extensive choreography. Another animated button family would contribute less than a calmer populated brew form, a concise tasting prompt, and a beautiful comparison of actual attempts.
 
-Keep the censer, square geometry, editorial type and drawn-line vocabulary. Read **all** revisions in `docs/design-notes.md`: its early coffee/instrument proposals were repeatedly rejected or superseded. The owner explicitly preferred expressive animation over literal props, then required quiet integration with the page. Do not resurrect gauges, crema floods, random measuring strips, off-palette slabs, hover lift or keycap decorations. Coffee-specific below means serving brewing, not putting coffee imagery everywhere.
+Keep the censer, square geometry, editorial type and drawn-line vocabulary. The owner explicitly preferred expressive animation over literal props, then required quiet integration with the page. Do not resurrect gauges, crema floods, random measuring strips, off-palette slabs, hover lift or keycap decorations. Coffee-specific below means serving brewing, not putting coffee imagery everywhere.
 
 ## Findings with implementation implications
 

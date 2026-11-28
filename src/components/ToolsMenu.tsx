@@ -93,7 +93,7 @@ export default function ToolsMenu() {
 						aria-label="Background"
 						className="flex flex-col"
 					>
-						{BACKGROUNDS.map(({ id, name, exploration }) => (
+						{BACKGROUNDS.map(({ id, name }) => (
 							// biome-ignore lint/a11y/useSemanticElements: a styled menu row
 							<button
 								key={id}
@@ -103,14 +103,7 @@ export default function ToolsMenu() {
 								onClick={() => pick(id)}
 								className={cn(row, prefs.scene === id && "text-foreground")}
 							>
-								<span>
-									{name}
-									{exploration && (
-										<em className="ml-1.5 border border-line px-1 align-[0.15em] font-data text-[9px] not-italic uppercase tracking-[0.08em] text-ink-faint">
-											exp
-										</em>
-									)}
-								</span>
+								<span>{name}</span>
 								{prefs.scene === id && <Check size={13} aria-hidden />}
 							</button>
 						))}

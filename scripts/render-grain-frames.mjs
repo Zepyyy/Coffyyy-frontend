@@ -1,5 +1,5 @@
 // Vite DEV required. Stills of a scene on the real Home, for judging by eye.
-// Run: SCENES=whale,koi TIMES=20,30,40 node scripts/render-grain-frames.mjs
+// Run: SCENES=cherry,koi TIMES=20,30,40 node scripts/render-grain-frames.mjs
 // Optional: BASE_URL, OUT, CHROMIUM_EXECUTABLE_PATH.
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";

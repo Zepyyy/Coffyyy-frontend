@@ -62,7 +62,7 @@ export default function Backgrounds() {
 			</header>
 			<fieldset className="background-studies__choices">
 				<legend className="sr-only">Background candidates</legend>
-				{BACKGROUNDS.map(({ id, name, exploration }) => (
+				{BACKGROUNDS.map(({ id, name }) => (
 					<label key={id}>
 						<input
 							type="radio"
@@ -71,12 +71,7 @@ export default function Backgrounds() {
 							checked={selected.id === id}
 							onChange={() => choose(id)}
 						/>
-						<span>
-							{name}
-							{exploration && (
-								<em className="background-studies__tag">exploration</em>
-							)}
-						</span>
+						<span>{name}</span>
 					</label>
 				))}
 			</fieldset>
@@ -101,7 +96,6 @@ export default function Backgrounds() {
 			<div className="background-studies__caption">
 				<div aria-live="polite" aria-atomic="true">
 					<h2>{selected.name}</h2>
-					{selected.note && <p>{selected.note}</p>}
 				</div>
 				<div className="background-studies__actions">
 					<Link

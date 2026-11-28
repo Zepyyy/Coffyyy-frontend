@@ -73,18 +73,6 @@ try {
 				await page.goto(`${base}/home?grain=${scene}`);
 				await page.waitForFunction(() => window.__grain);
 				await page.evaluate(() => document.fonts.ready);
-				// Whale deliberately spends a minute offscreen. Exercise a crossing,
-				// rather than mistaking that pause for a stalled/empty renderer.
-				if (scene === "whale") {
-					await page.evaluate(async () => {
-						const { SCENES } = await import(
-							"/src/components/grain/scenes/index.ts"
-						);
-						window.__grain.setScene((layers, env) =>
-							SCENES.whale(layers, { ...env, t: env.t + 30 }),
-						);
-					});
-				}
 				await page.waitForTimeout(3000);
 				const timing = await page.evaluate(async () => {
 					const p = window.__grainProbe;

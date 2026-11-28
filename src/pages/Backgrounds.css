@@ -16,7 +16,6 @@
 .background-studies__motion { position:absolute;right:12px;bottom:12px;z-index:1;min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--paper-raised);font-family:var(--font-data);font-size:12px;color:var(--ink-soft);cursor:pointer; }
 .background-studies__caption { display:flex;justify-content:space-between;align-items:center;gap:24px;padding-bottom:16px; }
 .background-studies__caption h2 { font-family:var(--font-display);font-size:26px;font-style:italic;margin:0 0 5px; }
-.background-studies__caption p { max-width:450px;color:var(--ink-soft);font-size:13px;line-height:1.6;margin:0; }
 .background-studies__actions { display:flex;gap:12px;align-items:center;flex-shrink:0; }
 .background-studies__actions a,.background-studies__actions button { display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:10px 14px;font-size:12px; }
 .background-studies__actions a { color:var(--ink-soft); }
@@ -24,17 +23,3 @@
 .background-studies__actions button { border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer; }
 .background-studies button:focus-visible,.background-studies a:focus-visible { outline:2px solid var(--accent);outline-offset:3px; }
 @media(max-width:700px) { .background-studies__caption { align-items:stretch;flex-direction:column;gap:18px; }.background-studies__actions { flex-wrap:wrap;justify-content:space-between;gap:8px; }.background-studies__choices label { min-width:30%; }.background-studies__stage { height:520px; }.background-studies__intro { padding-top:0; } }
-
-/* Work-in-progress scenes: selectable like any other, just labelled. */
-.background-studies__tag {
-	margin-left: 0.5em;
-	padding: 0 0.35em;
-	border: 1px solid var(--line);
-	font-family: var(--font-data, ui-monospace, monospace);
-	font-size: 11px;
-	font-style: normal;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--ink-faint);
-	vertical-align: 0.15em;
-}

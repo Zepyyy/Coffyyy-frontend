@@ -21,7 +21,7 @@ A more elaborate dashboard and statistics will be added in the future to underst
 
 The visual identity is documented in [docs/design-notes.md](./docs/design-notes.md) and lives as a living styleguide at `/buttons` (dev builds only).
 
-Direction: **"calm instrument"** — neutral paper, near-black ink, hairlines and squares, one dusty caramel accent (the dial's needle, active states). Inspired by precision/editorial tooling; see the revision log in [docs/design-notes.md](./docs/design-notes.md).
+Direction: **"calm instrument"** — neutral paper, near-black ink, hairlines and squares, one dusty caramel accent (the dial's needle, active states). Inspired by precision/editorial tooling.
 
 - **Color** is built from semantic tokens in `src/index.css`: neutral `paper` surfaces, near-black `ink` text, hairline borders, and a single dusty caramel accent (`crema`) reserved for what is active or true. Flavor-note hues survive only as small square swatches. Dark mode is neutral near-black, no color cast.
 - **Type** uses three faces with strict roles: **Fraunces** speaks (display, brand wordmark, italic voice), **Instrument Sans** works (body, forms, buttons), **Spline Sans Mono** measures (labels, recipes, ledger data). Everything maps through the `font-display` / `font-sans` / `font-data` / `.eyebrow` utilities.
